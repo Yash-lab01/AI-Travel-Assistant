@@ -5,15 +5,21 @@ from enum import Enum
 
 
 class TravelStyle(str, Enum):
-    popular = "popular"       # Mostly mainstream attractions
-    balanced = "balanced"     # Mix of popular + niche
-    niche = "niche"           # Mostly hidden gems
+    popular   = "popular"     # Mostly mainstream attractions
+    balanced  = "balanced"    # Mix of popular + niche
+    niche     = "niche"       # Mostly hidden gems
+    cultural  = "cultural"
+    adventure = "adventure"
+    foodie    = "foodie"
+    relaxed   = "relaxed"
 
 
 class TravelPace(str, Enum):
-    relaxed = "relaxed"       # 2-3 stops/day
+    slow     = "slow"         # 2-3 stops/day
+    relaxed  = "relaxed"      # alias for slow
     moderate = "moderate"     # 4-5 stops/day
-    intense = "intense"       # 6+ stops/day
+    fast     = "fast"         # 6+ stops/day
+    intense  = "intense"      # alias for fast
 
 
 class GroupType(str, Enum):
@@ -64,10 +70,12 @@ class Stop(BaseModel):
     estimated_cost_usd: Optional[float] = None
     photo_urls: list[str] = Field(default_factory=list)
     rating: Optional[float] = None
+    review_count: Optional[int] = None         # Google Places review count
+    source: Optional[str] = None               # "opentripmap", "reddit", "tavily"
     is_niche: bool = False
     niche_score: Optional[NicheScore] = None
     opening_hours: Optional[dict] = None
-    travel_time_from_prev_minutes: Optional[int] = None  # Travel time from previous stop
+    travel_time_from_prev_minutes: Optional[int] = None
 
 
 class DayPlan(BaseModel):

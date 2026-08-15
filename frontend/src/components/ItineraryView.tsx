@@ -1,7 +1,10 @@
 'use client';
 
 import { Itinerary, DayPlan, Stop } from '@/types';
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
+
+const MapView = lazy(() => import('./MapView'));
+
 
 const CATEGORY_ICONS: Record<string, string> = {
   attraction: '🏛️',
@@ -179,7 +182,7 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
             className={`day-tab ${activeDay === i ? 'active' : ''}`}
             onClick={() => setActiveDay(i)}
           >
-            Day {day.day_number} {day.theme ? `· ${day.theme.split(' ')[0]}` : ''}
+            Day {day.day_number}{day.theme ? ` · ${day.theme.split(' ').slice(0, 2).join(' ')}` : ''}
           </button>
         ))}
       </div>
@@ -188,25 +191,41 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
       <div style={{
         display: 'flex',
         gap: 16,
-        padding: '10px 20px',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--bg-surface)',
-        fontSize: 13,
+        padding: '8px 20px',
+        borderBottom: '1px solid var(--glass-border)',
+        background: 'rgba(8,20,37,0.6)',
+        backdropFilter: 'blur(16px)',
+        fontSize: 12,
         color: 'var(--text-secondary)',
         alignItems: 'center',
         flexWrap: 'wrap',
+        fontFamily: 'var(--font-label)',
       }}>
-        <span>📍 <strong style={{ color: 'var(--text-primary)' }}>{itinerary.trip_request.destination}</strong></span>
-        <span>📅 {itinerary.days.length} days</span>
+        <span>&#128205; <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-headline)', fontStyle: 'italic' }}>{itinerary.trip_request.destination}</strong></span>
+        <span>&#128197; {itinerary.days.length} days</span>
         {itinerary.trip_request.budget_usd && (
-          <span>💵 ${itinerary.trip_request.budget_usd.toLocaleString()} budget</span>
+          <span>&#128181; ${itinerary.trip_request.budget_usd.toLocaleString()} budget</span>
         )}
         {itinerary.total_cost_estimate_usd && (
-          <span>~${itinerary.total_cost_estimate_usd.toLocaleString()} estimated</span>
+          <span style={{ color: 'var(--text-muted)' }}>~${itinerary.total_cost_estimate_usd.toLocaleString()} est.</span>
         )}
-        <span style={{ marginLeft: 'auto', color: 'var(--accent-teal)', fontWeight: 600 }}>
-          💎 {itinerary.days.flatMap(d => d.stops).filter(s => s.is_niche).length} hidden gems
+        <span style={{ marginLeft: 'auto', color: 'var(--teal)', fontWeight: 600 }}>
+          &#128142; {itinerary.days.flatMap(d => d.stops).filter(s => s.is_niche).length} hidden gems
         </span>
+      </div>
+
+      {/* Map */}
+      <div style={{ height: '220px', flexShrink: 0, borderBottom: '1px solid var(--glass-border)' }}>
+        <Suspense fallback={
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+            Loading map...
+          </div>
+        }>
+          <MapView
+            stops={itinerary.days[activeDay]?.stops ?? []}
+            activeDay={activeDay}
+          />
+        </Suspense>
       </div>
 
       {/* Active day content */}
