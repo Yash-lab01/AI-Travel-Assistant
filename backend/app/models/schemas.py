@@ -80,12 +80,12 @@ class Stop(BaseModel):
 
 class DayPlan(BaseModel):
     day_number: int
-    date: Optional[date] = None
-    theme: Optional[str] = None  # e.g. "Old Town & Hidden Cafés"
+    date: Optional[str] = None          # ISO date string e.g. "2026-08-17"
+    theme: Optional[str] = None
     stops: list[Stop] = Field(default_factory=list)
     daily_budget_usd: Optional[float] = None
     daily_cost_estimate_usd: Optional[float] = None
-    weather_note: Optional[str] = None  # e.g. "Rain forecast — consider indoor alternatives"
+    weather_note: Optional[str] = None
 
 
 class Itinerary(BaseModel):

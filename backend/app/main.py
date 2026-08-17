@@ -80,9 +80,7 @@ async def plan(request: ChatRequest):
         "edit_instruction": request.message if request.existing_itinerary_id else None,
     }
 
-    result = await asyncio.to_thread(
-        travel_graph.invoke, initial_state, config
-    )
+    result = await travel_graph.ainvoke(initial_state, config)
 
     if not result.get("itinerary"):
         raise HTTPException(status_code=500, detail="Itinerary generation failed.")
@@ -114,16 +112,13 @@ async def plan_stream(request: ChatRequest):
     }
 
     async def event_generator():
-        # Run graph in thread to avoid blocking
-        result = await asyncio.to_thread(
-            travel_graph.invoke, initial_state, config
-        )
+        result = await travel_graph.ainvoke(initial_state, config)
         events: list[AgentEvent] = result.get("events", [])
         itinerary: Itinerary | None = result.get("itinerary")
 
         for event in events:
             yield f"event: agent_event\ndata: {event.model_dump_json()}\n\n"
-            await asyncio.sleep(0.05)  # Small delay for frontend rendering
+            await asyncio.sleep(0.05)
 
         if itinerary:
             yield f"event: itinerary\ndata: {itinerary.model_dump_json()}\n\n"
