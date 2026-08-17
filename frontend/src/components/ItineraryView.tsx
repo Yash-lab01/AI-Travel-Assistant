@@ -5,7 +5,6 @@ import { useState, lazy, Suspense } from 'react';
 
 const MapView = lazy(() => import('./MapView'));
 
-
 const CATEGORY_ICONS: Record<string, string> = {
   attraction: '🏛️',
   restaurant: '🍽️',
@@ -26,7 +25,7 @@ function StopCard({ stop, index }: { stop: Stop; index: number }) {
     <>
       {index > 0 && stop.travel_time_from_prev_minutes && (
         <div className="travel-connector">
-          🚶 {stop.travel_time_from_prev_minutes} min
+          🚶 {stop.travel_time_from_prev_minutes} min walk / transit
         </div>
       )}
       <div className={`stop-card ${stop.is_niche ? 'niche' : ''}`}>
@@ -43,9 +42,9 @@ function StopCard({ stop, index }: { stop: Stop; index: number }) {
         <div className="stop-card-body">
           <div className="stop-card-top">
             <div className="stop-name">{stop.name}</div>
-            {stop.is_niche && stop.niche_score && (
-              <div className="niche-badge">
-                💎 {(stop.niche_score.hidden_gem_score * 100).toFixed(0)}
+            {stop.is_niche && (
+              <div className="niche-badge" title="Surfaced via high community sentiment & low tourist saturation">
+                💎 HIDDEN GEM {stop.niche_score ? `${(stop.niche_score.hidden_gem_score * 100).toFixed(0)}%` : ''}
               </div>
             )}
           </div>
@@ -60,16 +59,21 @@ function StopCard({ stop, index }: { stop: Stop; index: number }) {
           )}
 
           <div className="stop-meta">
-            <span className="stop-meta-chip">⏱ {stop.duration_minutes}min</span>
+            <span className="stop-meta-chip">⏱️ {stop.duration_minutes} min</span>
             {stop.estimated_cost_usd !== undefined && (
               <span className="stop-meta-chip">💵 ${stop.estimated_cost_usd}</span>
             )}
             {stop.rating && (
-              <span className="stop-meta-chip">⭐ {stop.rating.toFixed(1)}</span>
+              <span className="stop-meta-chip">★ {stop.rating.toFixed(1)}</span>
             )}
             <span className="stop-meta-chip" style={{ textTransform: 'capitalize' }}>
               {icon} {stop.category}
             </span>
+            {stop.source && (
+              <span className="stop-meta-chip" style={{ color: 'var(--teal)' }}>
+                via {stop.source}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -82,7 +86,7 @@ function DayView({ day, budget }: { day: DayPlan; budget?: number }) {
   const pct = budget ? Math.min((spent / budget) * 100, 100) : 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div className="day-header">
         <div className="day-number-badge">{day.day_number}</div>
         <div>
@@ -98,16 +102,16 @@ function DayView({ day, budget }: { day: DayPlan; budget?: number }) {
       {day.weather_note && (
         <div style={{
           background: 'rgba(248,113,113,0.08)',
-          border: '1px solid rgba(248,113,113,0.2)',
+          border: '1px solid rgba(248,113,113,0.25)',
           borderRadius: 'var(--radius-md)',
           padding: '10px 14px',
           fontSize: 13,
-          color: 'var(--accent-coral)',
+          color: 'var(--coral)',
           display: 'flex',
           gap: 8,
           alignItems: 'center',
         }}>
-          ☁️ {day.weather_note}
+          🌦️ {day.weather_note}
         </div>
       )}
 
@@ -115,7 +119,7 @@ function DayView({ day, budget }: { day: DayPlan; budget?: number }) {
         <div className="budget-bar-container">
           <div className="budget-bar-label">
             <span>Daily spend estimate</span>
-            <span><strong style={{ color: 'var(--text-primary)' }}>${spent.toFixed(0)}</strong> / ${budget.toFixed(0)}</span>
+            <span><strong style={{ color: 'var(--text-primary)' }}>${spent.toFixed(0)}</strong> / ${budget.toFixed(0)} budget</span>
           </div>
           <div className="budget-bar-track">
             <div className="budget-bar-fill" style={{ width: `${pct}%` }} />
@@ -141,10 +145,12 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
   if (isLoading) {
     return (
       <div className="itinerary-panel">
-        <div className="itinerary-content" style={{ gap: 12 }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton" style={{ height: 240, borderRadius: 'var(--radius-lg)' }} />
-          ))}
+        <div className="empty-state">
+          <div className="empty-state-icon">🧭</div>
+          <div className="empty-state-title">Multi-Agent Swarm Orchestrating...</div>
+          <div className="empty-state-desc">
+            Extracting requirements, querying live place databases, spatial clustering, and evaluating hidden gem scores.
+          </div>
         </div>
       </div>
     );
@@ -154,23 +160,21 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
     return (
       <div className="itinerary-panel">
         <div className="empty-state">
-          <div className="empty-icon">🗺️</div>
-          <h2>Your itinerary will appear here</h2>
-          <p>Tell the assistant where you'd like to go. It will find popular sights <em>and</em> hidden gems the crowd misses.</p>
-          <div className="prompt-chips">
-            <span className="prompt-chip" style={{ cursor: 'default' }}>💎 Hidden gem scoring</span>
-            <span className="prompt-chip" style={{ cursor: 'default' }}>🤖 Multi-agent planning</span>
-            <span className="prompt-chip" style={{ cursor: 'default' }}>✍️ AI narration</span>
+          <div className="empty-state-icon">✈️</div>
+          <div className="empty-state-title">Your Itinerary Will Materialize Here</div>
+          <div className="empty-state-desc">
+            Type a destination in the chat or click one of the curated prompt chips to generate a tailored itinerary complete with hidden gems and map routing.
           </div>
         </div>
       </div>
     );
   }
 
-  const perDayBudget =
-    itinerary.trip_request.budget_usd && itinerary.days.length
-      ? itinerary.trip_request.budget_usd / itinerary.days.length
-      : undefined;
+  const perDayBudget = itinerary.trip_request.budget_usd
+    ? itinerary.trip_request.budget_usd / itinerary.days.length
+    : undefined;
+
+  const totalNicheCount = itinerary.days.flatMap(d => d.stops).filter(s => s.is_niche).length;
 
   return (
     <div className="itinerary-panel">
@@ -190,10 +194,10 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
       {/* Trip summary strip */}
       <div style={{
         display: 'flex',
-        gap: 16,
-        padding: '8px 20px',
+        gap: 18,
+        padding: '10px 24px',
         borderBottom: '1px solid var(--glass-border)',
-        background: 'rgba(8,20,37,0.6)',
+        background: 'rgba(6, 17, 33, 0.85)',
         backdropFilter: 'blur(16px)',
         fontSize: 12,
         color: 'var(--text-secondary)',
@@ -201,24 +205,24 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
         flexWrap: 'wrap',
         fontFamily: 'var(--font-label)',
       }}>
-        <span>&#128205; <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-headline)', fontStyle: 'italic' }}>{itinerary.trip_request.destination}</strong></span>
-        <span>&#128197; {itinerary.days.length} days</span>
+        <span>📍 <strong style={{ color: 'var(--amber)', fontFamily: 'var(--font-headline)', fontStyle: 'italic', fontSize: 14 }}>{itinerary.trip_request.destination}</strong></span>
+        <span>📅 {itinerary.days.length} Days</span>
         {itinerary.trip_request.budget_usd && (
-          <span>&#128181; ${itinerary.trip_request.budget_usd.toLocaleString()} budget</span>
+          <span>💵 ${itinerary.trip_request.budget_usd.toLocaleString()} Budget</span>
         )}
         {itinerary.total_cost_estimate_usd && (
-          <span style={{ color: 'var(--text-muted)' }}>~${itinerary.total_cost_estimate_usd.toLocaleString()} est.</span>
+          <span style={{ color: 'var(--text-muted)' }}>~${itinerary.total_cost_estimate_usd.toLocaleString()} Est. Total</span>
         )}
         <span style={{ marginLeft: 'auto', color: 'var(--teal)', fontWeight: 600 }}>
-          &#128142; {itinerary.days.flatMap(d => d.stops).filter(s => s.is_niche).length} hidden gems
+          💎 {totalNicheCount} Hidden {totalNicheCount === 1 ? 'Gem' : 'Gems'} Discovered
         </span>
       </div>
 
-      {/* Map */}
-      <div style={{ height: '220px', flexShrink: 0, borderBottom: '1px solid var(--glass-border)' }}>
+      {/* Mapbox Map View */}
+      <div style={{ height: '240px', flexShrink: 0, borderBottom: '1px solid var(--glass-border)' }}>
         <Suspense fallback={
           <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
-            Loading map...
+            Loading nocturnal map...
           </div>
         }>
           <MapView
@@ -228,7 +232,7 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
         </Suspense>
       </div>
 
-      {/* Active day content */}
+      {/* Active Day Content */}
       <div className="itinerary-content">
         {itinerary.days[activeDay] && (
           <DayView day={itinerary.days[activeDay]} budget={perDayBudget} />

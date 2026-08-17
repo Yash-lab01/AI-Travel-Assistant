@@ -5,9 +5,9 @@ export interface TripRequest {
   end_date?: string;
   num_days?: number;
   budget_usd?: number;
-  travel_style: 'popular' | 'balanced' | 'niche';
+  travel_style: 'popular' | 'balanced' | 'niche' | 'cultural' | 'adventure' | 'foodie' | 'relaxed';
   niche_weight: number;
-  pace: 'relaxed' | 'moderate' | 'intense';
+  pace: 'slow' | 'relaxed' | 'moderate' | 'fast' | 'intense';
   group_type: 'solo' | 'couple' | 'family' | 'friends';
   interests: string[];
   raw_message?: string;
@@ -37,6 +37,8 @@ export interface Stop {
   estimated_cost_usd?: number;
   photo_urls: string[];
   rating?: number;
+  review_count?: number;
+  source?: string;
   is_niche: boolean;
   niche_score?: NicheScore;
   opening_hours?: Record<string, string>;

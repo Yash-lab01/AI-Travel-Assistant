@@ -1,24 +1,26 @@
 'use client';
 
-import { ChatMessage } from '@/types';
+import { ChatMessage, AgentEvent, Itinerary } from '@/types';
 import { useEffect, useRef, useState } from 'react';
 import AgentEventFeed from './AgentEventFeed';
-import { AgentEvent } from '@/types';
 
 const PROMPT_CHIPS = [
   '3 days in Lisbon, hidden gems 🇵🇹',
   'Tokyo on a budget, mostly niche 🇯🇵',
   'Weekend in Medellín, couple 🇨🇴',
-  'Solo trip to Kyoto, relaxed pace 🌸',
+  'Solo trip to Kyoto, relaxed pace 🏮',
 ];
 
 interface Props {
-  onItinerary: (itinerary: unknown) => void;
+  onItinerary: (itinerary: Itinerary) => void;
   agentEvents: AgentEvent[];
   isStreaming: boolean;
-  setAgentEvents: (events: AgentEvent[]) => void;
+  setAgentEvents: React.Dispatch<React.SetStateAction<AgentEvent[]>>;
   setIsStreaming: (v: boolean) => void;
+  externalPrompt?: string | null;
+  onExternalPromptConsumed?: () => void;
 }
+
 
 export default function ChatPanel({
   onItinerary,
@@ -26,11 +28,13 @@ export default function ChatPanel({
   isStreaming,
   setAgentEvents,
   setIsStreaming,
+  externalPrompt,
+  onExternalPromptConsumed,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: "Hey! I'm your AI travel assistant. Tell me where you'd like to go — destination, how many days, your budget, and whether you prefer popular sights or hidden gems. I'll build a personalised itinerary for you. ✈️",
+      content: "Hey! I'm your AI travel assistant. Tell me where you'd like to go — destination, how many days, your budget, and whether you prefer popular sights or hidden gems. I'll build a custom itinerary for you with live AI reasoning. ✈️✨",
     },
   ]);
   const [input, setInput] = useState('');
@@ -42,6 +46,16 @@ export default function ChatPanel({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Handle external prompt triggers (e.g. from Hero chips)
+  useEffect(() => {
+    if (externalPrompt && !isStreaming) {
+      handleSend(externalPrompt);
+      if (onExternalPromptConsumed) {
+        onExternalPromptConsumed();
+      }
+    }
+  }, [externalPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-resize textarea
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -92,13 +106,12 @@ export default function ChatPanel({
             if (!raw) continue;
             try {
               const parsed = JSON.parse(raw);
-              // If it has 'days' it's an itinerary
               if ('days' in parsed) {
                 setCurrentItineraryId(parsed.id);
-                onItinerary(parsed);
+                onItinerary(parsed as Itinerary);
                 setMessages(prev => [
                   ...prev,
-                  { role: 'assistant', content: `Your itinerary for **${parsed.trip_request.destination}** is ready! You can ask me to swap stops, adjust the pace, or change the budget. 🗺️` },
+                  { role: 'assistant', content: `Your itinerary for **${parsed.trip_request.destination}** is ready! You can explore the map and day timeline on the right, or ask me to adjust pacing, change budget, or swap stops. 🗺️✨` },
                 ]);
               } else if ('event_type' in parsed) {
                 setAgentEvents(prev => [...prev, parsed as AgentEvent]);
@@ -135,9 +148,9 @@ export default function ChatPanel({
           </div>
         ))}
         {isStreaming && (
-          <div className="chat-bubble assistant" style={{ opacity: 0.6 }}>
-            <span className="dot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-teal)', marginRight: 6, animation: 'pulse 1.5s infinite' }} />
-            Planning your trip...
+          <div className="chat-bubble assistant" style={{ opacity: 0.85, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--teal)', animation: 'pulseDot 1.2s infinite' }} />
+            <span>Multi-Agent Swarm reasoning in progress...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -152,7 +165,7 @@ export default function ChatPanel({
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Where would you like to go? (Enter to send)"
+          placeholder="Where to? (e.g. 3 days in Lisbon, hidden gems)"
           rows={1}
           disabled={isStreaming}
         />
@@ -160,14 +173,14 @@ export default function ChatPanel({
           className="send-btn"
           onClick={() => handleSend()}
           disabled={!input.trim() || isStreaming}
-          title="Send"
+          title="Send message"
         >
           ➤
         </button>
       </div>
 
       {messages.length === 1 && (
-        <div style={{ padding: '0 16px 12px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <div style={{ padding: '0 16px 14px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {PROMPT_CHIPS.map(chip => (
             <button key={chip} className="prompt-chip" onClick={() => handleSend(chip)}>
               {chip}

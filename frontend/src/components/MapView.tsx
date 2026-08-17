@@ -8,9 +8,18 @@ interface Props {
   activeDay: number;
 }
 
+// Mapbox is loaded dynamically via CDN script to keep bundle light
+interface MapboxInstance {
+  accessToken: string;
+  Map: new (options: Record<string, unknown>) => any;
+  NavigationControl: new () => any;
+  Popup: new (options: Record<string, unknown>) => any;
+  Marker: new (options: Record<string, unknown>) => any;
+}
+
 declare global {
   interface Window {
-    mapboxgl: typeof import('mapbox-gl');
+    mapboxgl?: MapboxInstance;
   }
 }
 
@@ -39,7 +48,7 @@ function createMarkerEl(stop: Stop, index: number): HTMLElement {
     height: 32px;
     border-radius: 50% 50% 50% 0;
     background: ${color};
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255,255,255,0.35);
     transform: rotate(-45deg);
     cursor: pointer;
     display: flex;
@@ -77,8 +86,8 @@ function createMarkerEl(stop: Stop, index: number): HTMLElement {
 
 export default function MapView({ stops, activeDay }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<import('mapbox-gl').Map | null>(null);
-  const markersRef = useRef<import('mapbox-gl').Marker[]>([]);
+  const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (!mapRef.current || !MAPBOX_TOKEN) return;
@@ -122,7 +131,7 @@ export default function MapView({ stops, activeDay }: Props) {
 
   function updateMarkers() {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    if (!map || !window.mapboxgl) return;
 
     // Clear old markers
     markersRef.current.forEach(m => m.remove());
@@ -132,7 +141,7 @@ export default function MapView({ stops, activeDay }: Props) {
 
     // Add new markers
     stops.forEach((stop, i) => {
-      if (!stop.lat || !stop.lon) return;
+      if (!stop.lat || !stop.lon || !window.mapboxgl) return;
       const el = createMarkerEl(stop, i);
 
       const popup = new window.mapboxgl.Popup({
@@ -142,17 +151,17 @@ export default function MapView({ stops, activeDay }: Props) {
       }).setHTML(`
         <div style="
           background: rgba(21,32,49,0.95);
-          border: 1px solid rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.12);
           border-radius: 12px;
-          padding: 12px;
+          padding: 12px 14px;
           max-width: 220px;
           font-family: Outfit, sans-serif;
           color: #d8e3fb;
         ">
           ${stop.is_niche ? '<div style="color:#00DBE7;font-size:10px;font-weight:700;letter-spacing:0.08em;margin-bottom:6px">💎 HIDDEN GEM</div>' : ''}
-          <div style="font-family:\'Playfair Display\',serif;font-size:15px;font-weight:600;margin-bottom:4px">${stop.name}</div>
-          <div style="font-size:12px;color:#909096;text-transform:capitalize;margin-bottom:8px">${stop.category} · ${stop.duration_minutes}min</div>
-          ${stop.estimated_cost_usd !== undefined ? `<div style="font-size:12px;color:#FFBF00">$${stop.estimated_cost_usd} est.</div>` : ''}
+          <div style="font-family:\'Playfair Display\',serif;font-size:15px;font-weight:600;margin-bottom:4px;color:#fff">${stop.name}</div>
+          <div style="font-size:12px;color:#909096;text-transform:capitalize;margin-bottom:8px">${stop.category} · ${stop.duration_minutes} min</div>
+          ${stop.estimated_cost_usd !== undefined ? `<div style="font-size:12px;color:#FFBF00;font-weight:600">$${stop.estimated_cost_usd} est.</div>` : ''}
         </div>
       `);
 
@@ -170,15 +179,17 @@ export default function MapView({ stops, activeDay }: Props) {
     } else {
       const lons = stops.map(s => s.lon).filter(Boolean) as number[];
       const lats = stops.map(s => s.lat).filter(Boolean) as number[];
-      map.fitBounds(
-        [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-        { padding: 60, duration: 1500 }
-      );
+      if (lons.length > 0 && lats.length > 0) {
+        map.fitBounds(
+          [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+          { padding: 60, duration: 1500 }
+        );
+      }
     }
   }
 
   useEffect(() => {
-    if (mapInstanceRef.current?.loaded()) {
+    if (mapInstanceRef.current && typeof mapInstanceRef.current.loaded === 'function' && mapInstanceRef.current.loaded()) {
       updateMarkers();
     }
   }, [stops, activeDay]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -192,7 +203,7 @@ export default function MapView({ stops, activeDay }: Props) {
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        background: 'rgba(21,32,49,0.5)',
+        background: 'rgba(13,25,44,0.5)',
         borderTop: '1px solid var(--glass-border)',
         color: 'var(--text-muted)',
         fontSize: 13,
@@ -201,12 +212,12 @@ export default function MapView({ stops, activeDay }: Props) {
         textAlign: 'center',
       }}>
         <span style={{ fontSize: 32 }}>🗺️</span>
-        <span>Add <code style={{ color: 'var(--amber)', background: 'rgba(255,191,0,0.1)', padding: '2px 6px', borderRadius: 4 }}>NEXT_PUBLIC_MAPBOX_TOKEN</code> to <code>.env</code> to enable the map.</span>
+        <span>Add <code style={{ color: 'var(--amber)', background: 'rgba(255,191,0,0.1)', padding: '2px 6px', borderRadius: 4 }}>NEXT_PUBLIC_MAPBOX_TOKEN</code> to <code>.env</code> to enable the interactive map.</span>
         <a
           href="https://account.mapbox.com/access-tokens/"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: 'var(--teal)', fontSize: 12 }}
+          style={{ color: 'var(--teal)', fontSize: 12, textDecoration: 'underline' }}
         >
           Get a free Mapbox token →
         </a>
