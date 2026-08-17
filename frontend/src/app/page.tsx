@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import ChatPanel from '@/components/ChatPanel';
 import ItineraryView from '@/components/ItineraryView';
+import TravelLiveWallpaper from '@/components/TravelLiveWallpaper';
 import { AgentEvent, Itinerary } from '@/types';
+
 
 const HERO_PROMPT_CARDS = [
   {
@@ -55,10 +57,11 @@ export default function Home() {
 
   return (
     <>
-      {/* Dynamic Nocturnal Voyager Background */}
-      <div className="app-bg" aria-hidden="true" />
+      {/* Travel-Themed Live Wallpaper Canvas */}
+      <TravelLiveWallpaper />
 
       <div className="main-wrapper">
+
         {/* Navigation Bar */}
         <header className="site-header">
           <div className="header-left">
