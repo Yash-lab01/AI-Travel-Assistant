@@ -6,31 +6,30 @@ import ItineraryView from '@/components/ItineraryView';
 import TravelLiveWallpaper from '@/components/TravelLiveWallpaper';
 import { AgentEvent, Itinerary } from '@/types';
 
-
 const HERO_PROMPT_CARDS = [
+  {
+    flag: '🇮🇳',
+    destination: 'Rajasthan, India',
+    prompt: '4 days in Rajasthan, Jaipur royal forts, stepwells & desert street food',
+    tag: 'Heritage & Royal Forts',
+  },
   {
     flag: '🇵🇹',
     destination: 'Lisbon, Portugal',
-    prompt: '3 days in Lisbon, hidden gems & authentic Fado',
-    tag: 'Culture & Miradouros',
+    prompt: '3 days in Lisbon, iconic landmarks, hidden miradouros & authentic Fado',
+    tag: 'Culture & Coast',
   },
   {
     flag: '🇯🇵',
     destination: 'Kyoto, Japan',
-    prompt: '4 days in Kyoto, tranquil zen temples & local ramen',
+    prompt: '4 days in Kyoto, iconic zen temples, bamboo groves & local ramen',
     tag: 'Zen & Gastronomy',
   },
   {
-    flag: '🇮🇸',
-    destination: 'Reykjavik, Iceland',
-    prompt: '5 days in Reykjavik, volcanic sights, hot springs & northern lights',
-    tag: 'Nordic Adventure',
-  },
-  {
-    flag: '🇲🇽',
-    destination: 'Oaxaca, Mexico',
-    prompt: '3 days in Oaxaca, culinary secrets, mezcal & artisan markets',
-    tag: 'Artisan Culinary',
+    flag: '🇮🇳',
+    destination: 'South Goa, India',
+    prompt: '3 days in South Goa, quiet beaches, Portuguese heritage & coastal cafes',
+    tag: 'Tropical & Heritage',
   },
 ];
 
@@ -61,7 +60,6 @@ export default function Home() {
       <TravelLiveWallpaper />
 
       <div className="main-wrapper">
-
         {/* Navigation Bar */}
         <header className="site-header">
           <div className="header-left">
@@ -114,18 +112,17 @@ export default function Home() {
         <section id="hero" className="hero-section">
           <div className="hero-tag">
             <span>✨</span>
-            <span>AUTONOMOUS TRAVEL INTELLIGENCE · POWERED BY LANGGRAPH</span>
+            <span>AUTONOMOUS MULTI-AGENT TRAVEL INTELLIGENCE · POWERED BY LANGGRAPH</span>
           </div>
 
           <h1 className="hero-title">
-            <span className="title-regular">Uncover the World's</span>
-            <span className="title-highlight">Best Kept Secrets.</span>
+            <span className="title-regular">Plan Any Journey.</span>
+            <span className="title-highlight">Iconic Sights to Hidden Gems.</span>
           </h1>
 
           <p className="hero-subtitle">
-            An intelligent multi-agent travel companion that discovers authentic hidden gems,
-            balances local secrets with iconic landmarks, and builds geo-clustered daily itineraries
-            in real-time through live AI reasoning.
+            A versatile multi-agent travel companion that crafts complete, personalized day-by-day itineraries —
+            whether you want must-see world wonders, local cultural secrets, or the perfect curated blend of both.
           </p>
 
           <div className="hero-actions">
@@ -170,20 +167,20 @@ export default function Home() {
           {/* Live Metrics / Stats Strip */}
           <div className="stats-strip">
             <div className="stat-item">
-              <span className="stat-value">85%</span>
-              <span className="stat-label">Hidden Gem Discovery Ratio</span>
+              <span className="stat-value">100%</span>
+              <span className="stat-label">Global & Regional Coverage</span>
             </div>
             <div className="stat-item">
               <span className="stat-value">&lt; 2s</span>
               <span className="stat-label">Multi-Agent Parallel Orchestration</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">100%</span>
-              <span className="stat-label">Geo-Clustered Spatial Efficiency</span>
+              <span className="stat-value">Versatile</span>
+              <span className="stat-label">Popular Sights, Balanced, or Niche</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">Zero</span>
-              <span className="stat-label">Sponsored Tourist Traps</span>
+              <span className="stat-value">Optimized</span>
+              <span className="stat-label">Geo-Clustered Spatial Pacing</span>
             </div>
           </div>
         </section>
@@ -191,10 +188,10 @@ export default function Home() {
         {/* How It Works & Architecture Section */}
         <section id="how-it-works" className="features-section">
           <div className="section-header">
-            <span className="section-tag">ENGINEERED FOR AUTHENTICITY</span>
-            <h2 className="section-title">How Multi-Agent Intelligence Works</h2>
+            <span className="section-tag">ENGINEERED FOR SEAMLESS EXPLORATION</span>
+            <h2 className="section-title">How Multi-Agent Travel Planning Works</h2>
             <p className="section-subtitle">
-              Traditional travel apps push sponsored tourist traps. WanderAI coordinates
+              From famous iconic landmarks to authentic community recommendations, WanderAI coordinates
               specialized AI agents to cross-reference live place data, community sentiment, and spatial geometry.
             </p>
           </div>
@@ -205,19 +202,19 @@ export default function Home() {
               <h3 className="feature-title">Autonomous Agent Swarm</h3>
               <p className="feature-desc">
                 A deterministic LangGraph state machine orchestrating Intake slot-filling (Groq Llama 3.1 8B),
-                live OpenTripMap discovery, and thematic storytelling (Gemini 2.5 Flash) without hallucination loops.
+                live OpenTripMap & Google Places discovery, and evocative storytelling (Gemini 2.5 Flash).
               </p>
               <div className="feature-pill">⚡ LangGraph Orchestration</div>
             </div>
 
             <div className="feature-card teal-glow">
               <div className="feature-icon-box icon-box-teal">💎</div>
-              <h3 className="feature-title">Hidden Gem Scoring Formula</h3>
+              <h3 className="feature-title">Versatile Intelligence & Gem Formula</h3>
               <p className="feature-desc">
-                Our log-normalized formula cross-references Reddit & local travel blog sentiment against
-                Google Places review saturation to rank authentically under-the-radar cultural spots.
+                Switch effortlessly between classic landmark sightseeing and under-the-radar spots scored by
+                cross-referencing community sentiment against Google review saturation.
               </p>
-              <div className="feature-pill">📊 Log-Normalized Math</div>
+              <div className="feature-pill">📊 Log-Normalized Ranking</div>
             </div>
 
             <div className="feature-card emerald-glow">
@@ -225,7 +222,7 @@ export default function Home() {
               <h3 className="feature-title">Geo-Clustering & Pacing</h3>
               <p className="feature-desc">
                 Pure-Python k-means coordinate clustering groups attractions into seamless, walking-optimized
-                daily clusters, eliminating exhausting zig-zagging across foreign cities.
+                daily clusters, eliminating exhausting zig-zagging across foreign destinations.
               </p>
               <div className="feature-pill">🧭 Spatial K-Means</div>
             </div>
@@ -238,7 +235,7 @@ export default function Home() {
             <span className="section-tag">LIVE INTERACTIVE WORKSPACE</span>
             <h2 className="section-title">Design Your Personalized Itinerary</h2>
             <p className="section-subtitle">
-              Chat with our multi-agent system below or customize pacing, budget, and hidden gem weight in real-time.
+              Chat with our multi-agent system below — specify any city, duration, budget, and travel preference.
             </p>
           </div>
 
@@ -268,7 +265,7 @@ export default function Home() {
             <div className="footer-left">
               <div className="logo-mark" style={{ width: 32, height: 32, fontSize: 16 }}>🧭</div>
               <span className="logo-text" style={{ fontSize: 18 }}>WanderAI</span>
-              <span className="footer-copy">© 2026 WanderAI. Autonomous multi-agent travel planner.</span>
+              <span className="footer-copy">© 2026 WanderAI. Versatile multi-agent AI travel planner.</span>
             </div>
 
             <div className="footer-tags">

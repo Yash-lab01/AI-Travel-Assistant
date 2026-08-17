@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 import AgentEventFeed from './AgentEventFeed';
 
 const PROMPT_CHIPS = [
-  '3 days in Lisbon, hidden gems 🇵🇹',
-  'Tokyo on a budget, mostly niche 🇯🇵',
-  'Weekend in Medellín, couple 🇨🇴',
-  'Solo trip to Kyoto, relaxed pace 🏮',
+  '4 days in Rajasthan, royal forts & palaces 🇮🇳',
+  '3 days in Lisbon, iconic sights & hidden gems 🇵🇹',
+  'Weekend in South Goa, beaches & cafes 🌴',
+  'Solo trip to Kyoto, relaxed temples & ramen 🇯🇵',
 ];
 
 interface Props {
@@ -20,7 +20,6 @@ interface Props {
   externalPrompt?: string | null;
   onExternalPromptConsumed?: () => void;
 }
-
 
 export default function ChatPanel({
   onItinerary,
@@ -34,7 +33,7 @@ export default function ChatPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: "Hey! I'm your AI travel assistant. Tell me where you'd like to go — destination, how many days, your budget, and whether you prefer popular sights or hidden gems. I'll build a custom itinerary for you with live AI reasoning. ✈️✨",
+      content: "Hey! I'm your AI travel assistant. Tell me where you'd like to travel — destination, duration, budget, and travel style (iconic landmarks, authentic hidden gems, or a balanced mix). I'll build a tailored day-by-day itinerary with live AI reasoning. ✈️✨",
     },
   ]);
   const [input, setInput] = useState('');
@@ -165,7 +164,7 @@ export default function ChatPanel({
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Where to? (e.g. 3 days in Lisbon, hidden gems)"
+          placeholder="Where to? (e.g. 4 days in Rajasthan, royal forts or 3 days in Lisbon)"
           rows={1}
           disabled={isStreaming}
         />

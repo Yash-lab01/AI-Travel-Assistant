@@ -29,28 +29,33 @@ interface Particle {
   color: string;
 }
 
-// Major global travel destinations mapped across a stylized equirectangular projection
+// Major global and Indian travel destinations mapped across stylized equirectangular projection
 const CITIES: City[] = [
-  { name: 'Lisbon', x: 0.44, y: 0.38, isHub: true },
-  { name: 'Tokyo', x: 0.88, y: 0.37, isHub: true },
-  { name: 'Kyoto', x: 0.86, y: 0.39 },
-  { name: 'Reykjavik', x: 0.41, y: 0.22, isHub: true },
-  { name: 'Oaxaca', x: 0.22, y: 0.52 },
-  { name: 'New York', x: 0.28, y: 0.36, isHub: true },
-  { name: 'Paris', x: 0.48, y: 0.33, isHub: true },
-  { name: 'Rome', x: 0.51, y: 0.38 },
-  { name: 'Cairo', x: 0.55, y: 0.44 },
-  { name: 'Dubai', x: 0.62, y: 0.45, isHub: true },
-  { name: 'Bali', x: 0.82, y: 0.65 },
-  { name: 'Sydney', x: 0.91, y: 0.76, isHub: true },
-  { name: 'Cape Town', x: 0.52, y: 0.75 },
-  { name: 'Rio de Janeiro', x: 0.34, y: 0.70 },
-  { name: 'Bangkok', x: 0.77, y: 0.49 },
-  { name: 'Honolulu', x: 0.08, y: 0.47 },
-  { name: 'Vancouver', x: 0.19, y: 0.31 },
-  { name: 'Lima', x: 0.26, y: 0.63 },
-  { name: 'London', x: 0.46, y: 0.31, isHub: true },
-  { name: 'Singapore', x: 0.78, y: 0.57, isHub: true },
+  { name: 'Lisbon', x: 0.44, y: 0.38, isHub: true },       // 0
+  { name: 'Tokyo', x: 0.88, y: 0.37, isHub: true },        // 1
+  { name: 'Kyoto', x: 0.86, y: 0.39 },                     // 2
+  { name: 'Reykjavik', x: 0.41, y: 0.22, isHub: true },    // 3
+  { name: 'Oaxaca', x: 0.22, y: 0.52 },                    // 4
+  { name: 'New York', x: 0.28, y: 0.36, isHub: true },     // 5
+  { name: 'Paris', x: 0.48, y: 0.33, isHub: true },        // 6
+  { name: 'Rome', x: 0.51, y: 0.38 },                     // 7
+  { name: 'Cairo', x: 0.55, y: 0.44 },                     // 8
+  { name: 'Dubai', x: 0.62, y: 0.45, isHub: true },        // 9
+  { name: 'Bali', x: 0.82, y: 0.65 },                      // 10
+  { name: 'Sydney', x: 0.91, y: 0.76, isHub: true },       // 11
+  { name: 'Cape Town', x: 0.52, y: 0.75 },                 // 12
+  { name: 'Rio de Janeiro', x: 0.34, y: 0.70 },            // 13
+  { name: 'Bangkok', x: 0.77, y: 0.49 },                   // 14
+  { name: 'Honolulu', x: 0.08, y: 0.47 },                  // 15
+  { name: 'Vancouver', x: 0.19, y: 0.31 },                 // 16
+  { name: 'London', x: 0.46, y: 0.31, isHub: true },       // 17
+  { name: 'Singapore', x: 0.78, y: 0.57, isHub: true },    // 18
+  // Indian Travel Hubs & Heritage Destinations
+  { name: 'New Delhi', x: 0.67, y: 0.42, isHub: true },    // 19
+  { name: 'Mumbai', x: 0.65, y: 0.48, isHub: true },       // 20
+  { name: 'Jaipur', x: 0.66, y: 0.44 },                    // 21
+  { name: 'Goa', x: 0.66, y: 0.52 },                       // 22
+  { name: 'Bengaluru', x: 0.68, y: 0.54 },                 // 23
 ];
 
 const ROUTE_PAIRS: [number, number][] = [
@@ -59,13 +64,22 @@ const ROUTE_PAIRS: [number, number][] = [
   [0, 5],   // Lisbon -> New York
   [5, 4],   // New York -> Oaxaca
   [5, 3],   // New York -> Reykjavik
-  [3, 18],  // Reykjavik -> London
-  [18, 9],  // London -> Dubai
+  [3, 17],  // Reykjavik -> London
+  [17, 9],  // London -> Dubai
+  [17, 19], // London -> New Delhi
+  [9, 19],  // Dubai -> New Delhi
+  [9, 20],  // Dubai -> Mumbai
+  [19, 21], // New Delhi -> Jaipur
+  [19, 20], // New Delhi -> Mumbai
+  [20, 22], // Mumbai -> Goa
+  [20, 23], // Mumbai -> Bengaluru
+  [19, 14], // New Delhi -> Bangkok
+  [20, 18], // Mumbai -> Singapore
+  [18, 10], // Singapore -> Bali
   [9, 14],  // Dubai -> Bangkok
   [14, 1],  // Bangkok -> Tokyo
   [1, 2],   // Tokyo -> Kyoto
   [1, 11],  // Tokyo -> Sydney
-  [9, 10],  // Dubai -> Bali
   [10, 11], // Bali -> Sydney
   [0, 13],  // Lisbon -> Rio
   [13, 12], // Rio -> Cape Town
@@ -95,7 +109,6 @@ export default function TravelLiveWallpaper() {
     let targetMouseX = mouseX;
     let targetMouseY = mouseY;
 
-    // Handle high DPI
     const handleResize = () => {
       if (!canvas) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -124,7 +137,7 @@ export default function TravelLiveWallpaper() {
         progress: Math.random(),
         speed: 0.0012 + Math.random() * 0.0016,
         color: isAmber ? '#FFBF00' : '#00DBE7',
-        curvature: (index % 3 - 1) * 0.18, // dynamic curve offset
+        curvature: (index % 3 - 1) * 0.18,
       };
     });
 
@@ -145,23 +158,19 @@ export default function TravelLiveWallpaper() {
       };
     });
 
-    // Radar scan ring state
     let radarRadius = 0;
     let radarCityIdx = 0;
-
     let time = 0;
 
     const render = () => {
       time += 0.016;
 
-      // Smooth mouse follow
       mouseX += (targetMouseX - mouseX) * 0.04;
       mouseY += (targetMouseY - mouseY) * 0.04;
 
       ctx.clearRect(0, 0, width, height);
 
-      // ── 1. Dynamic Deep Atmosphere & Aurora Glows ────────────────
-      // Base dark radial gradient
+      // ── 1. Dynamic Atmosphere & Aurora Glows ───────────────────
       const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
       bgGrad.addColorStop(0, '#040e1f');
       bgGrad.addColorStop(0.4, '#061226');
@@ -170,7 +179,7 @@ export default function TravelLiveWallpaper() {
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // Aurora oceanic glow in top-right (Tokyo / Pacific corridor)
+      // Aurora oceanic glow in East
       const auroraTeal = ctx.createRadialGradient(
         width * 0.75 + Math.sin(time * 0.5) * 60,
         height * 0.35 + Math.cos(time * 0.4) * 40,
@@ -185,12 +194,12 @@ export default function TravelLiveWallpaper() {
       ctx.fillStyle = auroraTeal;
       ctx.fillRect(0, 0, width, height);
 
-      // Aurora warm golden amber glow in left (Atlantic / Lisbon corridor)
+      // Aurora warm golden amber glow in Central & West
       const auroraAmber = ctx.createRadialGradient(
-        width * 0.3 + Math.cos(time * 0.6) * 50,
+        width * 0.45 + Math.cos(time * 0.6) * 50,
         height * 0.45 + Math.sin(time * 0.5) * 40,
         20,
-        width * 0.3,
+        width * 0.45,
         height * 0.45,
         width * 0.5
       );
@@ -208,12 +217,11 @@ export default function TravelLiveWallpaper() {
       ctx.fillStyle = mouseGlow;
       ctx.fillRect(0, 0, width, height);
 
-      // ── 2. Subtle Global Navigation Grid (Latitude/Longitude curves) ──
+      // ── 2. Subtle Global Navigation Grid ──────────────────────
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 12]);
 
-      // Latitudinal curved lines
       for (let lat = 0.2; lat <= 0.8; lat += 0.15) {
         ctx.beginPath();
         ctx.moveTo(0, height * lat);
@@ -228,16 +236,15 @@ export default function TravelLiveWallpaper() {
         ctx.stroke();
       }
 
-      // Longitudinal lines
       for (let lon = 0.15; lon <= 0.9; lon += 0.18) {
         ctx.beginPath();
         ctx.moveTo(width * lon, 0);
         ctx.quadraticCurveTo(width * (lon + 0.04), height * 0.5, width * lon, height);
         ctx.stroke();
       }
-      ctx.setLineDash([]); // Reset dash
+      ctx.setLineDash([]);
 
-      // ── 3. Drifting Ambient Stars & Flight Particles ─────────────
+      // ── 3. Drifting Ambient Stars & Flight Particles ──────────
       particles.forEach((p) => {
         p.x += p.vx;
         p.y += p.vy;
@@ -247,7 +254,6 @@ export default function TravelLiveWallpaper() {
         if (p.y < 0) p.y = height;
         if (p.y > height) p.y = 0;
 
-        // Subtle twinkling
         const twinkle = Math.sin(time * 3 + p.x * 0.01) * 0.2;
         const currentAlpha = Math.max(0.05, Math.min(0.8, p.baseAlpha + twinkle));
 
@@ -257,7 +263,7 @@ export default function TravelLiveWallpaper() {
         ctx.fill();
       });
 
-      // ── 4. Radar Pulse Expanding from Selected Hub ──────────────
+      // ── 4. Radar Pulse from Selected Hub ──────────────────────
       radarRadius += 1.2;
       const hub = CITIES[radarCityIdx];
       const hubX = hub.x * width;
@@ -276,28 +282,26 @@ export default function TravelLiveWallpaper() {
       ctx.arc(hubX, hubY, radarRadius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // ── 5. Flight Routes (Great Circle Arcs) ────────────────────
+      // ── 5. Flight Routes (Great Circle Arcs) ─────────────────
       routes.forEach((route) => {
         const x1 = route.from.x * width;
         const y1 = route.from.y * height;
         const x2 = route.to.x * width;
         const y2 = route.to.y * height;
 
-        // Midpoint and perpendicular curve control point
         const midX = (x1 + x2) / 2;
         const midY = (y1 + y2) / 2;
         const dx = x2 - x1;
         const dy = y2 - y1;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Control point curved upwards / offset
         const normalX = -dy / dist;
         const normalY = dx / dist;
         const curveOffset = dist * (route.curvature || -0.22);
         const ctrlX = midX + normalX * curveOffset;
         const ctrlY = midY + normalY * curveOffset;
 
-        // Draw static faint flight path
+        // Draw flight trajectory
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.quadraticCurveTo(ctrlX, ctrlY, x2, y2);
@@ -310,18 +314,17 @@ export default function TravelLiveWallpaper() {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Advance flight packet
+        // Advance packet
         route.progress += route.speed;
         if (route.progress > 1) {
           route.progress = 0;
         }
 
         const t = route.progress;
-        // Quadratic Bezier interpolation: B(t) = (1-t)^2 P0 + 2(1-t)t P1 + t^2 P2
         const currentX = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * ctrlX + t * t * x2;
         const currentY = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * ctrlY + t * t * y2;
 
-        // Trail positions (5 steps behind)
+        // Particle trail
         for (let trail = 5; trail >= 1; trail--) {
           const tTrail = Math.max(0, t - trail * 0.014);
           const trX = (1 - tTrail) * (1 - tTrail) * x1 + 2 * (1 - tTrail) * tTrail * ctrlX + tTrail * tTrail * x2;
@@ -337,7 +340,7 @@ export default function TravelLiveWallpaper() {
           ctx.fill();
         }
 
-        // Flight Packet Head (Glowing Airplane / Comet Head)
+        // Glowing Flight Packet Head
         const isAmber = route.color === '#FFBF00';
         ctx.fillStyle = isAmber ? '#FFF3B0' : '#E0F7FA';
         ctx.shadowColor = route.color;
@@ -345,19 +348,17 @@ export default function TravelLiveWallpaper() {
         ctx.beginPath();
         ctx.arc(currentX, currentY, 2.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0; // Reset shadow blur
+        ctx.shadowBlur = 0;
       });
 
-      // ── 6. World Destinations (Waypoints & Beacon Rings) ────────
+      // ── 6. World & Indian Destinations (Waypoints & Beacon Rings) ──
       CITIES.forEach((city) => {
         const cx = city.x * width;
         const cy = city.y * height;
 
-        // Outer pulse ring
         const pulse = (Math.sin(time * 2.5 + city.x * 10) + 1) * 0.5;
         const isHub = city.isHub;
 
-        // Hub aura
         if (isHub) {
           ctx.fillStyle = 'rgba(255, 191, 0, 0.08)';
           ctx.beginPath();
@@ -371,7 +372,6 @@ export default function TravelLiveWallpaper() {
           ctx.stroke();
         }
 
-        // Center dot
         ctx.fillStyle = isHub ? '#FFBF00' : '#00DBE7';
         ctx.shadowColor = isHub ? '#FFBF00' : '#00DBE7';
         ctx.shadowBlur = 8;
@@ -380,10 +380,9 @@ export default function TravelLiveWallpaper() {
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // City labels (subtle typography)
         if (isHub || width > 900) {
           ctx.font = '500 10px Sora, sans-serif';
-          ctx.fillStyle = 'rgba(216, 227, 251, 0.45)';
+          ctx.fillStyle = 'rgba(216, 227, 251, 0.5)';
           ctx.fillText(city.name, cx + 8, cy + 3);
         }
       });
