@@ -25,7 +25,8 @@ from app.models.schemas import (
 )
 from app.tools.places_tool import get_places_for_destination
 
-GEMINI_KEY = os.getenv("GOOGLE_API_KEY", "")
+GEMINI_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
+
 
 # ── K-means clustering (pure Python, no numpy needed) ────────────────────────
 def _kmeans_cluster(stops: list[Stop], k: int, iterations: int = 30) -> list[list[Stop]]:

@@ -8,24 +8,15 @@ interface Props {
   activeDay: number;
 }
 
-// Mapbox is loaded dynamically via CDN script to keep bundle light
-interface MapboxInstance {
-  accessToken: string;
-  Map: new (options: Record<string, unknown>) => any;
-  NavigationControl: new () => any;
-  Popup: new (options: Record<string, unknown>) => any;
-  Marker: new (options: Record<string, unknown>) => any;
-}
-
 declare global {
   interface Window {
-    mapboxgl?: MapboxInstance;
+    L?: any;
+    mapboxgl?: any;
   }
 }
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
-// Category colours matching the design system
 const MARKER_COLORS: Record<string, string> = {
   attraction: '#E8A838',  // amber — popular
   museum:     '#E8A838',
@@ -37,198 +28,162 @@ const MARKER_COLORS: Record<string, string> = {
   default:    '#E8A838',
 };
 
-function createMarkerEl(stop: Stop, index: number): HTMLElement {
-  const color = stop.is_niche
-    ? '#00DBE7'  // teal for niche gems
-    : (MARKER_COLORS[stop.category] ?? MARKER_COLORS.default);
-
-  const el = document.createElement('div');
-  el.style.cssText = `
-    width: 32px;
-    height: 32px;
-    border-radius: 50% 50% 50% 0;
-    background: ${color};
-    border: 2px solid rgba(255,255,255,0.35);
-    transform: rotate(-45deg);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.4)${stop.is_niche ? `, 0 0 16px ${color}80` : ''};
-    transition: transform 200ms, box-shadow 200ms;
-  `;
-
-  const label = document.createElement('div');
-  label.style.cssText = `
-    transform: rotate(45deg);
-    color: #0a0e1a;
-    font-family: 'Sora', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1;
-  `;
-  label.textContent = String(index + 1);
-  el.appendChild(label);
-
-  el.addEventListener('mouseenter', () => {
-    el.style.transform = 'rotate(-45deg) scale(1.2)';
-    el.style.boxShadow = `0 4px 20px rgba(0,0,0,0.5)${stop.is_niche ? `, 0 0 24px ${color}` : ''}`;
-    el.style.zIndex = '10';
-  });
-  el.addEventListener('mouseleave', () => {
-    el.style.transform = 'rotate(-45deg) scale(1)';
-    el.style.boxShadow = `0 2px 12px rgba(0,0,0,0.4)${stop.is_niche ? `, 0 0 16px ${color}80` : ''}`;
-    el.style.zIndex = '';
-  });
-
-  return el;
-}
-
 export default function MapView({ stops, activeDay }: Props) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const leafletMapRef = useRef<any>(null);
+  const leafletMarkersRef = useRef<any[]>([]);
 
   useEffect(() => {
-    if (!mapRef.current || !MAPBOX_TOKEN) return;
+    if (!mapContainerRef.current) return;
 
-    // Dynamically load Mapbox GL JS
+    // Load Leaflet (100% Free, No credit card, No API token required)
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     document.head.appendChild(link);
 
     const script = document.createElement('script');
-    script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js';
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.async = true;
-    script.onload = initMap;
+    script.onload = () => {
+      initLeafletMap();
+    };
     document.head.appendChild(script);
 
     return () => {
-      mapInstanceRef.current?.remove();
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
       link.remove();
       script.remove();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function initMap() {
-    if (!mapRef.current || !window.mapboxgl) return;
-    window.mapboxgl.accessToken = MAPBOX_TOKEN;
+  const initLeafletMap = () => {
+    if (!mapContainerRef.current || !window.L || leafletMapRef.current) return;
 
-    const map = new window.mapboxgl.Map({
-      container: mapRef.current,
-      style: 'mapbox://styles/mapbox/navigation-night-v1',
-      center: [0, 20],
-      zoom: 2,
-      projection: 'mercator',
-    });
+    const L = window.L;
 
-    map.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
-    mapInstanceRef.current = map;
+    // Initialize map with dark background
+    const map = L.map(mapContainerRef.current, {
+      zoomControl: true,
+      attributionControl: false,
+    }).setView([20, 0], 2);
 
-    map.on('load', () => updateMarkers());
-  }
+    // CartoDB Dark Matter tile layer — gorgeous nocturnal map, 100% free, no API key needed
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd',
+    }).addTo(map);
 
-  function updateMarkers() {
-    const map = mapInstanceRef.current;
-    if (!map || !window.mapboxgl) return;
+    leafletMapRef.current = map;
+    updateLeafletMarkers();
+  };
 
-    // Clear old markers
-    markersRef.current.forEach(m => m.remove());
-    markersRef.current = [];
+  const updateLeafletMarkers = () => {
+    const map = leafletMapRef.current;
+    const L = window.L;
+    if (!map || !L) return;
 
-    if (!stops.length) return;
+    // Clear existing markers
+    leafletMarkersRef.current.forEach(m => m.remove());
+    leafletMarkersRef.current = [];
 
-    // Add new markers
-    stops.forEach((stop, i) => {
-      if (!stop.lat || !stop.lon || !window.mapboxgl) return;
-      const el = createMarkerEl(stop, i);
+    if (!stops || stops.length === 0) return;
 
-      const popup = new window.mapboxgl.Popup({
-        offset: 25,
-        closeButton: false,
-        className: 'wander-popup',
-      }).setHTML(`
+    const latLngs: [number, number][] = [];
+
+    stops.forEach((stop, index) => {
+      if (!stop.lat || !stop.lon) return;
+
+      const lat = stop.lat;
+      const lon = stop.lon;
+      latLngs.push([lat, lon]);
+
+      const color = stop.is_niche
+        ? '#00DBE7'
+        : (MARKER_COLORS[stop.category] ?? MARKER_COLORS.default);
+
+      // Custom nocturnal pin HTML icon
+      const customIcon = L.divIcon({
+        className: 'custom-leaflet-marker',
+        html: `
+          <div style="
+            width: 30px;
+            height: 30px;
+            border-radius: 50% 50% 50% 0;
+            background: ${color};
+            border: 2px solid rgba(255,255,255,0.4);
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 14px rgba(0,0,0,0.5)${stop.is_niche ? `, 0 0 16px ${color}` : ''};
+            cursor: pointer;
+          ">
+            <span style="
+              transform: rotate(45deg);
+              color: #040e1f;
+              font-family: 'Sora', sans-serif;
+              font-size: 11px;
+              font-weight: 700;
+              line-height: 1;
+            ">${index + 1}</span>
+          </div>
+        `,
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -28],
+      });
+
+      const popupContent = `
         <div style="
-          background: rgba(21,32,49,0.95);
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 12px;
-          padding: 12px 14px;
-          max-width: 220px;
-          font-family: Outfit, sans-serif;
+          background: #0d192c;
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 10px;
+          padding: 10px 12px;
           color: #d8e3fb;
+          font-family: 'Outfit', sans-serif;
+          min-width: 180px;
         ">
-          ${stop.is_niche ? '<div style="color:#00DBE7;font-size:10px;font-weight:700;letter-spacing:0.08em;margin-bottom:6px">💎 HIDDEN GEM</div>' : ''}
-          <div style="font-family:\'Playfair Display\',serif;font-size:15px;font-weight:600;margin-bottom:4px;color:#fff">${stop.name}</div>
-          <div style="font-size:12px;color:#909096;text-transform:capitalize;margin-bottom:8px">${stop.category} · ${stop.duration_minutes} min</div>
+          ${stop.is_niche ? '<div style="color:#00DBE7;font-size:10px;font-weight:700;letter-spacing:0.08em;margin-bottom:4px">💎 HIDDEN GEM</div>' : ''}
+          <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:#ffffff;margin-bottom:4px">${stop.name}</div>
+          <div style="font-size:12px;color:#909096;text-transform:capitalize;margin-bottom:6px">${stop.category} · ${stop.duration_minutes} min</div>
           ${stop.estimated_cost_usd !== undefined ? `<div style="font-size:12px;color:#FFBF00;font-weight:600">$${stop.estimated_cost_usd} est.</div>` : ''}
         </div>
-      `);
+      `;
 
-      const marker = new window.mapboxgl.Marker({ element: el })
-        .setLngLat([stop.lon, stop.lat])
-        .setPopup(popup)
+      const marker = L.marker([lat, lon], { icon: customIcon })
+        .bindPopup(popupContent, {
+          className: 'leaflet-dark-popup',
+        })
         .addTo(map);
 
-      markersRef.current.push(marker);
+      leafletMarkersRef.current.push(marker);
     });
 
-    // Fit map to all markers
-    if (stops.length === 1) {
-      map.flyTo({ center: [stops[0].lon, stops[0].lat], zoom: 14, duration: 1500 });
-    } else {
-      const lons = stops.map(s => s.lon).filter(Boolean) as number[];
-      const lats = stops.map(s => s.lat).filter(Boolean) as number[];
-      if (lons.length > 0 && lats.length > 0) {
-        map.fitBounds(
-          [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-          { padding: 60, duration: 1500 }
-        );
-      }
+    // Auto-fit bounds
+    if (latLngs.length === 1) {
+      map.setView(latLngs[0], 14, { animate: true });
+    } else if (latLngs.length > 1) {
+      const bounds = L.latLngBounds(latLngs);
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true });
     }
-  }
+  };
 
   useEffect(() => {
-    if (mapInstanceRef.current && typeof mapInstanceRef.current.loaded === 'function' && mapInstanceRef.current.loaded()) {
-      updateMarkers();
-    }
+    updateLeafletMarkers();
   }, [stops, activeDay]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!MAPBOX_TOKEN) {
-    return (
-      <div style={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        background: 'rgba(13,25,44,0.5)',
-        borderTop: '1px solid var(--glass-border)',
-        color: 'var(--text-muted)',
-        fontSize: 13,
-        fontFamily: 'var(--font-label)',
-        padding: 24,
-        textAlign: 'center',
-      }}>
-        <span style={{ fontSize: 32 }}>🗺️</span>
-        <span>Add <code style={{ color: 'var(--amber)', background: 'rgba(255,191,0,0.1)', padding: '2px 6px', borderRadius: 4 }}>NEXT_PUBLIC_MAPBOX_TOKEN</code> to <code>.env</code> to enable the interactive map.</span>
-        <a
-          href="https://account.mapbox.com/access-tokens/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: 'var(--teal)', fontSize: 12, textDecoration: 'underline' }}
-        >
-          Get a free Mapbox token →
-        </a>
-      </div>
-    );
-  }
 
   return (
     <div
-      ref={mapRef}
-      style={{ width: '100%', height: '100%' }}
+      ref={mapContainerRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        background: '#040e1f',
+      }}
     />
   );
 }
