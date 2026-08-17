@@ -205,9 +205,9 @@ PACE_LIMITS = {"slow": 3, "moderate": 5, "fast": 7}
 # ── Main planner node ─────────────────────────────────────────────────────────
 async def planner_node(state: TravelGraphState) -> dict:
     """
-    Phase 1 planner:
-    1. Fetch real places from OpenTripMap (+ Google Places enrichment)
-    2. K-means cluster into days
+    Phase 2 planner:
+    1. Use ranked_stops from Ranker Agent (or fetch from OpenTripMap fallback)
+    2. K-means cluster into geographically coherent days
     3. Assign themes via Gemini 2.5 Flash (or heuristic fallback)
     4. Generate narrations via Gemini (or use descriptions)
     5. Build Itinerary
@@ -218,15 +218,19 @@ async def planner_node(state: TravelGraphState) -> dict:
     events.append(AgentEvent(
         event_type="agent_start",
         agent="planner_agent",
-        message=f"Discovering places in {trip.destination}...",
+        message=f"Structuring geo-clustered daily plan for {trip.destination}...",
     ))
 
-    # ── Fetch places ──────────────────────────────────────────────────────────
-    stops = await get_places_for_destination(
-        destination=trip.destination,
-        num_days=trip.num_days,
-        travel_style=trip.travel_style.value if trip.travel_style else "balanced",
-    )
+    # ── Use Ranked Stops or Fetch Places Fallback ────────────────────────────
+    ranked = state.get("ranked_stops")
+    if ranked and len(ranked) > 0:
+        stops = list(ranked)
+    else:
+        stops = await get_places_for_destination(
+            destination=trip.destination,
+            num_days=trip.num_days,
+            travel_style=trip.travel_style.value if trip.travel_style else "balanced",
+        )
 
     events.append(AgentEvent(
         event_type="agent_step",

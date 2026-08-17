@@ -4,7 +4,7 @@ All agents share and mutate this state object.
 """
 from typing import TypedDict, Annotated, Optional
 from langgraph.graph.message import add_messages
-from app.models.schemas import TripRequest, Itinerary, NicheScore, AgentEvent
+from app.models.schemas import TripRequest, Itinerary, NicheScore, AgentEvent, Stop
 
 
 class TravelGraphState(TypedDict):
@@ -17,6 +17,7 @@ class TravelGraphState(TypedDict):
     # Raw candidates from tools (before ranking)
     popular_stops_raw: list[dict]       # From OpenTripMap + Google Places
     niche_spots_raw: list[NicheScore]   # From niche_scrape_tool + scoring engine
+    ranked_stops: list[Stop]            # Curated & blended stops from Ranker Agent
 
     # Final planned + narrated itinerary
     itinerary: Optional[Itinerary]
@@ -28,3 +29,4 @@ class TravelGraphState(TypedDict):
     session_id: str
     is_edit: bool   # True if this is a follow-up edit, not a fresh plan
     edit_instruction: Optional[str]
+

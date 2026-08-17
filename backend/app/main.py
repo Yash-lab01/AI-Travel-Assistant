@@ -73,6 +73,7 @@ async def plan(request: ChatRequest):
         "trip_request": None,
         "popular_stops_raw": [],
         "niche_spots_raw": [],
+        "ranked_stops": [],
         "itinerary": None,
         "events": [],
         "session_id": session_id,
@@ -104,12 +105,14 @@ async def plan_stream(request: ChatRequest):
         "trip_request": None,
         "popular_stops_raw": [],
         "niche_spots_raw": [],
+        "ranked_stops": [],
         "itinerary": None,
         "events": [],
         "session_id": session_id,
         "is_edit": request.existing_itinerary_id is not None,
         "edit_instruction": request.message if request.existing_itinerary_id else None,
     }
+
 
     async def event_generator():
         result = await travel_graph.ainvoke(initial_state, config)

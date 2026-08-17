@@ -1,6 +1,6 @@
 """
-LangGraph travel planning graph — Phase 1
-Wires: intake_agent → planner_agent
+LangGraph travel planning graph — Phase 2
+Wires: intake_agent -> ranker_agent -> planner_agent -> END
 """
 from langgraph.graph import StateGraph, END
 import sqlite3
@@ -15,6 +15,7 @@ except ImportError:
 
 from app.graph.state import TravelGraphState
 from app.agents.intake_agent import intake_node
+from app.agents.ranker_agent import ranker_node
 from app.agents.planner_agent import planner_node
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "checkpoints.db")
@@ -31,10 +32,12 @@ def build_graph():
 
     builder = StateGraph(TravelGraphState)
     builder.add_node("intake",  intake_node)
+    builder.add_node("ranker",  ranker_node)
     builder.add_node("planner", planner_node)
 
     builder.set_entry_point("intake")
-    builder.add_edge("intake", "planner")
+    builder.add_edge("intake", "ranker")
+    builder.add_edge("ranker", "planner")
     builder.add_edge("planner", END)
 
     return builder.compile(checkpointer=checkpointer)
