@@ -23,6 +23,9 @@ OTM_BASE = "https://api.opentripmap.com/0.1/en/places"
 OTM_KEY   = os.getenv("OPENTRIPMAP_API_KEY", "")
 GPLACES_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
 
+# Increment this when the parser or data schema changes to auto-invalidate Chroma cache
+CACHE_VERSION = "v4"
+
 # OTM category groups by travel style preference
 CATEGORY_MAP = {
     "attraction":   "historic,cultural,natural",
@@ -131,7 +134,8 @@ def _cache_key(destination: str) -> str:
 async def fetch_otm_places(lat: float, lon: float, radius_m: int = 15000, limit: int = 40) -> list[dict]:
     """Fetch places from OpenTripMap around a lat/lon, properly parsing flat JSON."""
     if not OTM_KEY:
-        return _mock_otm_places(lat, lon)
+        # Return empty — caller decides whether to use mock data
+        return []
 
     params = {
         "apikey":  OTM_KEY,
@@ -147,11 +151,12 @@ async def fetch_otm_places(lat: float, lon: float, radius_m: int = 15000, limit:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.get(f"{OTM_BASE}/radius", params=params)
             if resp.status_code != 200:
-                return _mock_otm_places(lat, lon)
+                print(f"[places_tool] OTM HTTP {resp.status_code} for ({lat},{lon})")
+                return []
             features = resp.json()
 
         if not isinstance(features, list):
-            return _mock_otm_places(lat, lon)
+            return []
 
         places = []
         for f in features:
@@ -260,22 +265,26 @@ async def get_places_for_destination(
     cache_key = _cache_key(clean_dest)
     chroma = get_chroma_client()
 
-    # 1. Check cache
+    # 1. Check versioned cache — stale entries (wrong CACHE_VERSION) are skipped entirely
+    versioned_key = f"{cache_key}_{CACHE_VERSION}"
     try:
         cached = chroma.get_or_create_collection("itineraries").get(
-            where={"destination_key": cache_key},
-            limit=50,
+            where={"cache_key": versioned_key},
+            limit=80,
         )
         if cached and cached.get("documents"):
             stops = []
             for doc in cached["documents"]:
-                data = json.loads(doc)
-                stops.append(Stop(**data))
-            # Filter out any legacy mock stops
-            stops = [s for s in stops if s.source != "mock" and not s.name.startswith("Historic Old Town") and not s.name.startswith("National Heritage")]
+                try:
+                    data = json.loads(doc)
+                    stops.append(Stop(**data))
+                except Exception:
+                    pass
+            # Only accept real OTM stops from cache — reject any mocks
+            stops = [s for s in stops if s.source == "opentripmap"]
             if len(stops) >= num_days * 3:
+                print(f"[places_tool] Cache hit for {clean_dest} ({len(stops)} stops, {CACHE_VERSION})")
                 return stops
-
     except Exception:
         pass
 
@@ -304,11 +313,27 @@ async def get_places_for_destination(
         otm_places = await fetch_otm_places(lat, lon, radius_m=adaptive_radius, limit=min(num_days * 15, 50))
 
     if not otm_places:
-        try:
-            lat, lon = await geocode_destination(clean_dest)
-        except Exception:
-            lat, lon = 18.5204, 73.8567
-        otm_places = _mock_otm_places(lat, lon)
+        if not OTM_KEY:
+            # No OTM key at all — use rich mock placeholders
+            try:
+                lat, lon = await geocode_destination(clean_dest)
+            except Exception:
+                lat, lon = 18.5204, 73.8567
+            otm_places = _mock_otm_places(lat, lon)
+            print(f"[places_tool] No OTM key — using mock places for {clean_dest}")
+        else:
+            # OTM key exists but returned 0 results — try wider radius once more
+            print(f"[places_tool] OTM returned 0 places for {clean_dest} — retrying with wider radius")
+            try:
+                lat, lon = await geocode_destination(clean_dest)
+                otm_places = await fetch_otm_places(lat, lon, radius_m=30000, limit=50)
+            except Exception:
+                pass
+            if not otm_places:
+                # Truly no data — fall back to mocks as last resort
+                lat2, lon2 = (lat, lon) if 'lat' in dir() else (18.5204, 73.8567)
+                otm_places = _mock_otm_places(lat2, lon2)
+                print(f"[places_tool] OTM exhausted — using mock places for {clean_dest}")
 
     # 3. Deduplicate places by name
     seen_names = set()
@@ -353,17 +378,21 @@ async def get_places_for_destination(
         )
         stops.append(stop)
 
-    # 6. Cache stops
-    try:
-        coll = chroma.get_or_create_collection("itineraries")
-        doc_strs = [s.model_dump_json() for s in stops]
-        ids = [f"{cache_key}_{s.id}" for s in stops]
-        metadatas = [{"destination_key": cache_key} for _ in stops]
-        coll.add(documents=doc_strs, ids=ids, metadatas=metadatas)
-    except Exception:
-        pass
+    # 6. Cache stops with versioned key (only real OTM stops)
+    otm_stops = [s for s in stops if s.source == "opentripmap"]
+    if otm_stops:
+        try:
+            coll = chroma.get_or_create_collection("itineraries")
+            doc_strs = [s.model_dump_json() for s in otm_stops]
+            ids = [f"{versioned_key}_{s.id}" for s in otm_stops]
+            metadatas = [{"cache_key": versioned_key, "destination": clean_dest} for _ in otm_stops]
+            coll.add(documents=doc_strs, ids=ids, metadatas=metadatas)
+            print(f"[places_tool] Cached {len(otm_stops)} real OTM stops for {clean_dest} ({CACHE_VERSION})")
+        except Exception as ce:
+            print(f"[places_tool] Cache write failed: {ce}")
 
     return stops
+
 
 
 def _infer_category(kinds: str) -> str:

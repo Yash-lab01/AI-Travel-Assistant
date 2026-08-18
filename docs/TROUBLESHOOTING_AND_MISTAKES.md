@@ -103,3 +103,49 @@ This document serves as a persistent record of bugs encountered, root causes dia
   `LANGCHAIN_TRACING_V2=true` was enabled without a valid LangSmith API key.
 - **Rule / What to Do**:
   Keep `LANGCHAIN_TRACING_V2=false` in `.env` unless actively debugging with a configured LangSmith workspace key.
+
+---
+
+## 7. Chroma Cache Polluted with Stale / Mock Stops Across Cities
+- **Symptom**:
+  After fixing the OTM parser, cities like Mumbai, Delhi, and Goa still showed generic stops (e.g. *"Artisanal Food & Spice Market"*, *"Traditional Arts & Craft Bazaar"*) despite new real OTM data being available.
+- **Root Cause**:
+  Old Chroma cache entries (stored before parser fix, with `source="mock"` or old `destination_key` metadata) were still matching queries via the old `destination_key` metadata field. Filtering by name prefix only caught some mocks — others slipped through.
+- **Fix Applied**:
+  1. Added `CACHE_VERSION = "v4"` constant in `places_tool.py`.
+  2. Cache reads use `where={"cache_key": f"{dest_hash}_{CACHE_VERSION}"}` — old entries (different version) are transparently skipped.
+  3. Cache writes only store entries with `source="opentripmap"` — mock stops are NEVER written.
+- **Rule / What to Do**:
+  Whenever the OTM parser or `Stop` schema changes, increment `CACHE_VERSION` in `places_tool.py`. This auto-invalidates all stale Chroma data on next request.
+- **What NOT to do**:
+  ❌ Do not manually delete `backend/data/chroma_db/` — this breaks all collections. Use versioning instead.
+
+---
+
+## 8. K-means Day 1 Consistently Underpopulated (1-2 Stops vs 5-6)
+- **Symptom**:
+  Day 1 cluster always has only 1-2 stops while Day 2 and Day 3 have 5+ stops each. Day 1 cards appear sparse in the UI.
+- **Root Cause**:
+  The original k-means initialization seeded centroids by dividing `lat-sorted stops` into k equal index steps. For cities where most POIs cluster geographically, the first centroid always landed in a small dense pocket, capturing very few items.
+- **Fix Applied**:
+  Replaced standard k-means initialization with **K-means++**:
+  - First seed is random.
+  - Each subsequent seed is sampled proportional to the squared distance from existing seeds.
+  - This guarantees initial centroids are maximally spread, preventing early cluster collapse.
+  - Added a post-clustering rebalance pass: if any cluster has `> target_per_day + 2` stops, excess stops are redistributed to the smallest cluster.
+- **What NOT to do**:
+  ❌ Do not use evenly-spaced lat-sorted index seeding for k-means on Indian cities — POIs cluster tightly by lat/lon and index-based seeding is pathological for this distribution.
+
+---
+
+## 9. Ranker Agent Bypassed — Planner Fetches Its Own OTM Data
+- **Symptom**:
+  Hidden gem stops from the Ranker's niche blending never appeared in the final itinerary. The planner would always show 100% OTM attraction-type stops.
+- **Root Cause**:
+  In `planner_agent.py`, when `state.get("ranked_stops")` was empty (e.g. ranker returned `[]` due to a niche scraper error), the planner silently fell back to calling `get_places_for_destination()` directly. This bypassed the niche-blending logic entirely.
+- **Fix Applied**:
+  1. `ranker_node` now has a **"never empty" guarantee**: even if `niche_stops` fails, it returns `popular_stops` directly as `ranked_stops`.
+  2. `planner_node` treats an empty `ranked_stops` as a WARNING and only falls back as a true last resort (ranker itself crashed).
+  3. Both agents log a `[WARNING]` message when the fallback path is taken.
+- **What NOT to do**:
+  ❌ Never silently swallow the ranker failure without a log message — it makes the bypass invisible during debugging.

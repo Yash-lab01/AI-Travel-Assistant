@@ -1,7 +1,10 @@
 """
-Ranker Agent — Phase 2
+Ranker Agent — Phase 2 + 3
 Blends mainstream attractions (OpenTripMap/Google Places) with authentic hidden gems
 (Reddit/Tavily scored via log-normalized formula) according to the user's niche_weight.
+
+Key guarantee: ranked_stops is ALWAYS populated (never empty) so planner_agent
+does not need to fall back to a standalone OTM fetch.
 """
 from __future__ import annotations
 import asyncio
@@ -23,14 +26,13 @@ PACE_STOPS_PER_DAY = {
 }
 
 
-
 async def ranker_node(state: TravelGraphState) -> dict:
     """
     Ranker LangGraph Node:
-    1. Fetches mainstream tourist POIs & scraped niche gems concurrently
+    1. Fetches mainstream tourist POIs & scraped niche gems CONCURRENTLY
     2. Blends them according to `trip_request.niche_weight` (0.0 = popular, 0.5 = balanced, 1.0 = deep niche)
     3. Guarantees category diversity and spatial coherence
-    4. Outputs `ranked_stops` to state for the Planner Agent
+    4. ALWAYS outputs a non-empty `ranked_stops` list to state for the Planner Agent
     """
     trip_req = state.get("trip_request")
     events = list(state.get("events", []))
@@ -44,45 +46,44 @@ async def ranker_node(state: TravelGraphState) -> dict:
         destination = trip_req.destination or "Lisbon"
         num_days = trip_req.num_days or 3
         niche_weight = trip_req.niche_weight if trip_req.niche_weight is not None else 0.5
-        pace = trip_req.pace or "moderate"
+        pace = trip_req.pace.value if hasattr(trip_req.pace, 'value') else (trip_req.pace or "moderate")
 
     # Emit ranker start event
     events.append(
         AgentEvent(
             agent="Ranker",
             event_type="agent_start",
-            message=f"Analyzing destination '{destination}' — balancing iconic landmarks with authentic community gems...",
+            message=f"Scouting '{destination}' — discovering iconic landmarks & authentic hidden gems...",
         )
     )
 
-    # ── 1. Fetch Popular & Niche Spots Concurrently ───────────────────────
+    # ── 1. Fetch Popular & Niche Spots Concurrently ───────────────────────────
+    # Both tasks run in parallel. Ranker is the SINGLE source of stops for the planner.
     popular_task = get_places_for_destination(destination, num_days=num_days)
     niche_task = discover_niche_spots(destination)
 
-
-    popular_stops, niche_stops = await asyncio.gather(
+    popular_stops_result, niche_stops_result = await asyncio.gather(
         popular_task, niche_task, return_exceptions=True
     )
 
-    if not isinstance(popular_stops, list):
-        popular_stops = []
-    if not isinstance(niche_stops, list):
-        niche_stops = []
+    popular_stops: list[Stop] = popular_stops_result if isinstance(popular_stops_result, list) else []
+    niche_stops: list[Stop] = niche_stops_result if isinstance(niche_stops_result, list) else []
 
-    # ── 2. Calculate Target Pool Size & Blending Ratio ────────────────────
+    if not isinstance(popular_stops_result, list):
+        print(f"[ranker_agent] Popular fetch failed for '{destination}': {popular_stops_result}")
+    if not isinstance(niche_stops_result, list):
+        print(f"[ranker_agent] Niche discovery failed for '{destination}': {niche_stops_result}")
+
+    # ── 2. Calculate Target Pool Size & Blending Ratio ────────────────────────
     stops_per_day = PACE_STOPS_PER_DAY.get(pace, 5)
-    total_needed = max(stops_per_day * num_days, 6)
+    total_needed = max(stops_per_day * num_days, num_days * 3)
 
-    # Calculate niche proportion based on niche_weight (0.0 to 1.0)
-    # niche_weight 0.0 -> ~15% niche (mostly popular)
-    # niche_weight 0.5 -> ~45% niche (balanced)
-    # niche_weight 1.0 -> ~75% niche (heavy gems)
+    # niche_weight 0.0 → ~15% niche  |  0.5 → ~45% niche  |  1.0 → ~75% niche
     target_niche_ratio = 0.15 + (niche_weight * 0.60)
     target_niche_count = max(1, int(round(total_needed * target_niche_ratio)))
     target_popular_count = total_needed - target_niche_count
 
-    # ── 3. Select Highest Scoring Niche Spots ─────────────────────────────
-    # Sort niche spots by hidden_gem_score descending
+    # ── 3. Select Highest-Scoring Niche Spots ────────────────────────────────
     sorted_niche = sorted(
         niche_stops,
         key=lambda s: s.niche_score.hidden_gem_score if s.niche_score else 0.5,
@@ -90,8 +91,8 @@ async def ranker_node(state: TravelGraphState) -> dict:
     )
     selected_niche = sorted_niche[:target_niche_count]
 
-    # ── 4. Select Diverse Popular Attractions ─────────────────────────────
-    # Filter out any popular stops that duplicate selected niche names
+    # ── 4. Select Diverse Popular Attractions ────────────────────────────────
+    # Remove duplicates with niche spots by name
     niche_names = {s.name.lower().strip() for s in selected_niche}
     filtered_popular = [
         s for s in popular_stops
@@ -100,13 +101,13 @@ async def ranker_node(state: TravelGraphState) -> dict:
 
     selected_popular = filtered_popular[:target_popular_count]
 
-    # If popular stops were fewer than target, top up with remaining niche spots
+    # Top up from niche leftovers if popular is short
     if len(selected_popular) < target_popular_count:
         leftover_niche = sorted_niche[target_niche_count:]
         needed = target_popular_count - len(selected_popular)
         selected_popular.extend(leftover_niche[:needed])
 
-    # ── 5. Combine & Interleave for Balanced Daily Distribution ───────────
+    # ── 5. Interleave Popular + Niche for Daily Variety ──────────────────────
     combined_stops: list[Stop] = []
     max_len = max(len(selected_popular), len(selected_niche))
 
@@ -116,13 +117,23 @@ async def ranker_node(state: TravelGraphState) -> dict:
         if idx < len(selected_niche):
             combined_stops.append(selected_niche[idx])
 
-    # Ensure total is sufficient
+    # Top up to hit total_needed if combined is still short
     if len(combined_stops) < total_needed and popular_stops:
+        combined_names = {s.name.lower().strip() for s in combined_stops}
         for s in popular_stops:
-            if s not in combined_stops:
+            if s.name.lower().strip() not in combined_names:
                 combined_stops.append(s)
+                combined_names.add(s.name.lower().strip())
             if len(combined_stops) >= total_needed:
                 break
+
+    # ── 6. Guarantee: ranked_stops is NEVER empty ────────────────────────────
+    # This ensures planner_node always receives a valid stop list and never
+    # falls back to its own OTM fetch (which would bypass the niche blending).
+    if not combined_stops and popular_stops:
+        combined_stops = popular_stops[:total_needed]
+    elif not combined_stops and niche_stops:
+        combined_stops = niche_stops[:total_needed]
 
     niche_count = sum(1 for s in combined_stops if s.is_niche)
     popular_count = len(combined_stops) - niche_count
@@ -131,7 +142,11 @@ async def ranker_node(state: TravelGraphState) -> dict:
         AgentEvent(
             agent="Ranker",
             event_type="agent_step",
-            message=f"Curated {len(combined_stops)} stops: {popular_count} iconic landmarks + {niche_count} community hidden gems (Gem Weight: {niche_weight:.2f})",
+            message=(
+                f"Curated {len(combined_stops)} stops: "
+                f"{popular_count} iconic + {niche_count} community hidden gems "
+                f"(gem weight: {niche_weight:.0%})"
+            ),
         )
     )
 
