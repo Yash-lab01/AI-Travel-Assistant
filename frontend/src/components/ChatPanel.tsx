@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 import AgentEventFeed from './AgentEventFeed';
 
 const PROMPT_CHIPS = [
+  '3 days in Mumbai, coastal walks & heritage 🇮🇳',
+  '3 days in Pune, Maratha forts & street food 🇮🇳',
   '3 days in Goa, beaches & heritage 🌴',
   '4 days in Rajasthan, royal forts & desert culture 👑',
-  '3 days in Lisbon, iconic sights & hidden gems 🇵🇹',
-  '4 days in Kyoto, zen temples & local ramen 🇯🇵',
 ];
 
 interface Props {
@@ -44,6 +44,10 @@ export default function ChatPanel({
     destination?: string;
     num_days?: number;
   } | null>(null);
+  const [pendingTrip, setPendingTrip] = useState<{
+    destination: string;
+    num_days: number;
+  } | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -57,7 +61,6 @@ export default function ChatPanel({
     }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeClarification]);
-
 
   // Handle external prompt triggers (e.g. from Hero chips)
   useEffect(() => {
@@ -86,12 +89,29 @@ export default function ChatPanel({
     text?: string,
     options?: { forcePlan?: boolean; customAnswers?: Record<string, string> }
   ) => {
-    const message = (text ?? input).trim();
-    if (!message && !options?.forcePlan && !options?.customAnswers) return;
+    const rawMessage = (text ?? input).trim();
+    if (!rawMessage && !options?.forcePlan && !options?.customAnswers) return;
 
-    const outgoingMessage = message || (options?.forcePlan ? 'Plan with standard defaults' : 'Submit preferences');
+    let outgoingMessage = rawMessage;
+    let explicitDest = pendingTrip?.destination;
+    let explicitDays = pendingTrip?.num_days;
 
-    if (!options?.forcePlan && !options?.customAnswers) {
+    if (options?.forcePlan) {
+      const dest = pendingTrip?.destination || activeClarification?.destination || 'Goa';
+      const days = pendingTrip?.num_days || activeClarification?.num_days || 3;
+      outgoingMessage = `${days} days in ${dest}`;
+      explicitDest = dest;
+      explicitDays = days;
+      setMessages(prev => [...prev, { role: 'user', content: `⚡ Plan ${days} days in ${dest} with standard defaults` }]);
+    } else if (options?.customAnswers) {
+      const dest = pendingTrip?.destination || activeClarification?.destination || 'Goa';
+      const days = pendingTrip?.num_days || activeClarification?.num_days || 3;
+      const answerSummary = Object.values(options.customAnswers).join(', ');
+      outgoingMessage = `${days} days in ${dest}${answerSummary ? `, ${answerSummary}` : ''}`;
+      explicitDest = dest;
+      explicitDays = days;
+      setMessages(prev => [...prev, { role: 'user', content: `🚀 Plan ${days} days in ${dest} (${answerSummary})` }]);
+    } else {
       setInput('');
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
       setMessages(prev => [...prev, { role: 'user', content: outgoingMessage }]);
@@ -108,6 +128,8 @@ export default function ChatPanel({
         body: JSON.stringify({
           session_id: sessionId,
           message: outgoingMessage,
+          destination: explicitDest,
+          num_days: explicitDays,
           existing_itinerary_id: currentItineraryId,
           force_plan: options?.forcePlan || false,
           answers: options?.customAnswers || selectedAnswers,
@@ -147,11 +169,14 @@ export default function ChatPanel({
                 ]);
               } else if (parsed.event_type === 'clarification_needed') {
                 const questions = parsed.data?.questions as ClarificationQuestion[];
+                const dest = (parsed.data?.destination as string) || '';
+                const numDays = (parsed.data?.num_days as number) || 3;
                 if (questions && questions.length > 0) {
+                  setPendingTrip({ destination: dest, num_days: numDays });
                   setActiveClarification({
                     questions,
-                    destination: parsed.data?.destination,
-                    num_days: parsed.data?.num_days,
+                    destination: dest,
+                    num_days: numDays,
                   });
                   setMessages(prev => [
                     ...prev,
@@ -160,8 +185,8 @@ export default function ChatPanel({
                       content: parsed.message,
                       questions,
                       isClarification: true,
-                      destination: parsed.data?.destination,
-                      num_days: parsed.data?.num_days,
+                      destination: dest,
+                      num_days: numDays,
                     },
                   ]);
                 }
@@ -217,7 +242,7 @@ export default function ChatPanel({
               {/* Render Interactive Clarification Card inside the message if present */}
               {msg.isClarification && msg.questions && (
                 <div className="clarification-card">
-                  <div className="clarification-title">✨ Quick Travel Preferences:</div>
+                  <div className="clarification-title">✨ Quick Travel Preferences for {msg.destination || 'your trip'}:</div>
                   {msg.questions.map((q) => (
                     <div key={q.id} className="clarification-question-group">
                       <div className="clarification-q-text">{q.question}</div>
@@ -283,7 +308,7 @@ export default function ChatPanel({
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Where to? (e.g. '3 days in Goa' or '4 days in Rajasthan, royal forts')"
+          placeholder="Where to? (e.g. '3 days in Mumbai' or '3 days in Pune, street food')"
           rows={1}
           disabled={isStreaming}
         />

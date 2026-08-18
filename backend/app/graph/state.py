@@ -15,6 +15,8 @@ class TravelGraphState(TypedDict):
 
     # Slot-filled trip parameters (built by Intake Agent)
     trip_request: Optional[TripRequest]
+    destination: Optional[str]                             # Preserved destination across turns
+    num_days: Optional[int]                                # Preserved num_days across turns
 
     # Clarification state
     force_plan: bool                                       # Bypass clarification if True

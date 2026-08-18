@@ -108,10 +108,11 @@ async def _assign_day_themes(
             from langchain_core.messages import HumanMessage
 
             llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
+                model="gemini-3.5-flash",
                 google_api_key=GEMINI_KEY,
                 temperature=0.4,
             )
+
 
             prompt = f"""You are an evocative travel writer. Give each day of this {destination} itinerary a short, evocative theme (3-6 words).
 {f"Traveler preference: {region_pref}" if region_pref else ""}
@@ -158,10 +159,11 @@ async def _generate_narrations(stops: list[Stop], destination: str) -> list[str]
         from langchain_core.messages import HumanMessage
 
         llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-3.5-flash",
             google_api_key=GEMINI_KEY,
             temperature=0.3,
         )
+
 
         stops_desc = "\n".join(
             f"- {s.name} ({s.category}): {s.description}" for s in stops

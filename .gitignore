@@ -36,3 +36,5 @@ Thumbs.db
 
 # LangSmith / traces (optional — can commit screenshots selectively)
 *.trace
+
+SS/

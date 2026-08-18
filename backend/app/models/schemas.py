@@ -138,6 +138,9 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     session_id: str
     message: str
+    destination: Optional[str] = None            # Explicit destination if preserved across turns
+    num_days: Optional[int] = None               # Explicit days if preserved across turns
     existing_itinerary_id: Optional[str] = None  # For follow-up edits
     force_plan: bool = False                     # If True, bypasses clarification questions
     answers: Optional[dict[str, str]] = None     # User-selected clarification answers
+

@@ -54,6 +54,8 @@ async def plan(request: ChatRequest):
     initial_state = {
         "messages": [HumanMessage(content=request.message)],
         "trip_request": None,
+        "destination": request.destination,
+        "num_days": request.num_days,
         "force_plan": request.force_plan,
         "clarification_answers": request.answers,
         "needs_clarification": False,
@@ -67,6 +69,7 @@ async def plan(request: ChatRequest):
         "is_edit": request.existing_itinerary_id is not None,
         "edit_instruction": request.message if request.existing_itinerary_id else None,
     }
+
 
     result = await travel_graph.ainvoke(initial_state, config)
 
