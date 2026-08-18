@@ -8,7 +8,8 @@ from __future__ import annotations
 import json
 import re
 import os
-from typing import Optional
+from typing import Optional, Any
+
 from langchain_core.messages import HumanMessage
 
 from app.models.schemas import (
@@ -191,6 +192,23 @@ Extract:
 Respond ONLY with valid JSON. No markdown, no explanation."""
 
 
+def safe_extract_text(content: Any) -> str:
+    """Safely extract string text from LLM response (handles str, list of dicts, or list of parts)."""
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        parts = []
+        for p in content:
+            if isinstance(p, dict):
+                parts.append(p.get("text", ""))
+            elif hasattr(p, "text"):
+                parts.append(getattr(p, "text", ""))
+            else:
+                parts.append(str(p))
+        return "".join(parts).strip()
+    return str(content).strip()
+
+
 async def _extract_with_llm(text: str) -> Optional[dict]:
     # 1. Try Gemini 3.5 Flash first (fastest, high rate limit)
     if GOOGLE_KEY:
@@ -206,7 +224,7 @@ async def _extract_with_llm(text: str) -> Optional[dict]:
                 {"role": "user",   "content": text},
             ]
             response = await llm.ainvoke(messages)
-            raw = response.content.strip()
+            raw = safe_extract_text(response.content)
             match = re.search(r'\{.*\}', raw, re.DOTALL)
             if match:
                 data = json.loads(match.group())
@@ -229,7 +247,7 @@ async def _extract_with_llm(text: str) -> Optional[dict]:
                 {"role": "user",   "content": text},
             ]
             response = await llm.ainvoke(messages)
-            raw = response.content.strip()
+            raw = safe_extract_text(response.content)
             match = re.search(r'\{.*\}', raw, re.DOTALL)
             if match:
                 data = json.loads(match.group())
@@ -237,6 +255,7 @@ async def _extract_with_llm(text: str) -> Optional[dict]:
                     return data
         except Exception as e:
             print(f"[intake_agent] Groq extraction failed: {e}")
+
 
     return None
 

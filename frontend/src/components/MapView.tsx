@@ -9,15 +9,12 @@ interface Props {
   activeDay: number;
 }
 
-
 declare global {
   interface Window {
     L?: any;
     mapboxgl?: any;
   }
 }
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
 const MARKER_COLORS: Record<string, string> = {
   attraction: '#E8A838',  // amber — popular
@@ -36,29 +33,33 @@ export default function MapView({ stops, activeDay }: Props) {
   const leafletMarkersRef = useRef<any[]>([]);
 
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (typeof window === 'undefined') return;
 
-    // Load Leaflet (100% Free, No credit card, No API token required)
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(link);
+    // Load Leaflet CSS if not already present
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
 
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.async = true;
-    script.onload = () => {
+    // Load Leaflet JS if not already loaded
+    if (!window.L) {
+      const script = document.createElement('script');
+      script.id = 'leaflet-js';
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => initLeafletMap();
+      document.head.appendChild(script);
+    } else {
       initLeafletMap();
-    };
-    document.head.appendChild(script);
+    }
 
     return () => {
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
         leafletMapRef.current = null;
       }
-      link.remove();
-      script.remove();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -71,9 +72,9 @@ export default function MapView({ stops, activeDay }: Props) {
     const map = L.map(mapContainerRef.current, {
       zoomControl: true,
       attributionControl: false,
-    }).setView([20, 0], 2);
+    }).setView([18.5204, 73.8567], 12);
 
-    // CartoDB Dark Matter tile layer — gorgeous nocturnal map, 100% free, no API key needed
+    // CartoDB Dark Matter tile layer — gorgeous nocturnal map, 100% free, zero token requirement
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       subdomains: 'abcd',
@@ -89,7 +90,9 @@ export default function MapView({ stops, activeDay }: Props) {
     if (!map || !L) return;
 
     // Clear existing markers
-    leafletMarkersRef.current.forEach(m => m.remove());
+    leafletMarkersRef.current.forEach(m => {
+      try { m.remove(); } catch {}
+    });
     leafletMarkersRef.current = [];
 
     if (!stops || stops.length === 0) return;
@@ -97,7 +100,9 @@ export default function MapView({ stops, activeDay }: Props) {
     const latLngs: [number, number][] = [];
 
     stops.forEach((stop, index) => {
-      if (!stop.lat || !stop.lon) return;
+      if (!stop || typeof stop.lat !== 'number' || typeof stop.lon !== 'number' || isNaN(stop.lat) || isNaN(stop.lon)) {
+        return;
+      }
 
       const lat = stop.lat;
       const lon = stop.lon;
@@ -150,28 +155,39 @@ export default function MapView({ stops, activeDay }: Props) {
           min-width: 180px;
         ">
           ${stop.is_niche ? '<div style="color:#00DBE7;font-size:10px;font-weight:700;letter-spacing:0.08em;margin-bottom:4px">💎 HIDDEN GEM</div>' : ''}
-          <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:#ffffff;margin-bottom:4px">${stop.name}</div>
-          <div style="font-size:12px;color:#909096;text-transform:capitalize;margin-bottom:6px">${stop.category} · ${stop.duration_minutes} min</div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:#ffffff;margin-bottom:4px">${stop.name || 'Stop'}</div>
+          <div style="font-size:12px;color:#909096;text-transform:capitalize;margin-bottom:6px">${stop.category || 'Attraction'} · ${stop.duration_minutes || 60} min</div>
           ${stop.estimated_cost_usd !== undefined ? `<div style="font-size:12px;color:#FFBF00;font-weight:600">${formatCost(stop.estimated_cost_usd, stop.address || stop.description || stop.name)}</div>` : ''}
         </div>
-
       `;
 
-      const marker = L.marker([lat, lon], { icon: customIcon })
-        .bindPopup(popupContent, {
-          className: 'leaflet-dark-popup',
-        })
-        .addTo(map);
+      try {
+        const marker = L.marker([lat, lon], { icon: customIcon })
+          .bindPopup(popupContent, {
+            className: 'leaflet-dark-popup',
+          })
+          .addTo(map);
 
-      leafletMarkersRef.current.push(marker);
+        leafletMarkersRef.current.push(marker);
+      } catch (err) {
+        console.warn('Marker create error:', err);
+      }
     });
 
-    // Auto-fit bounds
+    // Auto-fit bounds safely
     if (latLngs.length === 1) {
-      map.setView(latLngs[0], 14, { animate: true });
+      try {
+        map.setView(latLngs[0], 14, { animate: true });
+      } catch {}
     } else if (latLngs.length > 1) {
-      const bounds = L.latLngBounds(latLngs);
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true });
+      try {
+        const bounds = L.latLngBounds(latLngs);
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true });
+        }
+      } catch (e) {
+        console.warn('Map fitBounds error:', e);
+      }
     }
   };
 
@@ -185,7 +201,10 @@ export default function MapView({ stops, activeDay }: Props) {
       style={{
         width: '100%',
         height: '100%',
+        minHeight: 480,
         background: '#040e1f',
+        position: 'relative',
+        zIndex: 1,
       }}
     />
   );

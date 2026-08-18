@@ -1,22 +1,35 @@
 # HANDOFF.md — Active Session Handoff
 
-## 1. Issues Diagnosed & Resolved
-1. **"Unknown" Destination Bug after Clarification (`ChatPanel.tsx`, `intake_agent.py`, `schemas.py`)**:
-   - **Root Cause**: When the user typed *"3 days in Mumbai"* or *"3 days in Pune"*, the assistant asked clarifying questions with options. But when the user clicked *"Plan With Selected Preferences"* or *"Plan with defaults now"*, `handleSend` sent a generic message like `"Submit preferences"` or `"Plan with standard defaults"`. The intake agent then re-parsed that string and extracted `destination = "Unknown"`.
+## 1. Bugs Diagnosed & Resolved in this Session
+
+1. **`AttributeError: 'list' object has no attribute 'strip'` in LLM Invocations**:
+   - **Root Cause**: In recent `langchain_google_genai` releases, `response.content` returns a list of dictionaries (`[{'type': 'text', 'text': '...'}]`) instead of a plain string. Calling `.strip()` directly broke theme generation, narrations, and extraction.
+   - **Fix**: Created `safe_extract_text(content: Any)` across `intake_agent.py`, `planner_agent.py`, and `niche_scraper.py` to extract pure string text regardless of response shape.
+
+2. **OpenTripMap Flat JSON vs GeoJSON Parser Miss & Mock Fallback**:
+   - **Root Cause**: In `places_tool.py`, `fetch_otm_places` looked for `properties.xid` (GeoJSON shape). Because OpenTripMap returns flat JSON objects (`{"xid": "...", "name": "...", "point": {"lat": ..., "lon": ...}}`), all real attractions were skipped, returning 0 places and falling back to 8 hardcoded mock items like *"Scenic Waterfront Promenade"*.
+   - **Fix**: Updated parser to read both flat JSON and GeoJSON shapes, filtering for valid place names. Subzone misses now return empty arrays without mixing mock data into real attraction lists. Added regional centroids for Pune, Mumbai, Delhi, Jaipur, Lisbon, and Goa.
+
+3. **Frontend Day Switching & Map Error on Click**:
+   - **Root Cause**: `planner_agent.py` did not strictly guarantee `k` day clusters when stop lists were rebalanced, leaving `days[activeDay]` `undefined` when clicking day tabs, crashing `ItineraryView.tsx`. Also `MapView.tsx` threw Leaflet bounds errors on invalid lat/lon values.
    - **Fix**:
-     - `ChatPanel.tsx` now tracks `pendingTrip: { destination, num_days }`.
-     - When submitting preferences or clicking bypass, `ChatPanel.tsx` sends the full formulated prompt along with explicit `destination` and `num_days` fields.
-     - `intake_agent.py` prioritizes explicit destination values and preserves previous turn destination rather than falling back to `"Unknown"`.
-2. **Model 404 & Deprecation Fixes**:
-   - Updated Google Gemini model from deprecated `gemini-2.5-flash` to active `gemini-3.5-flash` across `intake_agent.py`, `planner_agent.py`, and `niche_scraper.py`.
-   - Disabled invalid LangSmith tracing (`LANGCHAIN_TRACING_V2=false`) in `.env` to eliminate 403 Forbidden console spam.
-3. **Verification**:
-   - E2E Python verification: Tested `"3 days in Pune"` and `"3 days in Mumbai"` — both correctly generated itineraries with themes and stop data.
-   - `pytest`: 11/11 tests passing.
-   - Next.js build: 0 errors.
-   - Committed and pushed to GitHub `main` (`dabd7cd`).
+     - `planner_agent.py` strictly guarantees returning exactly `trip.num_days` non-empty clusters.
+     - `ItineraryView.tsx` implements safe active day indexing (`validActiveDay`).
+     - `MapView.tsx` validates lat/lon coordinates and guards `bounds.isValid()`.
+
+4. **Created Dedicated Troubleshooting Guide**:
+   - Created [`docs/TROUBLESHOOTING_AND_MISTAKES.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/TROUBLESHOOTING_AND_MISTAKES.md) covering all past errors, root causes, and explicit "What NOT to do" guidelines.
 
 ---
 
-## 2. Next Steps
-- Continue with **Phase 4: Conversational Multi-Turn Editing** (handling follow-ups like *"swap stop 2"*, *"make day 1 slower"*, *"add street food"*).
+## 2. Current Working State
+- **Backend**: FastAPI server running on `http://127.0.0.1:8000`.
+- **Frontend**: Next.js 16 running on `http://localhost:3000`.
+- **Pytest**: 11/11 tests passing.
+- **Next.js Build**: 0 errors.
+
+---
+
+## 3. Immediate Next Steps (Phase 4)
+1. **Multi-Turn Intent Classifier**: Add intent classification node (`new_trip`, `edit_stop`, `adjust_pace`, `change_budget`) to allow interactive chat modifications.
+2. **Interactive State Patching**: Enable modifying individual stops, swapping venues, or regenerating specific days from conversational feedback.

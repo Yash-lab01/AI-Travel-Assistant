@@ -1,7 +1,7 @@
 """
 OpenTripMap + Google Places tool — Phase 3
 Fetches real tourist attractions for a destination, enriches with Google Places.
-Includes regional multi-zone awareness for states/regions (Goa, Rajasthan, Bali, Kerala, etc.)
+Includes regional multi-zone awareness for states/regions (Goa, Rajasthan, Bali, Mumbai, Pune, Delhi, Kerala, etc.)
 so multi-day trips explore geographically distinct zones instead of a 6km micro-cluster.
 
 Tier 1: OpenTripMap (free, 1000 req/day) — primary attraction data
@@ -42,6 +42,27 @@ REGIONAL_SUBZONES: dict[str, list[dict]] = {
         {"name": "Central Goa (Panjim, Fontainhas & Old Goa)",   "lat": 15.50, "lon": 73.83},
         {"name": "South Goa (Colva, Cabo de Rama & Palolem)",    "lat": 15.05, "lon": 73.96},
     ],
+    "mumbai": [
+        {"name": "South Mumbai (Colaba, Fort & Marine Drive)",   "lat": 18.922, "lon": 72.834},
+        {"name": "Central Mumbai (Bandra Fort & Seaside Promenades)", "lat": 19.055, "lon": 72.829},
+        {"name": "North Mumbai (Juhu Beach & Cultural Heritage)", "lat": 19.102, "lon": 72.827},
+    ],
+    "pune": [
+        {"name": "Central Heritage (Shaniwarwada & Old Peths)",  "lat": 18.519, "lon": 73.855},
+        {"name": "Shivajinagar & Deccan (Caves & Hill Views)",   "lat": 18.531, "lon": 73.844},
+        {"name": "Camp & Koregaon Park (Palaces & Cafes)",       "lat": 18.548, "lon": 73.901},
+        {"name": "Sinhagad Foothills & Waterfalls",              "lat": 18.366, "lon": 73.755},
+    ],
+    "delhi": [
+        {"name": "Old Delhi (Red Fort, Jama Masjid & Bazaars)",  "lat": 28.656, "lon": 77.231},
+        {"name": "Central Delhi (India Gate & Imperial Gardens)","lat": 28.612, "lon": 77.227},
+        {"name": "South Delhi (Qutub Minar & Historic Ruins)",   "lat": 28.524, "lon": 77.185},
+    ],
+    "jaipur": [
+        {"name": "Pink City (City Palace, Hawa Mahal & Bazaars)","lat": 26.924, "lon": 75.827},
+        {"name": "Amer Fort, Stepwells & Aravalli Hills",        "lat": 26.985, "lon": 75.851},
+        {"name": "Nahargarh Heights & Sunset Forts",             "lat": 26.937, "lon": 75.815},
+    ],
     "rajasthan": [
         {"name": "Jaipur Old City & Royal Palaces", "lat": 26.92, "lon": 75.82},
         {"name": "Amer Fort, Stepwells & Hills",   "lat": 26.98, "lon": 75.85},
@@ -63,6 +84,11 @@ REGIONAL_SUBZONES: dict[str, list[dict]] = {
         {"name": "Asakusa & Ueno Historic Temples", "lat": 35.71, "lon": 139.79},
         {"name": "Ginza, Tsukiji & Imperial Gardens","lat": 35.67, "lon": 139.76},
     ],
+    "lisbon": [
+        {"name": "Alfama & Castelo de São Jorge",   "lat": 38.713, "lon": -9.133},
+        {"name": "Baixa & Chiado Cultural Heart",   "lat": 38.711, "lon": -9.140},
+        {"name": "Belém Historic Tower & Monasteries", "lat": 38.697, "lon": -9.206},
+    ],
 }
 
 # ── Geocoding helper ──────────────────────────────────────────────────────────
@@ -73,21 +99,27 @@ async def geocode_destination(destination: str) -> tuple[float, float]:
     params = {"q": clean_dest, "format": "json", "limit": 1}
     headers = {"User-Agent": "WanderAI/1.0 (portfolio project)"}
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get(url, params=params, headers=headers)
-        resp.raise_for_status()
-        results = resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(url, params=params, headers=headers)
+            if resp.status_code == 200:
+                results = resp.json()
+                if results:
+                    return float(results[0]["lat"]), float(results[0]["lon"])
+    except Exception:
+        pass
 
-    if not results:
-        # Fallback coordinates for common destinations
-        dest_lower = destination.lower()
-        if "goa" in dest_lower: return 15.4989, 73.8278
-        if "rajasthan" in dest_lower or "jaipur" in dest_lower: return 26.9124, 75.7873
-        if "lisbon" in dest_lower: return 38.7223, -9.1393
-        if "kyoto" in dest_lower: return 35.0116, 135.7681
-        return 38.7223, -9.1393
-
-    return float(results[0]["lat"]), float(results[0]["lon"])
+    # Fallback coordinates for common destinations
+    dest_lower = destination.lower()
+    if "pune" in dest_lower: return 18.5204, 73.8567
+    if "mumbai" in dest_lower or "bombay" in dest_lower: return 18.9220, 72.8340
+    if "delhi" in dest_lower: return 28.6139, 77.2090
+    if "goa" in dest_lower: return 15.4989, 73.8278
+    if "jaipur" in dest_lower or "rajasthan" in dest_lower: return 26.9124, 75.7873
+    if "bengaluru" in dest_lower or "bangalore" in dest_lower: return 12.9716, 77.5946
+    if "lisbon" in dest_lower: return 38.7223, -9.1393
+    if "kyoto" in dest_lower: return 35.0116, 135.7681
+    return 38.7223, -9.1393
 
 
 # ── Cache key ─────────────────────────────────────────────────────────────────
@@ -96,8 +128,8 @@ def _cache_key(destination: str) -> str:
 
 
 # ── OpenTripMap fetch ─────────────────────────────────────────────────────────
-async def fetch_otm_places(lat: float, lon: float, radius_m: int = 12000, limit: int = 40) -> list[dict]:
-    """Fetch places from OpenTripMap around a lat/lon."""
+async def fetch_otm_places(lat: float, lon: float, radius_m: int = 15000, limit: int = 40) -> list[dict]:
+    """Fetch places from OpenTripMap around a lat/lon, properly parsing flat JSON."""
     if not OTM_KEY:
         return _mock_otm_places(lat, lon)
 
@@ -107,7 +139,6 @@ async def fetch_otm_places(lat: float, lon: float, radius_m: int = 12000, limit:
         "lon":     lon,
         "lat":     lat,
         "kinds":   ALL_KINDS,
-        "rate":    "3",          # minimum rating 3 stars
         "format":  "json",
         "limit":   limit,
     }
@@ -115,26 +146,50 @@ async def fetch_otm_places(lat: float, lon: float, radius_m: int = 12000, limit:
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.get(f"{OTM_BASE}/radius", params=params)
-            resp.raise_for_status()
+            if resp.status_code != 200:
+                return _mock_otm_places(lat, lon)
             features = resp.json()
+
+        if not isinstance(features, list):
+            return _mock_otm_places(lat, lon)
 
         places = []
         for f in features:
-            props = f.get("properties", {})
-            coords = f.get("geometry", {}).get("coordinates", [None, None])
-            if not props.get("xid"):
+            if not isinstance(f, dict):
                 continue
+            xid = f.get("xid") or f.get("properties", {}).get("xid")
+            name = f.get("name") or f.get("properties", {}).get("name", "")
+            if not xid or not name or len(name.strip()) <= 2:
+                continue
+
+            kinds = f.get("kinds") or f.get("properties", {}).get("kinds", "")
+            point = f.get("point", {})
+            p_lat = point.get("lat")
+            p_lon = point.get("lon")
+
+            if p_lat is None or p_lon is None:
+                coords = f.get("geometry", {}).get("coordinates", [None, None])
+                p_lon = coords[0]
+                p_lat = coords[1]
+
+            if p_lat is None or p_lon is None:
+                continue
+
+            rate = f.get("rate") or f.get("properties", {}).get("rate", 0)
             places.append({
-                "xid":       props["xid"],
-                "name":      props.get("name", "Unknown"),
-                "kinds":     props.get("kinds", ""),
-                "lat":       coords[1],
-                "lon":       coords[0],
-                "rate":      props.get("rate", 0),
+                "xid":   xid,
+                "name":  name.strip(),
+                "kinds": kinds,
+                "lat":   float(p_lat),
+                "lon":   float(p_lon),
+                "rate":  rate,
             })
-        return places if places else _mock_otm_places(lat, lon)
-    except Exception:
-        return _mock_otm_places(lat, lon)
+
+        return places
+    except Exception as e:
+        print(f"[places_tool] OTM fetch failed: {e}")
+        return []
+
 
 
 # ── Google Places enrichment ──────────────────────────────────────────────────
@@ -194,14 +249,15 @@ async def get_places_for_destination(
     """
     Full pipeline with multi-zone spatial dispersion for regional trips:
     1. Check Chroma cache
-    2. Check if destination matches a multi-zone region (e.g. Goa, Rajasthan, Bali)
+    2. Check if destination matches a multi-zone region (e.g. Pune, Mumbai, Goa, Rajasthan, Bali)
     3. Query POIs across regional subzones or geocoded centroid
     4. Enrich top attractions with Google Places
     5. Convert to Stop objects and cache in Chroma
     """
     import uuid
 
-    cache_key = _cache_key(destination)
+    clean_dest = destination.split("(")[0].strip()
+    cache_key = _cache_key(clean_dest)
     chroma = get_chroma_client()
 
     # 1. Check cache
@@ -215,13 +271,16 @@ async def get_places_for_destination(
             for doc in cached["documents"]:
                 data = json.loads(doc)
                 stops.append(Stop(**data))
+            # Filter out any legacy mock stops
+            stops = [s for s in stops if s.source != "mock" and not s.name.startswith("Historic Old Town") and not s.name.startswith("National Heritage")]
             if len(stops) >= num_days * 3:
                 return stops
+
     except Exception:
         pass
 
     # 2. Check for multi-zone subzones
-    dest_lower = destination.lower()
+    dest_lower = clean_dest.lower()
     matched_region_key = next((k for k in REGIONAL_SUBZONES if k in dest_lower), None)
 
     otm_places: list[dict] = []
@@ -229,7 +288,7 @@ async def get_places_for_destination(
     if matched_region_key and num_days > 1:
         subzones = REGIONAL_SUBZONES[matched_region_key]
         # Query each subzone concurrently for broad geographical spread
-        tasks = [fetch_otm_places(sz["lat"], sz["lon"], radius_m=10000, limit=12) for sz in subzones]
+        tasks = [fetch_otm_places(sz["lat"], sz["lon"], radius_m=12000, limit=15) for sz in subzones]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for sub_places in results:
             if isinstance(sub_places, list):
@@ -237,18 +296,18 @@ async def get_places_for_destination(
     else:
         # Standard centroid search with adaptive radius
         try:
-            lat, lon = await geocode_destination(destination)
+            lat, lon = await geocode_destination(clean_dest)
         except Exception:
-            lat, lon = 38.7223, -9.1393
+            lat, lon = 18.5204, 73.8567
 
-        adaptive_radius = min(25000, 6000 + (num_days * 3000))
-        otm_places = await fetch_otm_places(lat, lon, radius_m=adaptive_radius, limit=min(num_days * 12, 40))
+        adaptive_radius = min(25000, 8000 + (num_days * 3500))
+        otm_places = await fetch_otm_places(lat, lon, radius_m=adaptive_radius, limit=min(num_days * 15, 50))
 
     if not otm_places:
         try:
-            lat, lon = await geocode_destination(destination)
+            lat, lon = await geocode_destination(clean_dest)
         except Exception:
-            lat, lon = 38.7223, -9.1393
+            lat, lon = 18.5204, 73.8567
         otm_places = _mock_otm_places(lat, lon)
 
     # 3. Deduplicate places by name
@@ -279,8 +338,8 @@ async def get_places_for_destination(
             id=str(uuid.uuid4()),
             name=p["name"],
             category=category,
-            description=f"Iconic attraction in {destination}.",
-            narration=f"A must-see landmark in {destination}, offering rich history and cultural significance.",
+            description=f"Iconic attraction in {clean_dest}.",
+            narration=f"A must-see landmark in {clean_dest}, offering rich history and cultural significance.",
             lat=p["lat"],
             lon=p["lon"],
             duration_minutes=75 if category in ["museum", "attraction"] else 60,
@@ -313,34 +372,35 @@ def _infer_category(kinds: str) -> str:
     if "food" in kinds_lower or "cafe" in kinds_lower or "restaurant" in kinds_lower: return "restaurant"
     if "viewpoint" in kinds_lower or "natural" in kinds_lower or "view" in kinds_lower: return "viewpoint"
     if "beach" in kinds_lower: return "beach"
-    if "shop" in kinds_lower or "market" in kinds_lower: return "market"
+    if "shop" in kinds_lower or "market" in kinds_lower or "bazaar" in kinds_lower: return "market"
     if "park" in kinds_lower or "garden" in kinds_lower: return "park"
+    if "temple" in kinds_lower or "religion" in kinds_lower or "church" in kinds_lower or "mosque" in kinds_lower: return "attraction"
     return "attraction"
 
 
 def _estimate_cost(category: str) -> float:
     costs = {
-        "museum": 14.0,
-        "attraction": 10.0,
-        "restaurant": 25.0,
-        "cafe": 8.0,
+        "museum": 8.0,
+        "attraction": 5.0,
+        "restaurant": 15.0,
+        "cafe": 5.0,
         "viewpoint": 0.0,
         "park": 0.0,
         "beach": 0.0,
-        "market": 15.0,
+        "market": 10.0,
     }
-    return costs.get(category, 10.0)
+    return costs.get(category, 5.0)
 
 
 def _mock_otm_places(lat: float, lon: float) -> list[dict]:
-    """Rich mock attractions with spatial spread."""
+    """Rich fallback attractions with spatial spread."""
     return [
         {"xid": "m1", "name": "Historic Old Town Center", "kinds": "historic,architecture", "lat": lat + 0.018, "lon": lon + 0.015, "rate": 3},
         {"xid": "m2", "name": "National Heritage Museum", "kinds": "museums", "lat": lat + 0.012, "lon": lon - 0.014, "rate": 3},
         {"xid": "m3", "name": "Panoramic City Viewpoint", "kinds": "natural,interesting_places", "lat": lat - 0.022, "lon": lon + 0.018, "rate": 3},
         {"xid": "m4", "name": "Artisanal Food & Spice Market", "kinds": "foods,shops", "lat": lat - 0.015, "lon": lon - 0.012, "rate": 3},
         {"xid": "m5", "name": "Ancient Fortress & Ramparts", "kinds": "historic", "lat": lat + 0.035, "lon": lon + 0.028, "rate": 3},
-        {"xid": "m6", "name": "Scenic Waterfront Promenade", "kinds": "natural,cultural", "lat": lat - 0.032, "lon": lon - 0.025, "rate": 3},
+        {"xid": "m6", "name": "Historic Promenade & Gardens", "kinds": "natural,cultural", "lat": lat - 0.032, "lon": lon - 0.025, "rate": 3},
         {"xid": "m7", "name": "Botanical Heritage Garden", "kinds": "gardens,natural", "lat": lat + 0.025, "lon": lon - 0.020, "rate": 3},
         {"xid": "m8", "name": "Traditional Arts & Craft Bazaar", "kinds": "shops", "lat": lat - 0.018, "lon": lon + 0.030, "rate": 3},
     ]

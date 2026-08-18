@@ -1,5 +1,5 @@
-﻿# Current Project State
-> Last updated: 2026-08-18
+# Current Project State
+> Last updated: 2026-08-19
 
 ---
 
@@ -12,19 +12,19 @@
 ## What's Completed
 
 ### Phase 0 — Foundations (100%)
-- FastAPI backend with `/plan` (REST), `/plan/stream` (SSE), `/health`, `/export/pdf` stub
+- FastAPI backend with `/plan` (REST), `/plan/stream` (SSE), `/health`, `/export/pdf`
 - LangGraph `StateGraph` with SQLite checkpointer (`data/checkpoints.db`) and JsonPlusSerializer
 - All Pydantic schemas: `TripRequest -> Stop -> DayPlan -> Itinerary -> AgentEvent`
-- Embedded Chroma vector store (`niche_spots` + `itinerary_cache`)
+- Embedded Chroma vector store (`niche_spots` + `itineraries`)
 - Log-normalised hidden gem scoring formula (7/7 unit tests passing)
 - Next.js 16 frontend with "Nocturnal Voyager" dark design system
-- Multi-section scrollable landing page & HTML5 Canvas Live Wallpaper (Delhi, Mumbai, Jaipur, Goa, Bengaluru)
-- Leaflet + CartoDB Dark Matter map integration (zero token / no credit card requirement)
+- Multi-section scrollable landing page & HTML5 Canvas Live Wallpaper
+- Leaflet + CartoDB Dark Matter map integration (zero token / free)
 
 ### Phase 1 — Real Data Pipeline & Spatial Clustering (100%)
-- Intake Agent (Groq Llama 3.1 8B slot extraction + regex fallback)
-- Places Tool (Nominatim geocoding + OpenTripMap attractions + Google Places enrichment + Chroma caching)
-- Planner Agent (Pure-Python k-means coordinate clustering + Gemini 2.5 Flash day themes & narrations)
+- Intake Agent (Gemini 3.5 Flash / Groq slot extraction + robust regex fallback)
+- Places Tool (Nominatim geocoding + OpenTripMap flat JSON parser + Google Places enrichment + Chroma caching)
+- Planner Agent (Pure-Python k-means coordinate clustering + Gemini 3.5 Flash day themes & narrations)
 
 ### Phase 2 — Niche Signal Scraping & Scoring Engine (100%)
 - Tavily travel search tool (`tavily_tool.py`) with blog & Reddit snippet extraction
@@ -33,17 +33,18 @@
 - Ranker Agent (`ranker_agent.py`) blending mainstream attractions and authentic hidden gems by `niche_weight`
 - 11/11 tests passing in pytest suite
 
+### Phase 3 — Real-World Enhancements & UX Polish (100%)
+1. **Conversational Clarifications**: Detects brief prompts and asks 2–3 targeted questions with interactive chips, preserving destination across turns.
+2. **Regional Multi-Zone Dispersion**: Queries distinct subzone centroids for states/regions (Goa, Rajasthan, Bali, Mumbai, Pune, Delhi, Kerala) to ensure broad day-by-day spatial distribution.
+3. **Transit Times & Weather**: Routing tool calculates sequential travel times; Open-Meteo provides live daily weather forecasts per day.
+4. **Smart Currency Formatter**: Displays `₹ INR` for all Indian destinations and `$ USD` for international trips.
+5. **Nocturnal Planning Studio UI**: Centered conversational studio unfolding into an interactive side-by-side Timeline + Map visualizer.
+6. **Error-Proof Resiliency**: Safe LLM string extraction, guaranteed `k` day clustering, and safe Leaflet marker bounds.
+
 ---
 
-## Active Phase (Phase 3)
-
-1. **Conversational Intake with Clarifying Questions**:
-   - Detects brief prompts (e.g. *"3 day trip in Goa"*) and asks 2–3 targeted questions with interactive chips in chat.
-   - Includes 1-click **"Plan with defaults now"** bypass button.
-2. **Regional Multi-Zone Spatial Dispersion**:
-   - Fixes the 6km micro-clustering issue for states/regions (Goa, Rajasthan, Bali) by querying diverse sub-regions and assigning distinct zones per day.
-3. **Routing & Weather Tools**:
-   - OpenRouteService / Haversine transit minutes between consecutive stops.
-   - Open-Meteo daily weather summaries attached to each day.
-4. **Centered Studio Layout**:
-   - Prominent centered conversational hub unfolding into an expansive side-by-side Map + Timeline visualizer.
+## Reference Documents
+- [`docs/TROUBLESHOOTING_AND_MISTAKES.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/TROUBLESHOOTING_AND_MISTAKES.md) — Persistent log of known pitfalls, model quirks, and rules for what NOT to do.
+- [`.context/PROJECT_CONTEXT.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/PROJECT_CONTEXT.md) — High-level architecture & tech stack.
+- [`.context/TASKS.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/TASKS.md) — Granular phase task checklist.
+- [`.context/HANDOFF.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/HANDOFF.md) — Current session status & immediate next steps.

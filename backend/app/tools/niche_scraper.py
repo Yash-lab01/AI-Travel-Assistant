@@ -9,7 +9,8 @@ import json
 import uuid
 import re
 import asyncio
-from typing import Optional
+from typing import Optional, Any
+
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from app.models.schemas import Stop, NicheScore
@@ -199,26 +200,41 @@ Text snippets:
 {text[:3000]}
 """
 
+    def safe_extract_text(raw_content: Any) -> str:
+        if isinstance(raw_content, str):
+            return raw_content.strip()
+        if isinstance(raw_content, list):
+            parts = []
+            for p in raw_content:
+                if isinstance(p, dict):
+                    parts.append(p.get("text", ""))
+                elif hasattr(p, "text"):
+                    parts.append(getattr(p, "text", ""))
+                else:
+                    parts.append(str(p))
+            return "".join(parts).strip()
+        return str(raw_content).strip()
+
     if GROQ_KEY:
         from langchain_groq import ChatGroq
         llm = ChatGroq(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             api_key=GROQ_KEY,
             temperature=0.2,
             max_tokens=800,
         )
         resp = await llm.ainvoke(prompt)
-        content = resp.content.strip()
+        content = safe_extract_text(resp.content)
     else:
         from langchain_google_genai import ChatGoogleGenerativeAI
         llm = ChatGoogleGenerativeAI(
             model="gemini-3.5-flash",
-
             google_api_key=GEMINI_KEY,
             temperature=0.2,
         )
         resp = await llm.ainvoke(prompt)
-        content = resp.content.strip()
+        content = safe_extract_text(resp.content)
+
 
     # Extract JSON array
     json_match = re.search(r'\[.*\]', content, re.DOTALL)
@@ -315,6 +331,136 @@ def _get_fallback_candidates(destination: str) -> list[dict]:
                 "review_count": 950,
                 "estimated_cost_usd": 3,
                 "duration_minutes": 90,
+            },
+        ]
+    elif "pune" in dest_lower:
+        return [
+            {
+                "name": "Vetal Tekdi & ARAI Sunset Point",
+                "category": "viewpoint",
+                "context": "Highest panoramic hill viewpoint in Pune with serene forest trails, wild peacocks, and sweeping sunset views over the city.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 17,
+                "review_count": 1100,
+                "estimated_cost_usd": 0,
+                "duration_minutes": 75,
+            },
+            {
+                "name": "Pataleshwar Cave Temple",
+                "category": "attraction",
+                "context": "8th-century Rashtrakuta monolithic rock-cut basalt cave temple hidden right in the bustling heart of Shivaji Nagar.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 14,
+                "review_count": 920,
+                "estimated_cost_usd": 0,
+                "duration_minutes": 60,
+            },
+            {
+                "name": "Cafe Goodluck & FC Road Eateries",
+                "category": "cafe",
+                "context": "Iconic 1935 Irani cafe institution famed for fresh bun maska, Irani chai, and vintage intellectual atmosphere.",
+                "source_type": "tavily_blog",
+                "cross_platform": True,
+                "mention_count": 22,
+                "review_count": 2400,
+                "estimated_cost_usd": 4,
+                "duration_minutes": 45,
+            },
+            {
+                "name": "Raja Dinkar Kelkar Museum",
+                "category": "museum",
+                "context": "Eclectic 20,000-artifact collection of ancient musical instruments, brassware, and Mastani Mahal palace chamber.",
+                "source_type": "reddit",
+                "cross_platform": False,
+                "mention_count": 11,
+                "review_count": 1300,
+                "estimated_cost_usd": 3,
+                "duration_minutes": 90,
+            },
+        ]
+    elif "mumbai" in dest_lower or "bombay" in dest_lower:
+        return [
+            {
+                "name": "Khotachiwadi Heritage Village",
+                "category": "attraction",
+                "context": "19th-century Portuguese-Goan wooden architectural heritage enclave tucked away in quiet Girgaon alleys.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 15,
+                "review_count": 850,
+                "estimated_cost_usd": 0,
+                "duration_minutes": 75,
+            },
+            {
+                "name": "Banganga Sacred Tank & Walkeshwar",
+                "category": "attraction",
+                "context": "Ancient holy freshwater water tank dating back to the 12th century Silhara dynasty, surrounded by ancient temples.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 13,
+                "review_count": 720,
+                "estimated_cost_usd": 0,
+                "duration_minutes": 60,
+            },
+            {
+                "name": "Bandra Castella de Aguada (Bandra Fort)",
+                "category": "viewpoint",
+                "context": "1640 Portuguese coastal watchtower ruins with panoramic Arabian sea views and sunset vantage overlooking Sea Link.",
+                "source_type": "tavily_blog",
+                "cross_platform": True,
+                "mention_count": 19,
+                "review_count": 1800,
+                "estimated_cost_usd": 0,
+                "duration_minutes": 60,
+            },
+            {
+                "name": "Cafe Mondegar & Colaba Art Deco Cafes",
+                "category": "cafe",
+                "context": "Historic 1932 vintage Art Deco cafe famous for Mario Miranda wall murals and classic rock jukeboxes.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 16,
+                "review_count": 2100,
+                "estimated_cost_usd": 8,
+                "duration_minutes": 60,
+            },
+        ]
+    elif "delhi" in dest_lower:
+        return [
+            {
+                "name": "Agrasen Ki Baoli",
+                "category": "attraction",
+                "context": "Ancient 60-meter red sandstone stepwell with 108 steps hidden amidst modern Connaught Place skyscrapers.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 16,
+                "review_count": 1500,
+                "estimated_cost_usd": 0,
+                "duration_minutes": 60,
+            },
+            {
+                "name": "Sunder Nursery Heritage Botanical Park",
+                "category": "park",
+                "context": "Magnificent 16th-century UNESCO heritage park with restored Mughal tombs, sprawling gardens, and artisan weekend markets.",
+                "source_type": "tavily_blog",
+                "cross_platform": True,
+                "mention_count": 21,
+                "review_count": 1900,
+                "estimated_cost_usd": 2,
+                "duration_minutes": 90,
+            },
+            {
+                "name": "Champa Gali Artisanal Roasteries",
+                "category": "cafe",
+                "context": "Rustic Parisian-style cobblestone alleyway in Saidulajab filled with specialty coffee roasteries, design studios, and fairy lights.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 12,
+                "review_count": 890,
+                "estimated_cost_usd": 6,
+                "duration_minutes": 60,
             },
         ]
     elif "goa" in dest_lower:

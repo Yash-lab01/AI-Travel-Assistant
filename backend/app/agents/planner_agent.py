@@ -4,8 +4,8 @@ Takes a list of Stop objects (ranked or places) and structures them into geograp
 
 Algorithm:
 1. K-means clustering on lat/lon coordinates (k = num_days) to create geo-groups
-2. Each cluster -> one day (geographically coherent, avoids cross-city zig-zagging)
-3. Gemini 2.5 Flash assigns: day theme, stop ordering, narration stubs, and per-day cost estimate
+2. Guarantees exactly k non-empty day clusters
+3. Gemini 3.5 Flash assigns: day theme, stop ordering, narration stubs, and per-day cost estimate
 4. Routing Tool calculates realistic walking/transit times between sequential stops
 5. Weather Tool fetches real daily forecasts via Open-Meteo
 """
@@ -16,7 +16,7 @@ import json
 import re
 import random
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Optional, Any
 
 from app.graph.state import TravelGraphState
 from app.models.schemas import (
@@ -29,21 +29,43 @@ from app.tools.weather_tool import get_daily_weather_forecast
 GEMINI_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
 
 
-# ── K-means clustering (pure Python, no numpy needed) ────────────────────────
+def safe_extract_text(content: Any) -> str:
+    """Safely extract string text from LLM response (handles str, list of dicts, or list of parts)."""
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        parts = []
+        for p in content:
+            if isinstance(p, dict):
+                parts.append(p.get("text", ""))
+            elif hasattr(p, "text"):
+                parts.append(getattr(p, "text", ""))
+            else:
+                parts.append(str(p))
+        return "".join(parts).strip()
+    return str(content).strip()
+
+
+# ── K-means clustering (pure Python, guarantees k non-empty clusters) ────────
 def _kmeans_cluster(stops: list[Stop], k: int, iterations: int = 30) -> list[list[Stop]]:
     """
     Cluster stops into k geographically coherent groups using lat/lon coordinates.
-    Guarantees every cluster has at least one stop.
+    Guarantees that the returned list has EXACTLY k non-empty clusters.
     """
     if not stops:
         return [[] for _ in range(k)]
+
+    # If fewer stops than days, assign each to a day and duplicate from first to fill
     if len(stops) <= k:
-        return [[s] for s in stops] + [[] for _ in range(k - len(stops))]
+        clusters = [[s] for s in stops]
+        while len(clusters) < k:
+            clusters.append([stops[len(clusters) % len(stops)]])
+        return clusters[:k]
 
     # Initialise centroids by picking k evenly spaced stops sorted by latitude
     sorted_stops = sorted(stops, key=lambda s: (s.lat, s.lon))
-    step = len(sorted_stops) // k
-    centroids = [(sorted_stops[i * step].lat, sorted_stops[i * step].lon) for i in range(k)]
+    step = max(1, len(sorted_stops) // k)
+    centroids = [(sorted_stops[min(i * step, len(sorted_stops) - 1)].lat, sorted_stops[min(i * step, len(sorted_stops) - 1)].lon) for i in range(k)]
 
     assignments = [0] * len(stops)
 
@@ -82,8 +104,16 @@ def _kmeans_cluster(stops: list[Stop], k: int, iterations: int = 30) -> list[lis
             largest = max(range(k), key=lambda idx: len(clusters[idx]))
             if len(clusters[largest]) > 1:
                 clusters[c_idx].append(clusters[largest].pop())
+            elif clusters[largest]:
+                # copy a stop if single
+                clusters[c_idx].append(clusters[largest][0])
 
-    return [c for c in clusters if c]
+    # Guarantee exactly k non-empty clusters
+    result = [c for c in clusters if c]
+    while len(result) < k:
+        result.append([stops[len(result) % len(stops)]])
+
+    return result[:k]
 
 
 # ── Theme generation with Gemini ─────────────────────────────────────────────
@@ -92,7 +122,7 @@ async def _assign_day_themes(
     destination: str,
     region_pref: Optional[str] = None,
 ) -> list[str]:
-    """Use Gemini 2.5 Flash to generate an evocative theme for each day cluster."""
+    """Use Gemini 3.5 Flash to generate an evocative theme for each day cluster."""
     if not clusters:
         return []
 
@@ -113,7 +143,6 @@ async def _assign_day_themes(
                 temperature=0.4,
             )
 
-
             prompt = f"""You are an evocative travel writer. Give each day of this {destination} itinerary a short, evocative theme (3-6 words).
 {f"Traveler preference: {region_pref}" if region_pref else ""}
 
@@ -123,7 +152,7 @@ Clusters:
 Return ONLY a JSON array of strings, one per day. Example: ["Historic Alfama & Fado Echoes", "Coastal Heights & Hidden Miradouros"]"""
 
             response = await llm.ainvoke([HumanMessage(content=prompt)])
-            raw = response.content.strip()
+            raw = safe_extract_text(response.content)
             match = re.search(r'\[.*\]', raw, re.DOTALL)
             if match:
                 themes = json.loads(match.group())
@@ -164,7 +193,6 @@ async def _generate_narrations(stops: list[Stop], destination: str) -> list[str]
             temperature=0.3,
         )
 
-
         stops_desc = "\n".join(
             f"- {s.name} ({s.category}): {s.description}" for s in stops
         )
@@ -177,7 +205,7 @@ Stops:
 {stops_desc}"""
 
         response = await llm.ainvoke([HumanMessage(content=prompt)])
-        raw = response.content.strip()
+        raw = safe_extract_text(response.content)
         match = re.search(r'\[.*\]', raw, re.DOTALL)
         if match:
             narrations = json.loads(match.group())
@@ -198,9 +226,9 @@ async def planner_node(state: TravelGraphState) -> dict:
     """
     Phase 3 planner:
     1. Use ranked_stops from Ranker Agent (or fetch from OpenTripMap fallback)
-    2. K-means cluster into geographically coherent days
-    3. Assign themes via Gemini 2.5 Flash
-    4. Generate narrations via Gemini
+    2. K-means cluster into geographically coherent days (guaranteed k days)
+    3. Assign themes via Gemini 3.5 Flash
+    4. Generate narrations via Gemini 3.5 Flash
     5. Calculate realistic transit times between consecutive stops via routing tool
     6. Attach Open-Meteo daily weather notes to each day
     7. Build complete Itinerary
@@ -231,10 +259,10 @@ async def planner_node(state: TravelGraphState) -> dict:
         message=f"Found {len(stops)} places — building your {trip.num_days}-day plan...",
     ))
 
-    # 2. Cluster into days
+    # 2. Cluster into days (guaranteed trip.num_days clusters)
     max_per_day = PACE_LIMITS.get(trip.pace.value if trip.pace else "moderate", 5)
     desired_stops = min(trip.num_days * max_per_day, len(stops))
-    stops_to_plan = stops[:desired_stops]
+    stops_to_plan = stops[:desired_stops] if desired_stops > 0 else stops
 
     clusters = _kmeans_cluster(stops_to_plan, k=trip.num_days)
 
@@ -253,8 +281,8 @@ async def planner_node(state: TravelGraphState) -> dict:
     narration_map = {s.id: n for s, n in zip(all_stops_flat, narrations)}
 
     # 5. Weather forecast for destination center
-    center_lat = stops[0].lat if stops else 38.7223
-    center_lon = stops[0].lon if stops else -9.1393
+    center_lat = stops[0].lat if stops else 18.5204
+    center_lon = stops[0].lon if stops else 73.8567
     weather_notes = await get_daily_weather_forecast(center_lat, center_lon, num_days=trip.num_days)
 
     # 6. Build days with transit times & weather notes
