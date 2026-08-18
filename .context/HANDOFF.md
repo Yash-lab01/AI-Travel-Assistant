@@ -1,23 +1,24 @@
 # HANDOFF.md — Active Session Handoff
 
-## 1. Current Session Context & User Directives
-The user provided clear feedback on real user testing:
-1. **Clarifying Questions in Chat**: The assistant should ask 2–3 contextual questions with clickable quick-reply chips inside the chat when given minimal prompts like *"3 day trip in Goa"*, while always offering a **"Plan with defaults now"** one-click button.
-2. **Spatial Dispersion across Days**: Fix the 6km clustering issue for large regions/states (Goa, Rajasthan, Bali, etc.) by discovering POIs across diverse sub-regions (e.g. North Goa, Panjim, South Goa) and assigning distinct zones per day.
-3. **Centered Studio & Side-by-Side Map Layout**: Overhaul the UI from a cramped left/right split into a large, centered conversational hub that smoothly unfolds into an expansive side-by-side Map + Timeline visualizer.
-4. **Phase Ordering**: Phase 3 now encompasses Conversational Intake + Regional Dispersion + Centered UI + Weather & Routing. Phase 4 is Conversational Editing. Phase 5 is Fine-Tuning.
+## 1. What We Just Finished (Phase 3: Conversational Intake, Regional Dispersion & UI Overhaul)
+- **Conversational Clarifying Questions (`intake_agent.py`)**: When given minimal prompts like *"3 days in Goa"*, the agent detects underspecification and responds with interactive question cards with clickable chips in chat, plus a 1-click **"⚡ Plan with defaults now"** bypass button.
+- **Regional Multi-Zone Discovery (`places_tool.py`)**: Solved the 6km micro-clustering issue for states/regions (Goa, Rajasthan, Bali, Kerala, Tokyo) by querying diverse sub-zones and using K-means clustering to assign distinct regional sectors to each day.
+- **Daily Weather & Routing Times (`weather_tool.py` & `routing_tool.py`)**: Integrated free Open-Meteo daily weather forecasts (`DayPlan.weather_note`) and calculated sequential walking/driving transit times (`Stop.travel_time_from_prev_minutes`).
+- **Centered Studio Hub & Side-by-Side Visualizer (`page.tsx`, `ChatPanel.tsx`, `ItineraryView.tsx`, `globals.css`)**: Overhauled the UI into a large centered conversational hub (`max-width: 960px`) that smoothly unfolds into an expansive side-by-side Map + Day Timeline workspace (`max-width: 1360px`).
+- **Verification**: 11/11 tests passing in pytest; Next.js 16 build passing with 0 errors. Committed to GitHub (`1f0adb1`).
 
 ---
 
-## 2. Immediate Actionable Steps for Phase 3 Execution
+## 2. Current State of Codebase
+- **Backend**: Running on `http://localhost:8000`. Full LangGraph workflow: `intake (with conditional clarification) -> ranker -> planner -> END`.
+- **Frontend**: Running on `http://localhost:3000`. Centered studio, interactive clarification chips, and side-by-side dark map visualizer with weather notes.
 
-| Target File | Changes to Make |
+---
+
+## 3. Specific Files & Functions Ready for Phase 4 (Conversational Editing & State Iteration)
+
+| File | Purpose / Function to Implement |
 |---|---|
-| `backend/app/models/schemas.py` | Add `needs_clarification`, `clarification_questions`, `options` to schemas |
-| `backend/app/agents/intake_agent.py` | Detect prompt completeness; return clarifying questions + option chips when underspecified unless forced |
-| `backend/app/tools/places_tool.py` | Add regional/state awareness with adaptive search radius & sub-region centroids |
-| `backend/app/tools/weather_tool.py` | Fetch free Open-Meteo forecasts by coordinates and date |
-| `backend/app/tools/routing_tool.py` | Calculate realistic walking/transit times between sequential stops |
-| `backend/app/graph/travel_graph.py` | Add conditional branch on `intake`: if `needs_clarification -> END` else `ranker -> planner -> END` |
-| `frontend/src/components/ChatPanel.tsx` | Render interactive question chips, "Plan with defaults" button, and prominent centered chat UI |
-| `frontend/src/app/page.tsx` & `globals.css` | Update studio layout to prominent centered conversational hub + wide side-by-side itinerary & map grid |
+| `backend/app/agents/editor_agent.py` | Create conversational editing node to handle instructions like "swap stop 2", "make day 1 more relaxed", "change budget" |
+| `backend/app/graph/travel_graph.py` | Add intent classifier routing (`is_edit` -> edit existing itinerary vs create new) |
+| `frontend/src/components/ChatPanel.tsx` | Add quick-edit action prompt chips after itinerary generation ("Swap stop", "More relaxed pace") |

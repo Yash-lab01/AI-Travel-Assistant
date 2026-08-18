@@ -59,26 +59,26 @@
 
 ---
 
-## Phase 3: Conversational Intake, Regional Spatial Dispersion & UI Overhaul (CURRENT)
-- [ ] **Conversational Intake with Clarifying Questions** (`intake_agent.py`):
-  - [ ] Detect underspecified prompts (e.g. *"3 day trip in Goa"*)
-  - [ ] Generate 2–3 contextual clarifying questions with interactive quick-reply chips
-  - [ ] Provide 1-click **"Plan with defaults now"** bypass option
-- [ ] **Regional Multi-Zone Discovery & Spatial Dispersion** (`places_tool.py`):
-  - [ ] State/region awareness for wide destinations (Goa, Rajasthan, Bali, Kerala, etc.)
-  - [ ] Multi-centroid / adaptive radius discovery to prevent 6km micro-clustering
-  - [ ] K-means assigns geographically distinct sub-regions per day (e.g. North vs Central vs South Goa)
-- [ ] **Routing & Weather Tools**:
-  - [ ] `routing_tool.py`: Calculate realistic walking & transit minutes between consecutive stops
-  - [ ] `weather_tool.py`: Open-Meteo daily weather forecast attached to `DayPlan.weather_note`
-- [ ] **Centered Studio UI & Wide Map/Timeline Layout** (`page.tsx`, `ChatPanel.tsx`, `globals.css`):
-  - [ ] Large prominent centered conversational studio
-  - [ ] Expansive side-by-side Map + Day-by-Day Timeline workspace once generated
-  - [ ] Interactive clarification question chip bubbles in chat
+## Phase 3: Conversational Intake, Regional Spatial Dispersion & UI Overhaul (COMPLETED)
+- [x] **Conversational Intake with Clarifying Questions** (`intake_agent.py`):
+  - [x] Detect underspecified prompts (e.g. *"3 day trip in Goa"*)
+  - [x] Generate 2–3 contextual clarifying questions with interactive quick-reply chips
+  - [x] Provide 1-click **"Plan with defaults now"** bypass option
+- [x] **Regional Multi-Zone Discovery & Spatial Dispersion** (`places_tool.py`):
+  - [x] State/region awareness for wide destinations (Goa, Rajasthan, Bali, Kerala, Tokyo, etc.)
+  - [x] Multi-centroid / adaptive radius discovery to eliminate 6km micro-clustering
+  - [x] K-means assigns geographically distinct sub-regions per day (e.g. North vs Central vs South Goa)
+- [x] **Routing & Weather Tools**:
+  - [x] `routing_tool.py`: Calculate realistic walking & transit minutes between consecutive stops
+  - [x] `weather_tool.py`: Open-Meteo daily weather forecast attached to `DayPlan.weather_note`
+- [x] **Centered Studio UI & Wide Side-by-Side Map/Timeline Layout** (`page.tsx`, `ChatPanel.tsx`, `ItineraryView.tsx`, `globals.css`):
+  - [x] Large prominent centered conversational studio hub
+  - [x] Expansive side-by-side Map + Day-by-Day Timeline workspace below chat
+  - [x] Interactive clarification question chip bubbles inside the chat messages
 
 ---
 
-## Phase 4: Multi-Turn Conversational Editing & State Iteration
+## Phase 4: Multi-Turn Conversational Editing & State Iteration (NEXT)
 - [ ] Multi-turn intent classifier (new trip vs edit stop vs adjust pace vs change budget)
 - [ ] LangGraph state checkpoint time-travel recovery
 - [ ] UI follow-up quick action prompts ("swap stop 2", "make day 1 more relaxed")
