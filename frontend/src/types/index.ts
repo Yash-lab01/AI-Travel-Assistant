@@ -1,4 +1,5 @@
 // Types matching backend Pydantic schemas
+
 export interface TripRequest {
   destination: string;
   start_date?: string;
@@ -10,6 +11,7 @@ export interface TripRequest {
   pace: 'slow' | 'relaxed' | 'moderate' | 'fast' | 'intense';
   group_type: 'solo' | 'couple' | 'family' | 'friends';
   interests: string[];
+  region_preference?: string;
   raw_message?: string;
 }
 
@@ -50,8 +52,7 @@ export interface DayPlan {
   date?: string;
   theme?: string;
   stops: Stop[];
-  daily_budget_usd?: number;
-  daily_cost_estimate_usd?: number;
+  day_cost_estimate_usd?: number;
   weather_note?: string;
 }
 
@@ -64,12 +65,27 @@ export interface Itinerary {
   share_slug?: string;
 }
 
+export interface ClarificationOption {
+  label: string;
+  value: string;
+  icon?: string;
+}
+
+export interface ClarificationQuestion {
+  id: string;
+  question: string;
+  category: string;
+  options: ClarificationOption[];
+}
+
 export interface AgentEvent {
   event_type:
     | 'agent_start'
     | 'tool_call'
     | 'tool_result'
     | 'agent_step'
+    | 'clarification_needed'
+    | 'day_ready'
     | 'narration_start'
     | 'narration_complete'
     | 'itinerary_ready'
@@ -77,10 +93,21 @@ export interface AgentEvent {
   agent?: string;
   tool?: string;
   message: string;
-  data?: Record<string, unknown>;
+  data?: {
+    questions?: ClarificationQuestion[];
+    destination?: string;
+    num_days?: number;
+    day_number?: number;
+    day_plan?: DayPlan;
+    [key: string]: unknown;
+  };
 }
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  questions?: ClarificationQuestion[];
+  isClarification?: boolean;
+  destination?: string;
+  num_days?: number;
 }

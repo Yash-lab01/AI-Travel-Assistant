@@ -38,7 +38,7 @@
 
 ---
 
-## Phase 2: Niche Signal Scraping & Scoring Engine (COMPLETED)
+## Phase 2: Niche Signal Scraping & Scoring Engine
 - [x] **Tavily Search Tool** (`backend/app/tools/tavily_tool.py`):
   - [x] Query travel blogs & Reddit discussions using `TAVILY_API_KEY`
   - [x] Extract place snippets, URLs, and source attributions with rich mock fallbacks
@@ -56,30 +56,40 @@
   - [x] Pace-aware stop selection and category diversity
 - [x] **Test Suite Verification**:
   - [x] 11/11 tests passing in pytest (`test_scoring.py` + `test_phase2_ranker.py`)
-  - [x] Tested on Lisbon and Rajasthan queries (verified `is_niche=True` and scores attached)
 
 ---
 
-## Phase 3: Routing, Weather & Progressive Streaming (NEXT)
-- [ ] **OpenRouteService Integration** (`routing_tool.py`): Calculate walking & transit travel times between sequential stops
-- [ ] **Open-Meteo Integration** (`weather_tool.py`): Free daily weather forecasts attached to `DayPlan.weather_note`
-- [ ] **Budget & Cost Engine**: Dynamic daily spend tracking against `TripRequest.budget_usd`
-- [ ] **Progressive Day Streaming**: Stream each `day_ready` event over SSE so days render progressively in the UI
+## Phase 3: Conversational Intake, Regional Spatial Dispersion & UI Overhaul (CURRENT)
+- [ ] **Conversational Intake with Clarifying Questions** (`intake_agent.py`):
+  - [ ] Detect underspecified prompts (e.g. *"3 day trip in Goa"*)
+  - [ ] Generate 2–3 contextual clarifying questions with interactive quick-reply chips
+  - [ ] Provide 1-click **"Plan with defaults now"** bypass option
+- [ ] **Regional Multi-Zone Discovery & Spatial Dispersion** (`places_tool.py`):
+  - [ ] State/region awareness for wide destinations (Goa, Rajasthan, Bali, Kerala, etc.)
+  - [ ] Multi-centroid / adaptive radius discovery to prevent 6km micro-clustering
+  - [ ] K-means assigns geographically distinct sub-regions per day (e.g. North vs Central vs South Goa)
+- [ ] **Routing & Weather Tools**:
+  - [ ] `routing_tool.py`: Calculate realistic walking & transit minutes between consecutive stops
+  - [ ] `weather_tool.py`: Open-Meteo daily weather forecast attached to `DayPlan.weather_note`
+- [ ] **Centered Studio UI & Wide Map/Timeline Layout** (`page.tsx`, `ChatPanel.tsx`, `globals.css`):
+  - [ ] Large prominent centered conversational studio
+  - [ ] Expansive side-by-side Map + Day-by-Day Timeline workspace once generated
+  - [ ] Interactive clarification question chip bubbles in chat
 
 ---
 
-## Phase 4: Local Fine-Tuned Narration Model (LoRA)
-- [ ] **Dataset Curation** (`backend/finetuning/curate_dataset.py`): CC-licensed travel writing
-- [ ] **LoRA Training** (`backend/finetuning/train_lora.py`): Unsloth + PEFT on Llama 3.2 3B (Colab T4)
-- [ ] **Ollama Deployment**: Local GGUF serving via `ChatOllama(model="travel-narrator-lora")`
-- [ ] **Blind Evaluation**: Documented before/after comparison in `eval_results.md`
-
----
-
-## Phase 5: Multi-Turn Conversational Editing
+## Phase 4: Multi-Turn Conversational Editing & State Iteration
 - [ ] Multi-turn intent classifier (new trip vs edit stop vs adjust pace vs change budget)
 - [ ] LangGraph state checkpoint time-travel recovery
-- [ ] UI follow-up quick action prompts ("swap stop", "more relaxed pace")
+- [ ] UI follow-up quick action prompts ("swap stop 2", "make day 1 more relaxed")
+
+---
+
+## Phase 5: Local Fine-Tuned Narration Model (LoRA)
+- [ ] Dataset curation (`curate_dataset.py`): CC-licensed travel writing
+- [ ] LoRA training (`train_lora.py`): Unsloth + PEFT on Llama 3.2 3B (Colab T4)
+- [ ] Local Ollama deployment: Serving via `ChatOllama(model="travel-narrator-lora")`
+- [ ] Blind before/after evaluation in `eval_results.md`
 
 ---
 

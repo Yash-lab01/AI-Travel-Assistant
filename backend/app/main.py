@@ -1,76 +1,63 @@
 """
-FastAPI backend — AI Travel Assistant
-Phase 0: skeleton with mock endpoints.
+FastAPI application entry point — Phase 3
+Endpoints:
+  POST /plan          - Synchronous trip planning (REST)
+  POST /plan/stream   - Streaming trip planning with AgentEvents + Clarification (SSE)
+  GET  /health        - Health check
+  GET  /export/pdf    - PDF export stub
 """
-import asyncio
-import json
-import uuid
-import os
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
+import uuid
+import json
+import asyncio
+import os
+from dotenv import load_dotenv
 
-from app.models.schemas import (
-    TripRequest, Itinerary, ChatRequest, AgentEvent
-)
+load_dotenv()
+
+from app.models.schemas import ChatRequest, Itinerary, AgentEvent
 from app.graph.travel_graph import travel_graph
 from app.vector_store.chroma_client import get_chroma_client
 
-# ─── LangSmith tracing (set env vars to enable) ──────────────────────────────
-# LANGCHAIN_TRACING_V2=true
-# LANGCHAIN_API_KEY=<your key>
-# LANGCHAIN_PROJECT=ai-travel-assistant
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Warm up Chroma on startup
-    get_chroma_client()
-    print("[OK] Chroma vector store ready")
-    print("[OK] LangGraph travel graph compiled")
-    yield
-
-
 app = FastAPI(
-    title="AI Travel Assistant API",
-    description="Multi-agent travel planning system with hidden-gem scoring and fine-tuned narration.",
-    version="0.1.0",
-    lifespan=lifespan,
+    title="WanderAI API",
+    description="Versatile Multi-Agent Travel Planner API",
+    version="0.3.0",
 )
 
+# Allow Next.js frontend (localhost:3000)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# ─── Health ───────────────────────────────────────────────────────────────────
-
+# ── Health ───────────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": "0.3.0"}
 
 
-# ─── Plan (REST — full itinerary, no streaming) ───────────────────────────────
-
+# ── Plan (REST) ──────────────────────────────────────────────────────────────
 @app.post("/plan", response_model=Itinerary)
 async def plan(request: ChatRequest):
-    """
-    Generate a full itinerary synchronously.
-    Phase 0: returns mock data via the stub graph.
-    """
+    """Generate a full itinerary synchronously (bypassing clarification if requested)."""
     session_id = request.session_id or str(uuid.uuid4())
     config = {"configurable": {"thread_id": session_id}}
 
     initial_state = {
         "messages": [HumanMessage(content=request.message)],
         "trip_request": None,
+        "force_plan": request.force_plan,
+        "clarification_answers": request.answers,
+        "needs_clarification": False,
+        "clarification_questions": [],
         "popular_stops_raw": [],
         "niche_spots_raw": [],
         "ranked_stops": [],
@@ -84,25 +71,25 @@ async def plan(request: ChatRequest):
     result = await travel_graph.ainvoke(initial_state, config)
 
     if not result.get("itinerary"):
-        raise HTTPException(status_code=500, detail="Itinerary generation failed.")
+        raise HTTPException(status_code=400, detail="Itinerary generation requires clarification or failed.")
 
     return result["itinerary"]
 
 
-# ─── Plan/Stream (SSE — streams AgentEvents then final itinerary) ─────────────
-
+# ── Plan/Stream (SSE — streams AgentEvents, Clarifications, and Itinerary) ───
 @app.post("/plan/stream")
 async def plan_stream(request: ChatRequest):
-    """
-    Stream agent events via Server-Sent Events.
-    Phase 0: streams mock events from the stub graph.
-    """
+    """Stream agent events, interactive clarification questions, and final itinerary via SSE."""
     session_id = request.session_id or str(uuid.uuid4())
     config = {"configurable": {"thread_id": session_id}}
 
     initial_state = {
         "messages": [HumanMessage(content=request.message)],
         "trip_request": None,
+        "force_plan": request.force_plan,
+        "clarification_answers": request.answers,
+        "needs_clarification": False,
+        "clarification_questions": [],
         "popular_stops_raw": [],
         "niche_spots_raw": [],
         "ranked_stops": [],
@@ -113,7 +100,6 @@ async def plan_stream(request: ChatRequest):
         "edit_instruction": request.message if request.existing_itinerary_id else None,
     }
 
-
     async def event_generator():
         result = await travel_graph.ainvoke(initial_state, config)
         events: list[AgentEvent] = result.get("events", [])
@@ -121,7 +107,7 @@ async def plan_stream(request: ChatRequest):
 
         for event in events:
             yield f"event: agent_event\ndata: {event.model_dump_json()}\n\n"
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.04)
 
         if itinerary:
             yield f"event: itinerary\ndata: {itinerary.model_dump_json()}\n\n"
@@ -133,22 +119,14 @@ async def plan_stream(request: ChatRequest):
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
         },
     )
 
 
-# ─── Export PDF (stub — Phase 6) ──────────────────────────────────────────────
-
+# ── PDF Export Stub ──────────────────────────────────────────────────────────
 @app.get("/export/pdf/{itinerary_id}")
 async def export_pdf(itinerary_id: str):
-    """Phase 6: Playwright renders the itinerary view → PDF. Stub for now."""
-    return {"message": "PDF export coming in Phase 6", "itinerary_id": itinerary_id}
-
-
-# ─── Share slug (stub — Phase 6) ──────────────────────────────────────────────
-
-@app.get("/trip/{slug}")
-async def get_shared_trip(slug: str):
-    """Phase 6: Return a shared itinerary by slug."""
-    return {"message": "Shared trip view coming in Phase 6", "slug": slug}
+    """Stub PDF export endpoint."""
+    return {"message": "PDF export available in Phase 6", "itinerary_id": itinerary_id}

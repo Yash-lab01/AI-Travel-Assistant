@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ChatPanel from '@/components/ChatPanel';
 import ItineraryView from '@/components/ItineraryView';
 import TravelLiveWallpaper from '@/components/TravelLiveWallpaper';
@@ -8,7 +8,13 @@ import { AgentEvent, Itinerary } from '@/types';
 
 const HERO_PROMPT_CARDS = [
   {
-    flag: '🇮🇳',
+    flag: '🌴',
+    destination: 'Goa, India',
+    prompt: '3 days in Goa, beaches, Portuguese heritage & cafes',
+    tag: 'Coastal & Heritage',
+  },
+  {
+    flag: '👑',
     destination: 'Rajasthan, India',
     prompt: '4 days in Rajasthan, Jaipur royal forts, stepwells & desert street food',
     tag: 'Heritage & Royal Forts',
@@ -25,12 +31,6 @@ const HERO_PROMPT_CARDS = [
     prompt: '4 days in Kyoto, iconic zen temples, bamboo groves & local ramen',
     tag: 'Zen & Gastronomy',
   },
-  {
-    flag: '🇮🇳',
-    destination: 'South Goa, India',
-    prompt: '3 days in South Goa, quiet beaches, Portuguese heritage & coastal cafes',
-    tag: 'Tropical & Heritage',
-  },
 ];
 
 export default function Home() {
@@ -38,6 +38,18 @@ export default function Home() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
   const [externalPrompt, setExternalPrompt] = useState<string | null>(null);
+
+  // Auto-scroll to itinerary visualizer when it becomes available
+  useEffect(() => {
+    if (itinerary) {
+      setTimeout(() => {
+        const itineraryEl = document.getElementById('itinerary-visualizer');
+        if (itineraryEl) {
+          itineraryEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    }
+  }, [itinerary]);
 
   const handleHeroPromptSelect = (promptText: string) => {
     setExternalPrompt(promptText);
@@ -235,12 +247,12 @@ export default function Home() {
             <span className="section-tag">LIVE INTERACTIVE WORKSPACE</span>
             <h2 className="section-title">Design Your Personalized Itinerary</h2>
             <p className="section-subtitle">
-              Chat with our multi-agent system below — specify any city, duration, budget, and travel preference.
+              Chat with our multi-agent assistant below — ask for any destination, specify your vibe, or choose quick preferences.
             </p>
           </div>
 
-          <div className="studio-wrapper">
-            {/* Left: Conversational Agent Panel */}
+          {/* Centered Conversational Planning Hub */}
+          <div className="studio-centered-flow">
             <ChatPanel
               onItinerary={(it) => setItinerary(it)}
               agentEvents={agentEvents}
@@ -250,13 +262,17 @@ export default function Home() {
               externalPrompt={externalPrompt}
               onExternalPromptConsumed={() => setExternalPrompt(null)}
             />
-
-            {/* Right: Itinerary & Map Visualizer */}
-            <ItineraryView
-              itinerary={itinerary}
-              isLoading={isStreaming && !itinerary}
-            />
           </div>
+
+          {/* Expansive Side-by-Side Itinerary & Map Visualizer */}
+          {(itinerary || isStreaming) && (
+            <div id="itinerary-visualizer" className="itinerary-full-wrapper" style={{ marginTop: 48 }}>
+              <ItineraryView
+                itinerary={itinerary}
+                isLoading={isStreaming && !itinerary}
+              />
+            </div>
+          )}
         </section>
 
         {/* Footer */}
@@ -273,8 +289,8 @@ export default function Home() {
               <span className="footer-tag">FastAPI</span>
               <span className="footer-tag">Groq Llama 3.1</span>
               <span className="footer-tag">Gemini 2.5 Flash</span>
-              <span className="footer-tag">ChromaDB</span>
-              <span className="footer-tag">Mapbox GL JS</span>
+              <span className="footer-tag">Leaflet Dark Matter</span>
+              <span className="footer-tag">Open-Meteo</span>
             </div>
 
             <a className="footer-back-top" onClick={() => scrollToSection('hero')}>

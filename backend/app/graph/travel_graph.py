@@ -1,6 +1,6 @@
 """
-LangGraph travel planning graph — Phase 2
-Wires: intake_agent -> ranker_agent -> planner_agent -> END
+LangGraph travel planning graph — Phase 3
+Wires: intake_agent (conditional) -> ranker_agent -> planner_agent -> END
 """
 from langgraph.graph import StateGraph, END
 import sqlite3
@@ -22,6 +22,13 @@ from app.agents.planner_agent import planner_node
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "checkpoints.db")
 
 
+def route_intake(state: TravelGraphState) -> str:
+    """If intake determines user needs clarification, stop and return clarifying questions."""
+    if state.get("needs_clarification"):
+        return END
+    return "ranker"
+
+
 def build_graph():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
@@ -38,7 +45,14 @@ def build_graph():
     builder.add_node("planner", planner_node)
 
     builder.set_entry_point("intake")
-    builder.add_edge("intake", "ranker")
+    builder.add_conditional_edges(
+        "intake",
+        route_intake,
+        {
+            END: END,
+            "ranker": "ranker",
+        }
+    )
     builder.add_edge("ranker", "planner")
     builder.add_edge("planner", END)
 

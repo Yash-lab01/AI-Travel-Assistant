@@ -4,25 +4,29 @@ import { AgentEvent } from '@/types';
 import { useEffect, useRef } from 'react';
 
 const EVENT_ICONS: Record<AgentEvent['event_type'], string> = {
-  agent_start:        '🚀',
-  tool_call:          '🔧',
-  tool_result:        '✅',
-  agent_step:         '⚙️',
-  narration_start:    '✨',
-  narration_complete: '📝',
-  itinerary_ready:    '🎉',
-  error:              '❌',
+  agent_start:          '🚀',
+  tool_call:            '🔍',
+  tool_result:          '✓',
+  agent_step:           '⚡',
+  clarification_needed: '💬',
+  day_ready:            '📅',
+  narration_start:      '✍️',
+  narration_complete:   '✨',
+  itinerary_ready:      '🎉',
+  error:                '⚠️',
 };
 
 const DOT_CLASS: Record<AgentEvent['event_type'], string> = {
-  agent_start:        '',
-  tool_call:          '',
-  tool_result:        'done',
-  agent_step:         '',
-  narration_start:    '',
-  narration_complete: 'done',
-  itinerary_ready:    'done',
-  error:              'error',
+  agent_start:          '',
+  tool_call:            '',
+  tool_result:          'done',
+  agent_step:           '',
+  clarification_needed: '',
+  day_ready:            'done',
+  narration_start:      '',
+  narration_complete:   'done',
+  itinerary_ready:      'done',
+  error:                'error',
 };
 
 interface Props {
@@ -39,7 +43,7 @@ export default function AgentEventFeed({ events, isStreaming }: Props) {
 
   if (!isStreaming && events.length === 0) {
     return (
-      <div className="agent-feed" style={{ color: 'var(--text-muted)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="agent-feed-container" style={{ color: 'var(--text-muted)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ opacity: 0.6 }}>⚡</span>
         <span>Agent reasoning stream will appear here</span>
       </div>
@@ -47,11 +51,10 @@ export default function AgentEventFeed({ events, isStreaming }: Props) {
   }
 
   return (
-    <div className="agent-feed">
+    <div className="agent-feed-container">
       {events.map((ev, i) => (
-        <div key={i} className="agent-event">
-          <span className={`dot ${DOT_CLASS[ev.event_type]}`} />
-          <span style={{ fontSize: 12 }}>{EVENT_ICONS[ev.event_type]}</span>
+        <div key={i} className="agent-event-item">
+          <span style={{ fontSize: 12 }}>{EVENT_ICONS[ev.event_type] || '⚡'}</span>
           <span>
             {ev.agent && <span style={{ color: 'var(--amber)', fontWeight: 600 }}>{ev.agent}</span>}
             {ev.tool && <span style={{ color: 'var(--teal)' }}> [{ev.tool}]</span>}
@@ -60,8 +63,8 @@ export default function AgentEventFeed({ events, isStreaming }: Props) {
         </div>
       ))}
       {isStreaming && (
-        <div className="agent-event">
-          <span className="dot" style={{ animation: 'pulseDot 1s infinite' }} />
+        <div className="agent-event-item">
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block', animation: 'pulseDot 1s infinite' }} />
           <span style={{ color: 'var(--text-muted)' }}>Multi-agent swarm reasoning...</span>
         </div>
       )}

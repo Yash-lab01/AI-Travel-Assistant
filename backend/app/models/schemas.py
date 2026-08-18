@@ -5,9 +5,9 @@ from enum import Enum
 
 
 class TravelStyle(str, Enum):
-    popular   = "popular"     # Mostly mainstream attractions
-    balanced  = "balanced"    # Mix of popular + niche
-    niche     = "niche"       # Mostly hidden gems
+    balanced  = "balanced"    # mix of popular + niche
+    popular   = "popular"     # mostly iconic landmarks
+    niche     = "niche"       # hidden gems & off-the-beaten-path
     cultural  = "cultural"
     adventure = "adventure"
     foodie    = "foodie"
@@ -43,6 +43,7 @@ class TripRequest(BaseModel):
     pace: TravelPace = TravelPace.moderate
     group_type: GroupType = GroupType.solo
     interests: list[str] = Field(default_factory=list, description="e.g. ['food', 'history', 'art']")
+    region_preference: Optional[str] = None   # e.g. "North Goa (beaches/nightlife)" or "South Goa (heritage/peace)"
     raw_message: Optional[str] = None  # Original user message for context
 
 
@@ -60,18 +61,18 @@ class NicheScore(BaseModel):
 class Stop(BaseModel):
     id: str
     name: str
-    category: str  # e.g. "attraction", "restaurant", "viewpoint"
+    category: str               # "attraction", "restaurant", "cafe", "viewpoint", "park", "museum", "beach", "market"
     description: str
-    narration: Optional[str] = None  # Fine-tuned model output
+    narration: str              # Written by fine-tuned model (or cloud LLM fallback)
     lat: float
     lon: float
     address: Optional[str] = None
-    duration_minutes: int = Field(60, description="Estimated time to spend here")
+    duration_minutes: int = 60
     estimated_cost_usd: Optional[float] = None
     photo_urls: list[str] = Field(default_factory=list)
     rating: Optional[float] = None
-    review_count: Optional[int] = None         # Google Places review count
-    source: Optional[str] = None               # "opentripmap", "reddit", "tavily"
+    review_count: Optional[int] = None
+    source: Optional[str] = None # e.g. "reddit", "opentripmap", "tavily_blog"
     is_niche: bool = False
     niche_score: Optional[NicheScore] = None
     opening_hours: Optional[dict] = None
@@ -80,11 +81,10 @@ class Stop(BaseModel):
 
 class DayPlan(BaseModel):
     day_number: int
-    date: Optional[str] = None          # ISO date string e.g. "2026-08-17"
-    theme: Optional[str] = None
+    theme: str                  # e.g. "Historic Alfama & Fado Nights" or "North Goa Coastal Forts"
+    date: Optional[str] = None
     stops: list[Stop] = Field(default_factory=list)
-    daily_budget_usd: Optional[float] = None
-    daily_cost_estimate_usd: Optional[float] = None
+    day_cost_estimate_usd: Optional[float] = None
     weather_note: Optional[str] = None
 
 
@@ -97,6 +97,19 @@ class Itinerary(BaseModel):
     share_slug: Optional[str] = None
 
 
+class ClarificationOption(BaseModel):
+    label: str
+    value: str
+    icon: Optional[str] = None
+
+
+class ClarificationQuestion(BaseModel):
+    id: str
+    question: str
+    category: str   # "region_vibe" | "pace" | "budget" | "travel_style" | "group"
+    options: list[ClarificationOption] = Field(default_factory=list)
+
+
 class AgentEvent(BaseModel):
     """Streamed over SSE to the frontend to show agent progress."""
     event_type: Literal[
@@ -104,6 +117,8 @@ class AgentEvent(BaseModel):
         "tool_call",
         "tool_result",
         "agent_step",
+        "clarification_needed",
+        "day_ready",
         "narration_start",
         "narration_complete",
         "itinerary_ready",
@@ -112,7 +127,7 @@ class AgentEvent(BaseModel):
     agent: Optional[str] = None   # e.g. "intake_agent", "planner_agent"
     tool: Optional[str] = None    # e.g. "places_tool", "niche_scrape_tool"
     message: str = ""
-    data: Optional[dict] = None   # Optional payload (e.g. partial stop data)
+    data: Optional[dict] = None   # Optional payload (e.g. clarification questions, partial stop data)
 
 
 class ChatMessage(BaseModel):
@@ -124,3 +139,5 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     existing_itinerary_id: Optional[str] = None  # For follow-up edits
+    force_plan: bool = False                     # If True, bypasses clarification questions
+    answers: Optional[dict[str, str]] = None     # User-selected clarification answers
