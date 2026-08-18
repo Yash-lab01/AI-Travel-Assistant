@@ -9,6 +9,7 @@ import os
 _SQLITE_AVAILABLE = False
 try:
     from langgraph.checkpoint.sqlite import SqliteSaver
+    from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
     _SQLITE_AVAILABLE = True
 except ImportError:
     from langgraph.checkpoint.memory import MemorySaver
@@ -26,7 +27,8 @@ def build_graph():
 
     if _SQLITE_AVAILABLE:
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        checkpointer = SqliteSaver(conn)
+        serde = JsonPlusSerializer(allowed_msgpack_modules=[("app.models.schemas", "*")])
+        checkpointer = SqliteSaver(conn, serde=serde)
     else:
         checkpointer = MemorySaver()
 
