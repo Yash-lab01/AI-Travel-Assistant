@@ -2,6 +2,7 @@
 
 import { Itinerary, DayPlan, Stop } from '@/types';
 import { useState, lazy, Suspense } from 'react';
+import { formatCost, formatTotalCost } from '@/utils/currency';
 
 const MapView = lazy(() => import('./MapView'));
 
@@ -18,7 +19,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   default:    '📍',
 };
 
-function StopCard({ stop, index }: { stop: Stop; index: number }) {
+function StopCard({ stop, index, destination }: { stop: Stop; index: number; destination?: string }) {
   const icon = CATEGORY_ICONS[stop.category] ?? CATEGORY_ICONS.default;
 
   return (
@@ -62,7 +63,7 @@ function StopCard({ stop, index }: { stop: Stop; index: number }) {
             <span className="stop-category-pill">{stop.category}</span>
             <span style={{ color: 'var(--text-muted)' }}>⏱️ {stop.duration_minutes} min</span>
             {stop.estimated_cost_usd !== undefined && (
-              <span className="stop-cost">${stop.estimated_cost_usd} est.</span>
+              <span className="stop-cost">{formatCost(stop.estimated_cost_usd, destination)}</span>
             )}
             {stop.rating && (
               <span style={{ color: 'var(--amber)' }}>★ {stop.rating}</span>
@@ -102,6 +103,7 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
     return null;
   }
 
+  const destination = itinerary.trip_request.destination;
   const days = itinerary.days || [];
   const currentDay: DayPlan | undefined = days[activeDay];
   const allStops = days.flatMap(d => d.stops);
@@ -115,7 +117,7 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <h2 className="itinerary-destination-title">
-              {itinerary.trip_request.num_days}-Day Journey to {itinerary.trip_request.destination}
+              {itinerary.trip_request.num_days}-Day Journey to {destination}
             </h2>
             {nicheTotal > 0 && (
               <span className="niche-badge" style={{ fontSize: 11, padding: '4px 10px' }}>
@@ -124,7 +126,7 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
             )}
           </div>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-            Paced for {itinerary.trip_request.pace} speed · {itinerary.trip_request.travel_style} focus · Estimated Total: <strong style={{ color: 'var(--amber)' }}>${itinerary.total_cost_estimate_usd?.toFixed(0) || '0'} USD</strong>
+            Paced for {itinerary.trip_request.pace} speed · {itinerary.trip_request.travel_style} focus · Estimated Total: <strong style={{ color: 'var(--amber)' }}>{formatTotalCost(itinerary.total_cost_estimate_usd, destination)}</strong>
           </p>
         </div>
 
@@ -170,7 +172,7 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
                 </h3>
                 {currentDay.day_cost_estimate_usd !== undefined && (
                   <span style={{ fontSize: 13, color: 'var(--amber)', fontWeight: 600 }}>
-                    Est. ${currentDay.day_cost_estimate_usd.toFixed(0)}
+                    Est. {formatCost(currentDay.day_cost_estimate_usd, destination, false)}
                   </span>
                 )}
               </div>
@@ -196,7 +198,7 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
           {/* Sequential Stops */}
           <div className="stops-timeline-list">
             {displayedStops.map((stop, idx) => (
-              <StopCard key={stop.id} stop={stop} index={idx} />
+              <StopCard key={stop.id} stop={stop} index={idx} destination={destination} />
             ))}
           </div>
         </div>

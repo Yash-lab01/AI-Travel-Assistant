@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { Stop } from '@/types';
+import { formatCost } from '@/utils/currency';
 
 interface Props {
   stops: Stop[];
   activeDay: number;
 }
+
 
 declare global {
   interface Window {
@@ -150,8 +152,9 @@ export default function MapView({ stops, activeDay }: Props) {
           ${stop.is_niche ? '<div style="color:#00DBE7;font-size:10px;font-weight:700;letter-spacing:0.08em;margin-bottom:4px">💎 HIDDEN GEM</div>' : ''}
           <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:#ffffff;margin-bottom:4px">${stop.name}</div>
           <div style="font-size:12px;color:#909096;text-transform:capitalize;margin-bottom:6px">${stop.category} · ${stop.duration_minutes} min</div>
-          ${stop.estimated_cost_usd !== undefined ? `<div style="font-size:12px;color:#FFBF00;font-weight:600">$${stop.estimated_cost_usd} est.</div>` : ''}
+          ${stop.estimated_cost_usd !== undefined ? `<div style="font-size:12px;color:#FFBF00;font-weight:600">${formatCost(stop.estimated_cost_usd, stop.address || stop.description || stop.name)}</div>` : ''}
         </div>
+
       `;
 
       const marker = L.marker([lat, lon], { icon: customIcon })

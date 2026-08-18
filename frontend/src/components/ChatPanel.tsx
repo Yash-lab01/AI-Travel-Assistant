@@ -48,10 +48,16 @@ export default function ChatPanel({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeClarification]);
+
 
   // Handle external prompt triggers (e.g. from Hero chips)
   useEffect(() => {
