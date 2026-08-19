@@ -53,7 +53,19 @@
 
 ## What's Next
 
-### Phase 4 — Multi-Turn Conversational Editing (Queued 🔜)
+### Phase 4a — Image Integration & Visual Richness (NEXT 🔜)
+> Full spec: [`docs/IMAGE_INTEGRATION.md`](docs/IMAGE_INTEGRATION.md)
+
+Images are currently absent from the entire app. Stop cards show emoji-only placeholders and the landing page has no destination photography at all.
+
+- **Backend (zero-key free tier):** `destination_images.py` with curated Unsplash static URLs for 15+ cities; `fetch_wikimedia_image()` via Wikipedia pageimages API (free, CC-licensed); `_unsplash_fallback_url()` keyword-based fallback; remove `num_days * 5` cap on Google Places enrichment
+- **Backend schema:** `cover_image_url: Optional[str]` on both `Itinerary` and `DayPlan`
+- **Frontend — Stop Cards:** full-bleed 16:9 image, lazy loading, shimmer skeleton, `onError` emoji fallback
+- **Frontend — Day Banners:** full-width cover photo with dark gradient text overlay per day tab
+- **Frontend — Landing Page:** destination photo thumbnails on hero prompt chips
+- **Frontend — Map popups:** 200px photo thumbnail shown when a map marker is clicked
+
+### Phase 4b — Multi-Turn Conversational Editing
 - Intent classifier node: `new_trip` | `edit_stop` | `adjust_pace` | `change_budget`
 - LangGraph checkpoint recovery for stop-level editing without full replan
 - UI "Swap / Remove / Tell me more" quick-action buttons on stop cards
@@ -68,6 +80,7 @@
 ---
 
 ## Reference Documents
+- [`docs/IMAGE_INTEGRATION.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/IMAGE_INTEGRATION.md) — **NEW** — Full image implementation spec (3-tier sourcing, frontend changes, schema updates, what NOT to do).
 - [`docs/TROUBLESHOOTING_AND_MISTAKES.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/TROUBLESHOOTING_AND_MISTAKES.md) — Persistent log of 9 known pitfalls, model quirks, and rules for what NOT to do.
 - [`.context/PROJECT_CONTEXT.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/PROJECT_CONTEXT.md) — Architecture, active model names, Chroma path, coding conventions.
 - [`.context/TASKS.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/TASKS.md) — Granular phase task checklist.
