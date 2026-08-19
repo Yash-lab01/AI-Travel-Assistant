@@ -182,20 +182,30 @@ export default function MapView({ stops, activeDay }: Props) {
       }
     });
 
-    // Auto-fit bounds safely
+    // Auto-fit bounds safely with container layout validation
     if (latLngs.length === 1) {
       try {
         map.setView(latLngs[0], 14, { animate: true });
       } catch {}
     } else if (latLngs.length > 1) {
-      try {
-        const bounds = L.latLngBounds(latLngs);
-        if (bounds.isValid()) {
-          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true });
+      setTimeout(() => {
+        try {
+          if (!leafletMapRef.current || !mapContainerRef.current) return;
+          leafletMapRef.current.invalidateSize();
+          const bounds = L.latLngBounds(latLngs);
+          if (bounds.isValid()) {
+            const ne = bounds.getNorthEast();
+            const sw = bounds.getSouthWest();
+            if (ne && sw && ne.lat === sw.lat && ne.lng === sw.lng) {
+              leafletMapRef.current.setView([ne.lat, ne.lng], 14, { animate: true });
+            } else {
+              leafletMapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true });
+            }
+          }
+        } catch {
+          // Gracefully suppress expected Leaflet initial render layout warnings
         }
-      } catch (e) {
-        console.warn('Map fitBounds error:', e);
-      }
+      }, 50);
     }
   };
 
