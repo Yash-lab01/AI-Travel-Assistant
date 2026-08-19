@@ -92,14 +92,13 @@ async def discover_niche_spots(destination: str) -> list[Stop]:
         # Calculate sentiment on mention context (with baseline for curated recommendations)
         raw_sentiment = float(vader_analyzer.polarity_scores(context)["compound"]) if context else 0.5
         avg_sentiment = max(0.45, raw_sentiment)
-
-
+        
         mention_count = int(item.get("mention_count", 8))
-        review_count = int(item.get("review_count", 420))  # Niche spots typically have low review counts
+        review_count = int(item.get("review_count", 420))
         sources = [source_type]
         if item.get("cross_platform"):
             sources.append("tavily_blog" if source_type == "reddit" else "reddit")
-
+        
         score_val = compute_hidden_gem_score(
             mention_count=mention_count,
             avg_sentiment=avg_sentiment,
@@ -107,16 +106,36 @@ async def discover_niche_spots(destination: str) -> list[Stop]:
             google_review_count=review_count,
             max_review_count_in_batch=10_000,
         )
+        
+        c = item.copy()
+        c["sentiment_score"] = avg_sentiment
+        c["hidden_gem_score"] = score_val
+        c["sources"] = sources
+        c["source_diversity"] = len(set(sources))
+        scored_candidates.append(c)
+
+    # Concurrently fetch real images for niche candidates
+    img_tasks = [fetch_wikimedia_image(c.get("name", ""), destination) for c in scored_candidates]
+    real_imgs = await asyncio.gather(*img_tasks, return_exceptions=True)
+
+    for i, c in enumerate(scored_candidates):
+        name = c.get("name", "").strip()
+        context = c.get("context", "")
+        category = c.get("category", "attraction").lower()
+        duration = int(c.get("duration_minutes", 60))
+        source_type = c.get("source_type", "reddit")
+        review_count = int(c.get("review_count", 420))
+        estimated_cost = float(c.get("estimated_cost_usd", 15.0))
 
         niche_score = NicheScore(
             spot_name=name,
             destination=destination,
-            mention_count=mention_count,
-            avg_sentiment=avg_sentiment,
-            source_diversity=len(set(sources)),
+            mention_count=c.get("mention_count", 8),
+            avg_sentiment=round(c.get("sentiment_score", 0.7), 2),
+            source_diversity=c.get("source_diversity", 1),
             google_review_count=review_count,
-            hidden_gem_score=score_val,
-            sources=sources,
+            hidden_gem_score=c.get("hidden_gem_score", 0.5),
+            sources=c.get("sources", [source_type]),
         )
 
         # Distribute slight spatial offset around destination center
@@ -125,7 +144,8 @@ async def discover_niche_spots(destination: str) -> list[Stop]:
         lat = center_lat + offset_r * 0.7 * (1 if i % 2 == 0 else -1)
         lon = center_lon + offset_r * (1 if i % 3 == 0 else -1)
 
-        photo_url = get_category_fallback_image(category)
+        real_img = real_imgs[i] if i < len(real_imgs) and isinstance(real_imgs[i], str) and real_imgs[i] else None
+        photo_url = real_img or get_category_fallback_image(category)
 
         stop = Stop(
             id=str(uuid.uuid4()),

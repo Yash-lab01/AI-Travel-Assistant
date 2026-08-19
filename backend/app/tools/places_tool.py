@@ -26,7 +26,7 @@ OTM_KEY   = os.getenv("OPENTRIPMAP_API_KEY", "")
 GPLACES_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
 
 # Increment this when the parser or data schema changes to auto-invalidate Chroma cache
-CACHE_VERSION = "v5"
+CACHE_VERSION = "v6"
 
 # OTM category groups by travel style preference
 CATEGORY_MAP = {
@@ -247,36 +247,92 @@ async def enrich_with_google_places(name: str, lat: float, lon: float) -> dict:
         return {}
 
 
-# ── Free Wikimedia Commons image scraper (Zero-Key / Free Tier) ───────────────
-async def fetch_wikimedia_image(place_name: str) -> str:
+# ── Free Wikipedia & Wikimedia Commons image scraper (Zero-Key / Free Tier) ──
+async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
     """
-    Fetch a high-quality CC-licensed thumbnail from Wikimedia Commons / Wikipedia API.
-    Zero auth / free endpoint.
+    Fetch a real, high-quality photograph from Wikipedia & Wikimedia Commons.
+    Cascade:
+    1. Wikipedia REST summary API (returns exact lead photo for named landmarks)
+    2. Wikipedia Generator Search with pageimages (fuzzy search matching article titles)
+    3. Wikimedia Commons file search (CC-licensed community photography)
+    Zero auth / completely free endpoints.
     """
-    if not place_name or len(place_name.strip()) < 3:
+    if not place_name or len(place_name.strip()) < 2:
         return ""
-    try:
-        url = "https://en.wikipedia.org/w/api.php"
-        clean_title = place_name.split("(")[0].strip()
-        params = {
-            "action": "query",
-            "titles": clean_title,
-            "prop": "pageimages",
-            "format": "json",
-            "pithumbsize": 800,
-            "redirects": 1,
-        }
-        async with httpx.AsyncClient(timeout=5) as client:
-            resp = await client.get(url, params=params, headers={"User-Agent": "WanderAI/1.0 (travel-planner)"})
+
+    import urllib.parse
+    clean_name = place_name.split("(")[0].strip()
+
+    async with httpx.AsyncClient(timeout=5, follow_redirects=True) as client:
+        # 1. Try Wikipedia REST summary API (fast & exact)
+        try:
+            encoded = urllib.parse.quote(clean_name.replace(" ", "_"))
+            resp = await client.get(
+                f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded}",
+                headers={"User-Agent": "WanderAI/1.0 (travel-planner)"}
+            )
             if resp.status_code == 200:
-                data = resp.json()
-                pages = data.get("query", {}).get("pages", {})
+                d = resp.json()
+                if d.get("thumbnail", {}).get("source"):
+                    return d["thumbnail"]["source"]
+                if d.get("originalimage", {}).get("source"):
+                    return d["originalimage"]["source"]
+        except Exception:
+            pass
+
+        # 2. Try Wikipedia generator search with pageimages
+        try:
+            search_query = f"{clean_name} {destination}".strip() if destination else clean_name
+            resp = await client.get(
+                "https://en.wikipedia.org/w/api.php",
+                params={
+                    "action": "query",
+                    "generator": "search",
+                    "gsrsearch": search_query,
+                    "gsrlimit": 1,
+                    "prop": "pageimages",
+                    "piprop": "thumbnail|original",
+                    "pithumbsize": 800,
+                    "format": "json",
+                },
+                headers={"User-Agent": "WanderAI/1.0 (travel-planner)"}
+            )
+            if resp.status_code == 200:
+                pages = resp.json().get("query", {}).get("pages", {})
                 for page in pages.values():
-                    thumb = page.get("thumbnail", {})
-                    if thumb.get("source"):
-                        return thumb["source"]
-    except Exception:
-        pass
+                    thumb = page.get("thumbnail", {}).get("source") or page.get("original", {}).get("source")
+                    if thumb:
+                        return thumb
+        except Exception:
+            pass
+
+        # 3. Try Wikimedia Commons search
+        try:
+            resp = await client.get(
+                "https://commons.wikimedia.org/w/api.php",
+                params={
+                    "action": "query",
+                    "generator": "search",
+                    "gsrsearch": clean_name,
+                    "gsrnamespace": 6,
+                    "gsrlimit": 1,
+                    "prop": "imageinfo",
+                    "iiprop": "url",
+                    "iiurlwidth": 800,
+                    "format": "json",
+                },
+                headers={"User-Agent": "WanderAI/1.0 (travel-planner)"}
+            )
+            if resp.status_code == 200:
+                pages = resp.json().get("query", {}).get("pages", {})
+                for page in pages.values():
+                    for info in page.get("imageinfo", []):
+                        thumb = info.get("thumburl") or info.get("url")
+                        if thumb:
+                            return thumb
+        except Exception:
+            pass
+
     return ""
 
 
@@ -391,12 +447,12 @@ async def get_places_for_destination(
     ]
     enrichments = await asyncio.gather(*enrich_tasks, return_exceptions=True)
 
-    # 5. For items without a Google Places photo, query Wikimedia Commons concurrently (Tier 2)
+    # 5. For items without a Google Places photo, query Wikipedia & Wikimedia Commons cascade (Tier 2)
     wiki_tasks = []
     for i, p in enumerate(unique_places):
         enr = enrichments[i] if i < len(enrichments) and isinstance(enrichments[i], dict) else {}
         if not enr.get("photo_url"):
-            wiki_tasks.append((i, fetch_wikimedia_image(p["name"])))
+            wiki_tasks.append((i, fetch_wikimedia_image(p["name"], clean_dest)))
 
     if wiki_tasks:
         wiki_results = await asyncio.gather(*[t[1] for t in wiki_tasks], return_exceptions=True)
