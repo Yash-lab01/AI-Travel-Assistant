@@ -35,10 +35,12 @@ interface Props {
 }
 
 export default function AgentEventFeed({ events, isStreaming }: Props) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (events.length > 0 && containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
   }, [events]);
 
   if (!isStreaming && events.length === 0) {
@@ -51,7 +53,7 @@ export default function AgentEventFeed({ events, isStreaming }: Props) {
   }
 
   return (
-    <div className="agent-feed-container">
+    <div className="agent-feed-container" ref={containerRef}>
       {events.map((ev, i) => (
         <div key={i} className="agent-event-item">
           <span style={{ fontSize: 12 }}>{EVENT_ICONS[ev.event_type] || '⚡'}</span>
@@ -68,7 +70,6 @@ export default function AgentEventFeed({ events, isStreaming }: Props) {
           <span style={{ color: 'var(--text-muted)' }}>Multi-agent swarm reasoning...</span>
         </div>
       )}
-      <div ref={bottomRef} />
     </div>
   );
 }

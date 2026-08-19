@@ -50,7 +50,7 @@ export default function ChatPanel({
   } | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isFirstRender = useRef(true);
 
@@ -59,7 +59,12 @@ export default function ChatPanel({
       isFirstRender.current = false;
       return;
     }
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   }, [messages, activeClarification]);
 
   // Handle external prompt triggers (e.g. from Hero chips)
@@ -231,7 +236,7 @@ export default function ChatPanel({
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="chat-messages-hub">
+      <div className="chat-messages-hub" ref={messagesContainerRef}>
         {messages.map((msg, i) => (
           <div key={i} className="message-wrapper">
             <div className={`chat-bubble ${msg.role}`}>
@@ -294,7 +299,6 @@ export default function ChatPanel({
             <span>Multi-Agent reasoning in progress (scoring, routing & weather)...</span>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Live Agent Thought Feed */}

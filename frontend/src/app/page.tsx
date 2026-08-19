@@ -43,6 +43,16 @@ export default function Home() {
   const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
   const [externalPrompt, setExternalPrompt] = useState<string | null>(null);
 
+  // Ensure page always starts at top on initial load
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'manual';
+      }
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   // Auto-scroll to itinerary visualizer when it becomes available
   useEffect(() => {
     if (itinerary) {
