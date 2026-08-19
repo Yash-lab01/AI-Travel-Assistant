@@ -120,5 +120,5 @@ AI Travel Assistant/
 - **LLM Response Safety**: Always use `safe_extract_text(response.content)` — never `response.content.strip()` directly.
 - **Chroma Cache**: Increment `CACHE_VERSION` in `places_tool.py` whenever OTM parser or Stop schema changes.
 - **Frontend**: Client components with `'use client'`, styling in `globals.css` using CSS custom properties (`--amber`, `--teal`, `--glass-bg`), clean TypeScript types.
-- **Git Commits**: Conventional commits format (`feat(scope): ...`, `fix(scope): ...`, `docs: ...`).
+- **Git Commits**: Conventional commits format (`feat(scope): ...`, `fix(scope): ...`, `docs: ...`). **Always make separate, atomic commits** for `docs`, `frontend`, and `backend` (never bundle them all into a single monolithic commit) so commit messages are direct and easy to track.
 - **Context Updates**: Whenever making changes, update `.context/TASKS.md`, `.context/HANDOFF.md`, and `docs/TROUBLESHOOTING_AND_MISTAKES.md` if a new bug/pattern was encountered.
