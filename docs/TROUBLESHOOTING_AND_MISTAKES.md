@@ -182,3 +182,17 @@ This document serves as a persistent record of bugs encountered, root causes dia
 - **What NOT to do**:
   ❌ Never rely solely on exact title matching (`titles=`) for Wikipedia image resolution — always provide fuzzy generator search as a fallback.
 
+---
+
+## 12. Page Auto-Scrolling to Chat Section on Initial Load
+- **Symptom**:
+  Opening or refreshing `http://localhost:3000` jumped the browser viewport directly to the Interactive Studio / Chat section instead of staying at the top hero section.
+- **Root Cause**:
+  `AgentEventFeed.tsx` had an active `useEffect(() => { bottomRef.current?.scrollIntoView(); }, [events])` which triggered on initial mount with `events = []`. Calling `element.scrollIntoView()` on an element inside a sub-component forces the global browser window/viewport to scroll down to that element.
+- **Fix Applied**:
+  1. Replaced `scrollIntoView()` in `AgentEventFeed.tsx` and `ChatPanel.tsx` with **internal container scrolling** (`containerRef.current.scrollTop = containerRef.current.scrollHeight` / `containerRef.current.scrollTo(...)`), which strictly scrolls only the message list inside the chat panel and never moves the outer browser window.
+  2. In `page.tsx`, added `window.history.scrollRestoration = 'manual'` and `window.scrollTo(0, 0)` on mount to ensure the site always starts at the top hero section on load and refresh.
+- **What NOT to do**:
+  ❌ Never use `element.scrollIntoView()` inside child components for internal message lists — it affects the top-level viewport. Use `container.scrollTop = container.scrollHeight` on the scrollable container ref instead.
+
+
