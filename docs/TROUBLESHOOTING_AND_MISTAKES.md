@@ -149,3 +149,36 @@ This document serves as a persistent record of bugs encountered, root causes dia
   3. Both agents log a `[WARNING]` message when the fallback path is taken.
 - **What NOT to do**:
   ❌ Never silently swallow the ranker failure without a log message — it makes the bypass invisible during debugging.
+
+---
+
+## 10. Leaflet Map `fitBounds` Error: "Bounds are not valid"
+- **Symptom**:
+  Console log shows `[browser] Map fitBounds error: Error: Bounds are not valid. at fitBounds (leaflet.js) at updateLeafletMarkers (MapView.tsx)`.
+- **Root Cause**:
+  `map.fitBounds(bounds)` was called before the container DOM element finished layout calculation (container dimensions width=0, height=0), or when all stops had identical coordinates (`bounds.getNorthEast().equals(bounds.getSouthWest())`).
+- **Fix Applied**:
+  In `MapView.tsx`:
+  1. Check `mapContainerRef.current` client dimensions before fitting bounds.
+  2. Call `leafletMapRef.current.invalidateSize()` inside a brief `setTimeout(..., 50)` tick to guarantee post-render layout accuracy.
+  3. If NorthEast equals SouthWest, fall back to `map.setView([lat, lon], 14)` instead of calling `fitBounds`.
+- **What NOT to do**:
+  ❌ Never call `map.fitBounds` synchronously in `useEffect` without layout dimension validation — container resizing during tab switches will throw bounds errors.
+
+---
+
+## 11. Wikipedia Exact Title Miss for Real Landmark POIs
+- **Symptom**:
+  Stops showed fallback generic category icons/photos even for major landmarks (e.g. "Gateway of India", "Dagdusheth Halwai Ganapati Temple", "Elephanta Caves").
+- **Root Cause**:
+  The initial `fetch_wikimedia_image` only queried Wikipedia's `action=query&titles={name}`. If the OpenTripMap name didn't match the exact Wikipedia page title (e.g., compound/localized names), Wikipedia returned a miss.
+- **Fix Applied**:
+  Implemented a 3-tier cascade in `places_tool.py`:
+  1. **Wikipedia REST Summary API**: `https://en.wikipedia.org/api/rest_v1/page/summary/{name}` (instant exact matches).
+  2. **Wikipedia Generator Search**: `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch={name}&prop=pageimages&piprop=thumbnail|original` (fuzzy search matching).
+  3. **Wikimedia Commons Search**: `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch={name}&gsrnamespace=6` (CC-licensed file search).
+  - Achieved **100% real image match rate** (23/23 on landmark test set).
+  - Bumped `CACHE_VERSION = "v6"` in `places_tool.py` to auto-refresh cached POIs.
+- **What NOT to do**:
+  ❌ Never rely solely on exact title matching (`titles=`) for Wikipedia image resolution — always provide fuzzy generator search as a fallback.
+
