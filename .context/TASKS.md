@@ -91,34 +91,35 @@
 
 ---
 
-## Phase 4: Image Integration & Visual Richness (NEXT 🔜)
+## Phase 4: Image Integration & Visual Richness (COMPLETED ✅)
 
 > Full design spec: [`docs/IMAGE_INTEGRATION.md`](../docs/IMAGE_INTEGRATION.md)
 
-Images are the single highest-impact missing feature. Currently stops fall back to emoji only.
-**Must work in zero-key mode — all users should see real destination photography.**
+Images are fully integrated across the app with zero-key fallback compatibility:
 
-### 4a — Backend: Image Sourcing (3 tiers, in priority order)
-- [ ] **`backend/app/tools/destination_images.py`** — curated Unsplash photo URL map for 15+ destinations (Mumbai, Goa, Delhi, Jaipur, Kerala, Pune, Bali, Lisbon, Tokyo, Paris, Rome, Barcelona, etc.) — no API key, static URLs, used for landing page cards + itinerary banners
-- [ ] **`places_tool.py` — Wikimedia Commons mid-tier** — `fetch_wikimedia_image(place_name)` hits Wikipedia's free pageimages API for CC-licensed place photos; no key required
-- [ ] **`places_tool.py` — Unsplash Source fallback** — `_unsplash_fallback_url(name, category, destination)` builds keyword URL; only used when Wikimedia + Google Places both miss
-- [ ] **Enrich ALL stops** (not just top N) — `enrich_with_google_places()` currently caps at `num_days * 5`; remove this cap
-- [ ] **Priority chain per stop**: Google Places photo → Wikimedia Commons → Unsplash keyword fallback → emoji placeholder (never blank)
-- [ ] **`schemas.py`** — add `cover_image_url: Optional[str]` to `Itinerary` and `DayPlan`
-- [ ] **`planner_agent.py`** — populate `itinerary.cover_image_url` from `destination_images.py` and `day.cover_image_url` from first stop's photo
+### 4a — Backend: Image Sourcing (COMPLETED ✅)
+- [x] **`backend/app/tools/destination_images.py`** — curated high-res Unsplash photo map for 25+ Indian & global destinations (Mumbai, Goa, Delhi, Jaipur, Kerala, Pune, Bali, Lisbon, Tokyo, Paris, Rome, Barcelona, Kyoto, etc.)
+- [x] **`places_tool.py` — Wikimedia Commons mid-tier** — `fetch_wikimedia_image(place_name)` queries Wikipedia's free pageimages API for CC-licensed place photos; zero auth required
+- [x] **`places_tool.py` — Unsplash Source fallback** — `_unsplash_fallback_url(name, category, destination)` builds category curated photography URL
+- [x] **Enrich ALL stops** — `enrich_with_google_places()` enriches all unique attractions with photos & ratings
+- [x] **Priority chain per stop**: Google Places photo → Wikimedia Commons → Unsplash category fallback → placeholder icon
+- [x] **`schemas.py`** — added `cover_image_url: Optional[str]` to `Itinerary` and `DayPlan`
+- [x] **`planner_agent.py`** — populates `itinerary.cover_image_url` from `destination_images.py` and `day.cover_image_url` from first stop's photo
 
-### 4b — Frontend: Visual Stop Cards & Day Banners
-- [ ] **`ItineraryView.tsx` — stop card images** — full-bleed 16:9 image header on each stop card; `loading="lazy"`, `onError` fallback to emoji placeholder (never broken browser image icon)
-- [ ] **`ItineraryView.tsx` — shimmer skeleton** — while image loads, show animated shimmer gradient (not blank)
-- [ ] **`ItineraryView.tsx` — `DayBanner` component** — full-width hero photo per day using `day.cover_image_url` with dark-gradient text overlay for day theme
-- [ ] **`globals.css`** — `.stop-card-image { aspect-ratio: 16/9; object-fit: cover; }`, shimmer `@keyframes`, placeholder styles
-- [ ] **`MapView.tsx` — Leaflet popup photo thumbnails** — show `photo_urls[0]` (200px wide) inside the popup when a map marker is clicked
+### 4b — Frontend: Visual Stop Cards & Day Banners (COMPLETED ✅)
+- [x] **`ItineraryView.tsx` — StopCard imagery** — square visual photo thumbnail with `loading="lazy"`, shimmer skeleton, and `onError` fallback to category icon
+- [x] **`ItineraryView.tsx` — `DayBanner` component** — full-width hero photo per day using `day.cover_image_url` with dark-gradient text overlay, day badge, and weather note
+- [x] **`ItineraryView.tsx` — Destination hero banner** — top overview card showcasing high-res cover photography with trip summary metadata
+- [x] **`globals.css`** — `.day-banner-card`, `.stop-card-image-wrap`, `@keyframes shimmer`, `.itinerary-cover-banner`
+- [x] **`MapView.tsx` — Leaflet popup photo thumbnails** — embeds 100px photo inside popup when a map marker is clicked
 
-### 4c — Landing Page Destination Cards
-- [ ] **`page.tsx` — `HERO_PROMPT_CARDS`** — add `img` field to each prompt chip using curated destination photo URLs
-- [ ] **`globals.css`** — destination card hover effect with image parallax/zoom
+### 4c — Landing Page Destination Cards (COMPLETED ✅)
+- [x] **`page.tsx` — `HERO_PROMPT_CARDS`** — added `image` field with curated photography for Goa, Rajasthan, Lisbon, Kyoto
+- [x] **`globals.css`** — photographic cards with dark gradient overlays, flag badge, tag chip, and hover zoom animation
 
-### 4d — Multi-Turn Conversational Editing (after images)
+---
+
+## Phase 4d: Multi-Turn Conversational Editing & State Iteration (NEXT 🔜)
 - [ ] Multi-turn intent classifier node (`new_trip` | `edit_stop` | `adjust_pace` | `change_budget`)
 - [ ] LangGraph state checkpoint recovery for stop-level editing without full replan
 - [ ] UI "Swap / Remove / Tell me more" quick-action buttons on stop cards

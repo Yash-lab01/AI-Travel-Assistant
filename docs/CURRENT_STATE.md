@@ -47,28 +47,23 @@
 8. **Versioned Chroma Cache (`v4`)**: Old stale/mock data auto-bypassed. Cache writes only store `source="opentripmap"` stops. Increment `CACHE_VERSION` in `places_tool.py` on schema changes.
 9. **Ranker Non-Empty Guarantee**: `ranker_node` always outputs `ranked_stops` (falls back to popular-only if niche scraper fails). `planner_node` logs `[WARNING]` on any bypass.
 10. **Gemini Theme Fix**: Code-fence stripping before JSON parse; destination-aware fallback themes for Mumbai, Pune, Goa, Delhi, Jaipur, Kerala, Bali, Lisbon, Tokyo.
-11. **Mock Place Isolation**: Mock data only used when `OTM_KEY` is entirely absent. Key present but 0 results → wider-radius retry before mocks.
+### Phase 4a — Image Integration & Visual Richness (100% ✅)
+12. **Curated Destination Banners (`destination_images.py`)**: 25+ high-res landscape cover images for Indian and global destinations.
+13. **3-Tier Sourcing Pipeline**: Google Places photos → Wikimedia Commons CC-licensed thumbnails → Unsplash curated photography fallback.
+14. **Visual Day Banners & Itinerary Cover**: Full-bleed hero imagery for itinerary headers and day tabs with gradient overlays.
+15. **StopCard Photographic Thumbnails**: Shimmer skeleton loading state, lazy loading, and robust `onError` fallback to category icons.
+16. **Landing Page Destination Cards**: Visual prompt cards with photographic backgrounds and hover zoom animations.
+17. **Map Marker Popup Thumbnails**: High-resolution image thumbnails embedded in Leaflet marker popups.
 
 ---
 
 ## What's Next
 
-### Phase 4a — Image Integration & Visual Richness (NEXT 🔜)
-> Full spec: [`docs/IMAGE_INTEGRATION.md`](docs/IMAGE_INTEGRATION.md)
-
-Images are currently absent from the entire app. Stop cards show emoji-only placeholders and the landing page has no destination photography at all.
-
-- **Backend (zero-key free tier):** `destination_images.py` with curated Unsplash static URLs for 15+ cities; `fetch_wikimedia_image()` via Wikipedia pageimages API (free, CC-licensed); `_unsplash_fallback_url()` keyword-based fallback; remove `num_days * 5` cap on Google Places enrichment
-- **Backend schema:** `cover_image_url: Optional[str]` on both `Itinerary` and `DayPlan`
-- **Frontend — Stop Cards:** full-bleed 16:9 image, lazy loading, shimmer skeleton, `onError` emoji fallback
-- **Frontend — Day Banners:** full-width cover photo with dark gradient text overlay per day tab
-- **Frontend — Landing Page:** destination photo thumbnails on hero prompt chips
-- **Frontend — Map popups:** 200px photo thumbnail shown when a map marker is clicked
-
-### Phase 4b — Multi-Turn Conversational Editing
+### Phase 4b — Multi-Turn Conversational Editing (NEXT 🔜)
 - Intent classifier node: `new_trip` | `edit_stop` | `adjust_pace` | `change_budget`
 - LangGraph checkpoint recovery for stop-level editing without full replan
 - UI "Swap / Remove / Tell me more" quick-action buttons on stop cards
+- `PATCH /plan/{id}/stop` endpoint for targeted stop replacement
 
 ### Phase 5 — Local Fine-Tuned Narration Model (LoRA)
 - LoRA fine-tuning on Llama 3.2 3B with Unsloth + PEFT (Colab T4)

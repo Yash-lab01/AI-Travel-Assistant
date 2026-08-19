@@ -350,46 +350,76 @@ html, body {
 .hero-chips-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .hero-prompt-card {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  background: rgba(17, 28, 45, 0.6);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 150px;
+  padding: 16px 18px;
   border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
   cursor: pointer;
   text-align: left;
   transition: all var(--dur-base) var(--ease-out);
   color: var(--text-primary);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.hero-prompt-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(4, 14, 31, 0.25) 0%, rgba(4, 14, 31, 0.8) 60%, rgba(4, 14, 31, 0.95) 100%);
+  transition: background var(--dur-base) var(--ease-out);
+  z-index: 1;
 }
 
 .hero-prompt-card:hover {
-  background: rgba(21, 35, 58, 0.9);
+  transform: translateY(-4px);
   border-color: var(--glass-border-amber);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 16px rgba(255, 191, 0, 0.15);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 191, 0, 0.25);
+}
+
+.hero-prompt-card:hover::before {
+  background: linear-gradient(to bottom, rgba(4, 14, 31, 0.1) 0%, rgba(4, 14, 31, 0.65) 50%, rgba(4, 14, 31, 0.92) 100%);
+}
+
+.hero-prompt-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: auto;
+  padding-bottom: 12px;
 }
 
 .hero-prompt-flag {
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .hero-prompt-text {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.4;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.3;
 }
 
 .hero-prompt-arrow {
-  margin-left: auto;
   color: var(--amber);
   font-size: 14px;
-  opacity: 0.6;
+  opacity: 0.7;
   transition: all var(--dur-fast) var(--ease-out);
 }
 
@@ -927,6 +957,42 @@ html, body {
   max-width: 160px;
 }
 
+/* ── Destination Cover Banner ────────────────────────────────────── */
+.itinerary-cover-banner {
+  position: relative;
+  width: 100%;
+  min-height: 140px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: flex-end;
+  padding: 24px 28px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.itinerary-cover-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(4, 14, 31, 0.95) 0%, rgba(4, 14, 31, 0.5) 60%, rgba(4, 14, 31, 0.15) 100%);
+  z-index: 1;
+}
+
+.itinerary-cover-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 /* ── Side-by-Side Dual-Pane Grid ─────────────────────────────────── */
 .itinerary-dual-grid {
   display: grid;
@@ -941,12 +1007,33 @@ html, body {
   gap: 16px;
 }
 
-.day-header-card {
-  padding: 18px 22px;
-  background: rgba(17, 28, 45, 0.7);
-  border: 1px solid var(--glass-border);
+.day-banner-card {
+  position: relative;
   border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-height: 130px;
+  padding: 20px 24px;
   margin-bottom: 4px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.day-banner-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 20, 36, 0.96) 0%, rgba(10, 20, 36, 0.6) 65%, rgba(10, 20, 36, 0.2) 100%);
+  z-index: 1;
+}
+
+.day-banner-card > * {
+  position: relative;
+  z-index: 2;
 }
 
 .day-theme-title {
@@ -954,6 +1041,7 @@ html, body {
   font-size: 20px;
   font-weight: 600;
   color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .weather-badge {
@@ -961,13 +1049,15 @@ html, body {
   align-items: center;
   gap: 8px;
   margin-top: 10px;
-  padding: 6px 14px;
+  padding: 5px 14px;
   border-radius: var(--radius-full);
-  background: rgba(0, 219, 231, 0.08);
+  background: rgba(0, 219, 231, 0.12);
   border: 1px solid var(--glass-border-teal);
   color: var(--teal);
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  width: fit-content;
+  backdrop-filter: blur(8px);
 }
 
 .stops-timeline-list {
@@ -989,35 +1079,63 @@ html, body {
 .stop-card {
   display: flex;
   gap: 16px;
-  padding: 16px 18px;
-  background: rgba(17, 28, 45, 0.7);
+  padding: 16px;
+  background: rgba(17, 28, 45, 0.75);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   transition: all var(--dur-base) var(--ease-out);
 }
 
 .stop-card:hover {
-  background: rgba(21, 35, 58, 0.9);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(21, 35, 58, 0.92);
+  border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .stop-card.niche {
   border-color: var(--glass-border-teal);
-  background: rgba(0, 219, 231, 0.04);
+  background: rgba(0, 219, 231, 0.05);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.stop-card-image-wrap {
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .stop-card-image {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-md);
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  background: rgba(255, 255, 255, 0.05);
+  display: block;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.stop-card:hover .stop-card-image {
+  transform: scale(1.06);
+}
+
+.stop-card-image-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
-  flex-shrink: 0;
+  font-size: 32px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .stop-card-body {
@@ -1025,6 +1143,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .stop-card-top {

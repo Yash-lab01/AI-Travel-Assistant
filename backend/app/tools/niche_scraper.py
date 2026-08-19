@@ -17,7 +17,8 @@ from app.models.schemas import Stop, NicheScore
 from app.scoring.hidden_gem_score import compute_hidden_gem_score
 from app.tools.tavily_tool import search_tavily_travel_content
 from app.tools.reddit_tool import search_reddit_travel_discussions
-from app.tools.places_tool import geocode_destination
+from app.tools.places_tool import geocode_destination, fetch_wikimedia_image
+from app.tools.destination_images import get_category_fallback_image
 from app.vector_store.chroma_client import get_chroma_client
 
 vader_analyzer = SentimentIntensityAnalyzer()
@@ -124,6 +125,8 @@ async def discover_niche_spots(destination: str) -> list[Stop]:
         lat = center_lat + offset_r * 0.7 * (1 if i % 2 == 0 else -1)
         lon = center_lon + offset_r * (1 if i % 3 == 0 else -1)
 
+        photo_url = get_category_fallback_image(category)
+
         stop = Stop(
             id=str(uuid.uuid4()),
             name=name,
@@ -134,7 +137,7 @@ async def discover_niche_spots(destination: str) -> list[Stop]:
             lon=lon,
             duration_minutes=duration,
             estimated_cost_usd=estimated_cost,
-            photo_urls=[],
+            photo_urls=[photo_url] if photo_url else [],
             rating=4.7,
             review_count=review_count,
             source=source_type,

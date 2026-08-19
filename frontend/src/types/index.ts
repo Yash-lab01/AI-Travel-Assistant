@@ -54,6 +54,7 @@ export interface DayPlan {
   stops: Stop[];
   day_cost_estimate_usd?: number;
   weather_note?: string;
+  cover_image_url?: string;
 }
 
 export interface Itinerary {
@@ -63,6 +64,7 @@ export interface Itinerary {
   total_cost_estimate_usd?: number;
   created_at?: string;
   share_slug?: string;
+  cover_image_url?: string;
 }
 
 export interface ClarificationOption {

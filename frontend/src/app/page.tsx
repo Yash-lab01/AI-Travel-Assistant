@@ -12,24 +12,28 @@ const HERO_PROMPT_CARDS = [
     destination: 'Goa, India',
     prompt: '3 days in Goa, beaches, Portuguese heritage & cafes',
     tag: 'Coastal & Heritage',
+    image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&auto=format&fit=crop&q=80',
   },
   {
     flag: '👑',
     destination: 'Rajasthan, India',
     prompt: '4 days in Rajasthan, Jaipur royal forts, stepwells & desert street food',
     tag: 'Heritage & Royal Forts',
+    image: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&auto=format&fit=crop&q=80',
   },
   {
     flag: '🇵🇹',
     destination: 'Lisbon, Portugal',
     prompt: '3 days in Lisbon, iconic landmarks, hidden miradouros & authentic Fado',
     tag: 'Culture & Coast',
+    image: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?w=800&auto=format&fit=crop&q=80',
   },
   {
     flag: '🇯🇵',
     destination: 'Kyoto, Japan',
     prompt: '4 days in Kyoto, iconic zen temples, bamboo groves & local ramen',
     tag: 'Zen & Gastronomy',
+    image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&auto=format&fit=crop&q=80',
   },
 ];
 
@@ -160,17 +164,31 @@ export default function Home() {
                 <div
                   key={card.destination}
                   className="hero-prompt-card"
+                  style={{ backgroundImage: `url(${card.image})` }}
                   onClick={() => handleHeroPromptSelect(card.prompt)}
                   title={`Generate itinerary for ${card.destination}`}
                 >
-                  <span className="hero-prompt-flag">{card.flag}</span>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--amber)', fontFamily: 'var(--font-label)', fontWeight: 600 }}>
+                  <div className="hero-prompt-header">
+                    <span className="hero-prompt-flag">{card.flag}</span>
+                    <span style={{
+                      fontSize: 10.5,
+                      color: 'var(--amber)',
+                      fontFamily: 'var(--font-label)',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      background: 'rgba(4, 14, 31, 0.75)',
+                      padding: '3px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      border: '1px solid var(--glass-border-amber)',
+                    }}>
                       {card.tag}
-                    </div>
-                    <div className="hero-prompt-text">{card.destination}</div>
+                    </span>
                   </div>
-                  <span className="hero-prompt-arrow">➔</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                    <div className="hero-prompt-text">{card.destination}</div>
+                    <span className="hero-prompt-arrow">➔</span>
+                  </div>
                 </div>
               ))}
             </div>

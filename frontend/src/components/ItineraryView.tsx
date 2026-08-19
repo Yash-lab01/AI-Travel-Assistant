@@ -20,8 +20,10 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 function StopCard({ stop, index, destination }: { stop: Stop; index: number; destination?: string }) {
+  const [imgError, setImgError] = useState(false);
   if (!stop) return null;
   const icon = CATEGORY_ICONS[stop.category] ?? CATEGORY_ICONS.default;
+  const photoUrl = stop.photo_urls && stop.photo_urls.length > 0 ? stop.photo_urls[0] : null;
 
   return (
     <>
@@ -32,16 +34,22 @@ function StopCard({ stop, index, destination }: { stop: Stop; index: number; des
         </div>
       )}
       <div className={`stop-card ${stop.is_niche ? 'niche' : ''}`}>
-        {stop.photo_urls && stop.photo_urls.length > 0 ? (
-          <img
-            src={stop.photo_urls[0]}
-            alt={stop.name || 'Attraction'}
-            className="stop-card-image"
-            style={{ display: 'block' }}
-          />
-        ) : (
-          <div className="stop-card-image">{icon}</div>
-        )}
+        <div className="stop-card-image-wrap">
+          {photoUrl && !imgError ? (
+            <img
+              src={photoUrl}
+              alt={stop.name || 'Attraction'}
+              className="stop-card-image"
+              loading="lazy"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="stop-card-image-placeholder">
+              {icon}
+            </div>
+          )}
+        </div>
+
         <div className="stop-card-body">
           <div className="stop-card-top">
             <div className="stop-name">{stop.name || 'Attraction'}</div>
@@ -73,6 +81,56 @@ function StopCard({ stop, index, destination }: { stop: Stop; index: number; des
         </div>
       </div>
     </>
+  );
+}
+
+function DayBanner({ day, destination }: { day: DayPlan; destination: string }) {
+  const bgStyle = day.cover_image_url
+    ? { backgroundImage: `url(${day.cover_image_url})` }
+    : {};
+
+  return (
+    <div className="day-banner-card" style={bgStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+        <span style={{
+          fontSize: 11,
+          fontFamily: 'var(--font-label)',
+          fontWeight: 700,
+          color: 'var(--amber)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          background: 'rgba(4, 14, 31, 0.75)',
+          padding: '3px 10px',
+          borderRadius: 'var(--radius-full)',
+          border: '1px solid var(--glass-border-amber)',
+        }}>
+          Day {day.day_number}
+        </span>
+        {day.day_cost_estimate_usd !== undefined && (
+          <span style={{
+            fontSize: 12.5,
+            color: 'var(--amber)',
+            fontWeight: 700,
+            background: 'rgba(4, 14, 31, 0.75)',
+            padding: '3px 10px',
+            borderRadius: 'var(--radius-full)',
+            border: '1px solid rgba(255, 191, 0, 0.3)',
+          }}>
+            Est. {formatCost(day.day_cost_estimate_usd, destination, false)}
+          </span>
+        )}
+      </div>
+
+      <h3 className="day-theme-title">
+        {day.theme || `Day ${day.day_number}`}
+      </h3>
+
+      {day.weather_note && (
+        <div className="weather-badge">
+          {day.weather_note}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -114,34 +172,71 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
   const displayedStops = validActiveDay === -1 ? allStops : (currentDay?.stops || []);
   const nicheTotal = allStops.filter(s => s.is_niche).length;
 
+  const destinationBgStyle = itinerary.cover_image_url
+    ? { backgroundImage: `url(${itinerary.cover_image_url})` }
+    : {};
+
   return (
     <div className="itinerary-workspace-container">
-      {/* Workspace Top Header Bar */}
-      <div className="itinerary-workspace-header">
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <h2 className="itinerary-destination-title">
-              {itinerary.trip_request?.num_days || days.length}-Day Journey to {destination}
-            </h2>
-            {nicheTotal > 0 && (
-              <span className="niche-badge" style={{ fontSize: 11, padding: '4px 10px' }}>
-                💎 {nicheTotal} Community Hidden Gems
-              </span>
-            )}
-          </div>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-            Paced for {itinerary.trip_request?.pace || 'moderate'} speed · {itinerary.trip_request?.travel_style || 'balanced'} focus · Estimated Total: <strong style={{ color: 'var(--amber)' }}>{formatTotalCost(itinerary.total_cost_estimate_usd, destination)}</strong>
-          </p>
-        </div>
+      {/* Destination Hero Banner */}
+      {itinerary.cover_image_url && (
+        <div className="itinerary-cover-banner" style={destinationBgStyle}>
+          <div className="itinerary-cover-content">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h2 className="itinerary-destination-title" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>
+                  {itinerary.trip_request?.num_days || days.length}-Day Journey to {destination}
+                </h2>
+                {nicheTotal > 0 && (
+                  <span className="niche-badge" style={{ fontSize: 11, padding: '4px 12px' }}>
+                    💎 {nicheTotal} Community Hidden Gems
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 13, color: '#d8e3fb', marginTop: 6, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                Paced for <strong>{itinerary.trip_request?.pace || 'moderate'}</strong> speed · <strong>{itinerary.trip_request?.travel_style || 'balanced'}</strong> focus · Estimated Total: <strong style={{ color: 'var(--amber)' }}>{formatTotalCost(itinerary.total_cost_estimate_usd, destination)}</strong>
+              </p>
+            </div>
 
-        <button
-          onClick={() => window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank')}
-          className="btn-primary-sm"
-          style={{ padding: '8px 16px', fontSize: 13 }}
-        >
-          <span>📄 Export Itinerary</span>
-        </button>
-      </div>
+            <button
+              onClick={() => window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank')}
+              className="btn-primary-sm"
+              style={{ padding: '9px 18px', fontSize: 13, boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}
+            >
+              <span>📄 Export PDF</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Fallback Workspace Header if no cover image */}
+      {!itinerary.cover_image_url && (
+        <div className="itinerary-workspace-header">
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h2 className="itinerary-destination-title">
+                {itinerary.trip_request?.num_days || days.length}-Day Journey to {destination}
+              </h2>
+              {nicheTotal > 0 && (
+                <span className="niche-badge" style={{ fontSize: 11, padding: '4px 10px' }}>
+                  💎 {nicheTotal} Community Hidden Gems
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+              Paced for {itinerary.trip_request?.pace || 'moderate'} speed · {itinerary.trip_request?.travel_style || 'balanced'} focus · Estimated Total: <strong style={{ color: 'var(--amber)' }}>{formatTotalCost(itinerary.total_cost_estimate_usd, destination)}</strong>
+            </p>
+          </div>
+
+          <button
+            onClick={() => window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank')}
+            className="btn-primary-sm"
+            style={{ padding: '8px 16px', fontSize: 13 }}
+          >
+            <span>📄 Export Itinerary</span>
+          </button>
+        </div>
+      )}
 
       {/* Day Selector Navigation Strip */}
       <div className="day-tabs-strip">
@@ -169,31 +264,13 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
         {/* Left Column: Day Timeline */}
         <div className="itinerary-timeline-pane">
           {validActiveDay !== -1 && currentDay && (
-            <div className="day-header-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                <h3 className="day-theme-title">
-                  Day {currentDay.day_number}: {currentDay.theme}
-                </h3>
-                {currentDay.day_cost_estimate_usd !== undefined && (
-                  <span style={{ fontSize: 13, color: 'var(--amber)', fontWeight: 600 }}>
-                    Est. {formatCost(currentDay.day_cost_estimate_usd, destination, false)}
-                  </span>
-                )}
-              </div>
-
-              {/* Weather Note Badge */}
-              {currentDay.weather_note && (
-                <div className="weather-badge">
-                  {currentDay.weather_note}
-                </div>
-              )}
-            </div>
+            <DayBanner day={currentDay} destination={destination} />
           )}
 
           {validActiveDay === -1 && (
-            <div className="day-header-card">
+            <div className="day-banner-card" style={destinationBgStyle}>
               <h3 className="day-theme-title">Complete Journey Overview</h3>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+              <p style={{ fontSize: 13, color: '#d8e3fb', marginTop: 4, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
                 Viewing all {allStops.length} locations across {days.length} days on the interactive map.
               </p>
             </div>

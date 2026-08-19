@@ -26,6 +26,7 @@ from app.models.schemas import (
 from app.tools.places_tool import get_places_for_destination
 from app.tools.routing_tool import calculate_sequential_transit_times
 from app.tools.weather_tool import get_daily_weather_forecast
+from app.tools.destination_images import get_destination_banner
 
 GEMINI_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
 
@@ -392,6 +393,13 @@ async def planner_node(state: TravelGraphState) -> dict:
         daily_cost = sum((s.estimated_cost_usd or 0) for s in day_stops)
         weather_note = weather_notes[day_idx] if day_idx < len(weather_notes) else None
 
+        # Cover photo for day: use first stop's photo or destination banner
+        day_cover = (
+            day_stops[0].photo_urls[0]
+            if (day_stops and day_stops[0].photo_urls and day_stops[0].photo_urls[0])
+            else get_destination_banner(trip.destination)
+        )
+
         day = DayPlan(
             day_number=day_idx + 1,
             theme=theme,
@@ -399,6 +407,7 @@ async def planner_node(state: TravelGraphState) -> dict:
             stops=day_stops,
             day_cost_estimate_usd=daily_cost,
             weather_note=weather_note,
+            cover_image_url=day_cover,
         )
         days.append(day)
 
@@ -410,6 +419,7 @@ async def planner_node(state: TravelGraphState) -> dict:
         days=days,
         total_cost_estimate_usd=total_cost,
         created_at=datetime.now(timezone.utc).isoformat(),
+        cover_image_url=get_destination_banner(trip.destination),
     )
 
     niche_count = sum(1 for d in days for s in d.stops if s.is_niche)

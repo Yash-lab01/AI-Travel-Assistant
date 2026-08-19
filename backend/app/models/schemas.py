@@ -86,6 +86,7 @@ class DayPlan(BaseModel):
     stops: list[Stop] = Field(default_factory=list)
     day_cost_estimate_usd: Optional[float] = None
     weather_note: Optional[str] = None
+    cover_image_url: Optional[str] = None
 
 
 class Itinerary(BaseModel):
@@ -95,6 +96,7 @@ class Itinerary(BaseModel):
     total_cost_estimate_usd: Optional[float] = None
     created_at: Optional[str] = None
     share_slug: Optional[str] = None
+    cover_image_url: Optional[str] = None
 
 
 class ClarificationOption(BaseModel):

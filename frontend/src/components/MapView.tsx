@@ -144,6 +144,12 @@ export default function MapView({ stops, activeDay }: Props) {
         popupAnchor: [0, -28],
       });
 
+      const photoImg = stop.photo_urls && stop.photo_urls.length > 0
+        ? `<div style="width:100%;height:100px;border-radius:6px;overflow:hidden;margin-bottom:8px;background:#15233a;">
+             <img src="${stop.photo_urls[0]}" alt="${stop.name || 'Stop'}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'" />
+           </div>`
+        : '';
+
       const popupContent = `
         <div style="
           background: #0d192c;
@@ -152,8 +158,10 @@ export default function MapView({ stops, activeDay }: Props) {
           padding: 10px 12px;
           color: #d8e3fb;
           font-family: 'Outfit', sans-serif;
-          min-width: 180px;
+          min-width: 200px;
+          max-width: 240px;
         ">
+          ${photoImg}
           ${stop.is_niche ? '<div style="color:#00DBE7;font-size:10px;font-weight:700;letter-spacing:0.08em;margin-bottom:4px">💎 HIDDEN GEM</div>' : ''}
           <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:#ffffff;margin-bottom:4px">${stop.name || 'Stop'}</div>
           <div style="font-size:12px;color:#909096;text-transform:capitalize;margin-bottom:6px">${stop.category || 'Attraction'} · ${stop.duration_minutes || 60} min</div>

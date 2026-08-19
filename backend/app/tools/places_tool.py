@@ -14,9 +14,11 @@ import asyncio
 import os
 import hashlib
 import json
+import uuid
 from typing import Optional
 from app.models.schemas import Stop, TravelStyle
 from app.vector_store.chroma_client import get_chroma_client
+from app.tools.destination_images import get_destination_banner, get_category_fallback_image
 
 # ── Config ────────────────────────────────────────────────────────────────────
 OTM_BASE = "https://api.opentripmap.com/0.1/en/places"
@@ -24,7 +26,7 @@ OTM_KEY   = os.getenv("OPENTRIPMAP_API_KEY", "")
 GPLACES_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
 
 # Increment this when the parser or data schema changes to auto-invalidate Chroma cache
-CACHE_VERSION = "v4"
+CACHE_VERSION = "v5"
 
 # OTM category groups by travel style preference
 CATEGORY_MAP = {
@@ -212,7 +214,7 @@ async def enrich_with_google_places(name: str, lat: float, lon: float) -> dict:
             resp = await client.get(search_url, params={
                 "key":      GPLACES_KEY,
                 "location": f"{lat},{lon}",
-                "radius":   250,
+                "radius":   300,
                 "keyword":  name,
             })
             data = resp.json()
@@ -245,6 +247,46 @@ async def enrich_with_google_places(name: str, lat: float, lon: float) -> dict:
         return {}
 
 
+# ── Free Wikimedia Commons image scraper (Zero-Key / Free Tier) ───────────────
+async def fetch_wikimedia_image(place_name: str) -> str:
+    """
+    Fetch a high-quality CC-licensed thumbnail from Wikimedia Commons / Wikipedia API.
+    Zero auth / free endpoint.
+    """
+    if not place_name or len(place_name.strip()) < 3:
+        return ""
+    try:
+        url = "https://en.wikipedia.org/w/api.php"
+        clean_title = place_name.split("(")[0].strip()
+        params = {
+            "action": "query",
+            "titles": clean_title,
+            "prop": "pageimages",
+            "format": "json",
+            "pithumbsize": 800,
+            "redirects": 1,
+        }
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(url, params=params, headers={"User-Agent": "WanderAI/1.0 (travel-planner)"})
+            if resp.status_code == 200:
+                data = resp.json()
+                pages = data.get("query", {}).get("pages", {})
+                for page in pages.values():
+                    thumb = page.get("thumbnail", {})
+                    if thumb.get("source"):
+                        return thumb["source"]
+    except Exception:
+        pass
+    return ""
+
+
+def _unsplash_fallback_url(name: str, category: str, destination: str) -> str:
+    """
+    Generate a reliable high-res curated photography URL for stops without live API images.
+    """
+    return get_category_fallback_image(category)
+
+
 # ── Main public function ──────────────────────────────────────────────────────
 async def get_places_for_destination(
     destination: str,
@@ -256,11 +298,9 @@ async def get_places_for_destination(
     1. Check Chroma cache
     2. Check if destination matches a multi-zone region (e.g. Pune, Mumbai, Goa, Rajasthan, Bali)
     3. Query POIs across regional subzones or geocoded centroid
-    4. Enrich top attractions with Google Places
+    4. Enrich attractions with Google Places + Wikimedia Commons 3-tier image pipeline
     5. Convert to Stop objects and cache in Chroma
     """
-    import uuid
-
     clean_dest = destination.split("(")[0].strip()
     cache_key = _cache_key(clean_dest)
     chroma = get_chroma_client()
@@ -344,20 +384,38 @@ async def get_places_for_destination(
             seen_names.add(norm)
             unique_places.append(p)
 
-    # 4. Enrich top items with Google Places
+    # 4. Enrich all items with Google Places (Tier 1)
     enrich_tasks = [
         enrich_with_google_places(p["name"], p["lat"], p["lon"])
-        for p in unique_places[:min(len(unique_places), num_days * 5)]
+        for p in unique_places
     ]
     enrichments = await asyncio.gather(*enrich_tasks, return_exceptions=True)
 
-    # 5. Convert to Stop objects
+    # 5. For items without a Google Places photo, query Wikimedia Commons concurrently (Tier 2)
+    wiki_tasks = []
+    for i, p in enumerate(unique_places):
+        enr = enrichments[i] if i < len(enrichments) and isinstance(enrichments[i], dict) else {}
+        if not enr.get("photo_url"):
+            wiki_tasks.append((i, fetch_wikimedia_image(p["name"])))
+
+    if wiki_tasks:
+        wiki_results = await asyncio.gather(*[t[1] for t in wiki_tasks], return_exceptions=True)
+        wiki_map = {}
+        for (idx, _), res in zip(wiki_tasks, wiki_results):
+            if isinstance(res, str) and res:
+                wiki_map[idx] = res
+    else:
+        wiki_map = {}
+
+    # 6. Convert to Stop objects with guaranteed photo_urls (Tier 1 -> Tier 2 -> Tier 3)
     stops: list[Stop] = []
     for i, p in enumerate(unique_places):
         enrichment = enrichments[i] if i < len(enrichments) and isinstance(enrichments[i], dict) else {}
-
         category = _infer_category(p.get("kinds", ""))
-        photo_urls = [enrichment["photo_url"]] if enrichment.get("photo_url") else []
+
+        # 3-tier image resolution
+        photo_url = enrichment.get("photo_url") or wiki_map.get(i) or _unsplash_fallback_url(p["name"], category, clean_dest)
+        photo_urls = [photo_url] if photo_url else []
 
         stop = Stop(
             id=str(uuid.uuid4()),
@@ -378,7 +436,7 @@ async def get_places_for_destination(
         )
         stops.append(stop)
 
-    # 6. Cache stops with versioned key (only real OTM stops)
+    # 7. Cache stops with versioned key (only real OTM stops)
     otm_stops = [s for s in stops if s.source == "opentripmap"]
     if otm_stops:
         try:
