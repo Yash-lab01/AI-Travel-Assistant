@@ -1,6 +1,6 @@
 'use client';
 
-import { Itinerary, DayPlan, Stop } from '@/types';
+import { Itinerary, DayPlan, Stop, StopEditRequest } from '@/types';
 import { useState, lazy, Suspense } from 'react';
 import { formatCost, formatTotalCost } from '@/utils/currency';
 
@@ -19,7 +19,21 @@ const CATEGORY_ICONS: Record<string, string> = {
   default:    '📍',
 };
 
-function StopCard({ stop, index, destination }: { stop: Stop; index: number; destination?: string }) {
+function StopCard({
+  stop,
+  index,
+  destination,
+  dayNumber,
+  itineraryId,
+  onStopAction,
+}: {
+  stop: Stop;
+  index: number;
+  destination?: string;
+  dayNumber: number;
+  itineraryId: string;
+  onStopAction?: (req: StopEditRequest) => void;
+}) {
   const [imgError, setImgError] = useState(false);
   if (!stop) return null;
   const icon = CATEGORY_ICONS[stop.category] ?? CATEGORY_ICONS.default;
@@ -77,6 +91,52 @@ function StopCard({ stop, index, destination }: { stop: Stop; index: number; des
             {stop.rating && (
               <span style={{ color: 'var(--amber)' }}>★ {stop.rating}</span>
             )}
+          </div>
+
+          {/* Quick Interactive Actions */}
+          <div className="stop-card-actions">
+            <button
+              type="button"
+              className="stop-action-btn swap"
+              onClick={() => onStopAction?.({
+                itinerary_id: itineraryId,
+                day_number: dayNumber,
+                stop_id: stop.id,
+                stop_name: stop.name,
+                action: 'swap',
+              })}
+              title="Swap this stop for an alternative place"
+            >
+              <span>🔄 Swap</span>
+            </button>
+            <button
+              type="button"
+              className="stop-action-btn remove"
+              onClick={() => onStopAction?.({
+                itinerary_id: itineraryId,
+                day_number: dayNumber,
+                stop_id: stop.id,
+                stop_name: stop.name,
+                action: 'remove',
+              })}
+              title="Remove this stop from Day plan"
+            >
+              <span>❌ Remove</span>
+            </button>
+            <button
+              type="button"
+              className="stop-action-btn info"
+              onClick={() => onStopAction?.({
+                itinerary_id: itineraryId,
+                day_number: dayNumber,
+                stop_id: stop.id,
+                stop_name: stop.name,
+                action: 'tell_me_more',
+              })}
+              title="Ask assistant for insider tips & storytelling"
+            >
+              <span>💬 Tell Me More</span>
+            </button>
           </div>
         </div>
       </div>
@@ -137,9 +197,11 @@ function DayBanner({ day, destination }: { day: DayPlan; destination: string }) 
 interface Props {
   itinerary: Itinerary | null;
   isLoading: boolean;
+  onStopAction?: (req: StopEditRequest) => void;
+  onQuickEdit?: (instruction: string) => void;
 }
 
-export default function ItineraryView({ itinerary, isLoading }: Props) {
+export default function ItineraryView({ itinerary, isLoading, onStopAction, onQuickEdit }: Props) {
   const [activeDay, setActiveDay] = useState(0);
 
   if (isLoading) {
@@ -238,6 +300,39 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
         </div>
       )}
 
+      {/* Quick Interactive Adjustments Strip */}
+      <div className="quick-edits-bar">
+        <span className="quick-edits-label">✨ Quick Adjustments:</span>
+        <button
+          type="button"
+          className="quick-edit-chip"
+          onClick={() => onQuickEdit?.("Make the trip pacing more relaxed with fewer stops")}
+        >
+          🧘 Relaxed Pacing
+        </button>
+        <button
+          type="button"
+          className="quick-edit-chip"
+          onClick={() => onQuickEdit?.("Add more authentic local hidden gems and secret spots")}
+        >
+          💎 More Hidden Gems
+        </button>
+        <button
+          type="button"
+          className="quick-edit-chip"
+          onClick={() => onQuickEdit?.("Focus recommendations on local food, cafes and street delicacies")}
+        >
+          🍲 Foodie & Cafes
+        </button>
+        <button
+          type="button"
+          className="quick-edit-chip"
+          onClick={() => onQuickEdit?.("Add more nature, parks and scenic viewpoints")}
+        >
+          🌿 Scenic & Nature
+        </button>
+      </div>
+
       {/* Day Selector Navigation Strip */}
       <div className="day-tabs-strip">
         {days.map((day, i) => (
@@ -278,9 +373,24 @@ export default function ItineraryView({ itinerary, isLoading }: Props) {
 
           {/* Sequential Stops */}
           <div className="stops-timeline-list">
-            {displayedStops.map((stop, idx) => (
-              <StopCard key={stop.id || idx} stop={stop} index={idx} destination={destination} />
-            ))}
+            {displayedStops.map((stop, idx) => {
+              // Derive day number for this stop
+              const stopDayNumber = validActiveDay === -1
+                ? (days.find(d => d.stops?.some(s => s.id === stop.id))?.day_number || 1)
+                : (currentDay?.day_number || 1);
+
+              return (
+                <StopCard
+                  key={stop.id || idx}
+                  stop={stop}
+                  index={idx}
+                  destination={destination}
+                  dayNumber={stopDayNumber}
+                  itineraryId={itinerary.id}
+                  onStopAction={onStopAction}
+                />
+              );
+            })}
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChatMessage, AgentEvent, Itinerary, ClarificationQuestion } from '@/types';
+import { ChatMessage, AgentEvent, Itinerary, ClarificationQuestion, StopEditRequest } from '@/types';
 import { useEffect, useRef, useState } from 'react';
 import AgentEventFeed from './AgentEventFeed';
 
@@ -19,6 +19,8 @@ interface Props {
   setIsStreaming: (v: boolean) => void;
   externalPrompt?: string | null;
   onExternalPromptConsumed?: () => void;
+  externalAction?: StopEditRequest | null;
+  onExternalActionConsumed?: () => void;
 }
 
 export default function ChatPanel({
@@ -29,6 +31,8 @@ export default function ChatPanel({
   setIsStreaming,
   externalPrompt,
   onExternalPromptConsumed,
+  externalAction,
+  onExternalActionConsumed,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -67,7 +71,7 @@ export default function ChatPanel({
     }
   }, [messages, activeClarification]);
 
-  // Handle external prompt triggers (e.g. from Hero chips)
+  // Handle external prompt triggers (e.g. from Hero chips or quick edit chips)
   useEffect(() => {
     if (externalPrompt && !isStreaming) {
       handleSend(externalPrompt);
@@ -76,6 +80,35 @@ export default function ChatPanel({
       }
     }
   }, [externalPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle external stop quick actions (Swap, Remove, Tell Me More)
+  useEffect(() => {
+    if (externalAction && !isStreaming) {
+      const act = externalAction.action;
+      const stopName = externalAction.stop_name || 'stop';
+      const dayNum = externalAction.day_number;
+
+      let msg = '';
+      if (act === 'swap') {
+        msg = `Swap stop "${stopName}" on Day ${dayNum} for another attraction`;
+      } else if (act === 'remove') {
+        msg = `Remove "${stopName}" from Day ${dayNum}`;
+      } else if (act === 'tell_me_more') {
+        msg = `Tell me more about "${stopName}" on Day ${dayNum} and insider tips`;
+      }
+
+      handleSend(msg, {
+        action: act,
+        targetDay: dayNum,
+        targetStopId: externalAction.stop_id,
+        targetStopName: stopName,
+      });
+
+      if (onExternalActionConsumed) {
+        onExternalActionConsumed();
+      }
+    }
+  }, [externalAction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -91,32 +124,34 @@ export default function ChatPanel({
   };
 
   const handleSend = async (
-    text?: string,
-    options?: { forcePlan?: boolean; customAnswers?: Record<string, string> }
+    textToSend?: string,
+    options?: {
+      forcePlan?: boolean;
+      customAnswers?: Record<string, string>;
+      action?: string;
+      targetDay?: number;
+      targetStopId?: string;
+      targetStopName?: string;
+    }
   ) => {
-    const rawMessage = (text ?? input).trim();
-    if (!rawMessage && !options?.forcePlan && !options?.customAnswers) return;
+    let outgoingMessage = (textToSend !== undefined ? textToSend : input).trim();
+    if (!outgoingMessage && !options?.forcePlan && !options?.customAnswers) return;
 
-    let outgoingMessage = rawMessage;
-    let explicitDest = pendingTrip?.destination;
-    let explicitDays = pendingTrip?.num_days;
+    const explicitDest = pendingTrip?.destination || activeClarification?.destination;
+    const explicitDays = pendingTrip?.num_days || activeClarification?.num_days;
 
     if (options?.forcePlan) {
-      const dest = pendingTrip?.destination || activeClarification?.destination || 'Goa';
-      const days = pendingTrip?.num_days || activeClarification?.num_days || 3;
+      const dest = explicitDest || 'Goa';
+      const days = explicitDays || 3;
       outgoingMessage = `${days} days in ${dest}`;
-      explicitDest = dest;
-      explicitDays = days;
       setMessages(prev => [...prev, { role: 'user', content: `⚡ Plan ${days} days in ${dest} with standard defaults` }]);
     } else if (options?.customAnswers) {
-      const dest = pendingTrip?.destination || activeClarification?.destination || 'Goa';
-      const days = pendingTrip?.num_days || activeClarification?.num_days || 3;
+      const dest = explicitDest || 'Goa';
+      const days = explicitDays || 3;
       const answerSummary = Object.values(options.customAnswers).join(', ');
       outgoingMessage = `${days} days in ${dest}${answerSummary ? `, ${answerSummary}` : ''}`;
-      explicitDest = dest;
-      explicitDays = days;
       setMessages(prev => [...prev, { role: 'user', content: `🚀 Plan ${days} days in ${dest} (${answerSummary})` }]);
-    } else {
+    } else if (outgoingMessage) {
       setInput('');
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
       setMessages(prev => [...prev, { role: 'user', content: outgoingMessage }]);
@@ -138,6 +173,10 @@ export default function ChatPanel({
           existing_itinerary_id: currentItineraryId,
           force_plan: options?.forcePlan || false,
           answers: options?.customAnswers || selectedAnswers,
+          action: options?.action,
+          target_day: options?.targetDay,
+          target_stop_id: options?.targetStopId,
+          target_stop_name: options?.targetStopName,
         }),
       });
 
@@ -163,13 +202,24 @@ export default function ChatPanel({
             try {
               const parsed = JSON.parse(raw);
               if ('days' in parsed) {
+                const isExisting = Boolean(currentItineraryId);
                 setCurrentItineraryId(parsed.id);
                 onItinerary(parsed as Itinerary);
                 setMessages(prev => [
                   ...prev,
                   {
                     role: 'assistant',
-                    content: `🎉 Your complete itinerary for **${parsed.trip_request.destination}** is ready below! Explore each day's curated route, interactive map pins, transit times, and weather forecast.`,
+                    content: isExisting
+                      ? `✨ I've updated your itinerary for **${parsed.trip_request.destination}**! The updated timeline and route are shown below.`
+                      : `🎉 Your complete itinerary for **${parsed.trip_request.destination}** is ready below! Explore each day's curated route, interactive map pins, transit times, and weather forecast.`,
+                  },
+                ]);
+              } else if (parsed.event_type === 'assistant_message' || ('message' in parsed && !parsed.event_type && !parsed.days)) {
+                setMessages(prev => [
+                  ...prev,
+                  {
+                    role: 'assistant',
+                    content: parsed.message,
                   },
                 ]);
               } else if (parsed.event_type === 'clarification_needed') {

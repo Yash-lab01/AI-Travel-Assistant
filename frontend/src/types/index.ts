@@ -80,6 +80,17 @@ export interface ClarificationQuestion {
   options: ClarificationOption[];
 }
 
+export type StopEditAction = 'swap' | 'remove' | 'tell_me_more';
+
+export interface StopEditRequest {
+  itinerary_id: string;
+  day_number: number;
+  stop_id?: string;
+  stop_name?: string;
+  action: StopEditAction;
+  custom_preference?: string;
+}
+
 export interface AgentEvent {
   event_type:
     | 'agent_start'
@@ -91,6 +102,7 @@ export interface AgentEvent {
     | 'narration_start'
     | 'narration_complete'
     | 'itinerary_ready'
+    | 'assistant_message'
     | 'error';
   agent?: string;
   tool?: string;
@@ -101,6 +113,7 @@ export interface AgentEvent {
     num_days?: number;
     day_number?: number;
     day_plan?: DayPlan;
+    stop_name?: string;
     [key: string]: unknown;
   };
 }
@@ -113,3 +126,4 @@ export interface ChatMessage {
   destination?: string;
   num_days?: number;
 }
+

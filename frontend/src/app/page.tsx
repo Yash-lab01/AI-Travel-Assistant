@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import ChatPanel from '@/components/ChatPanel';
 import ItineraryView from '@/components/ItineraryView';
 import TravelLiveWallpaper from '@/components/TravelLiveWallpaper';
-import { AgentEvent, Itinerary } from '@/types';
+import { AgentEvent, Itinerary, StopEditRequest } from '@/types';
 
 const HERO_PROMPT_CARDS = [
   {
@@ -42,6 +42,7 @@ export default function Home() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
   const [externalPrompt, setExternalPrompt] = useState<string | null>(null);
+  const [externalAction, setExternalAction] = useState<StopEditRequest | null>(null);
 
   // Ensure page always starts at top on initial load
   useEffect(() => {
@@ -289,6 +290,8 @@ export default function Home() {
               setIsStreaming={setIsStreaming}
               externalPrompt={externalPrompt}
               onExternalPromptConsumed={() => setExternalPrompt(null)}
+              externalAction={externalAction}
+              onExternalActionConsumed={() => setExternalAction(null)}
             />
           </div>
 
@@ -298,6 +301,14 @@ export default function Home() {
               <ItineraryView
                 itinerary={itinerary}
                 isLoading={isStreaming && !itinerary}
+                onStopAction={(req) => {
+                  setExternalAction(req);
+                  scrollToSection('planner-studio');
+                }}
+                onQuickEdit={(prompt) => {
+                  setExternalPrompt(prompt);
+                  scrollToSection('planner-studio');
+                }}
               />
             </div>
           )}

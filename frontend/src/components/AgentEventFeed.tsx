@@ -13,6 +13,7 @@ const EVENT_ICONS: Record<AgentEvent['event_type'], string> = {
   narration_start:      '✍️',
   narration_complete:   '✨',
   itinerary_ready:      '🎉',
+  assistant_message:    '💬',
   error:                '⚠️',
 };
 
@@ -26,6 +27,7 @@ const DOT_CLASS: Record<AgentEvent['event_type'], string> = {
   narration_start:      '',
   narration_complete:   'done',
   itinerary_ready:      'done',
+  assistant_message:    'done',
   error:                'error',
 };
 
