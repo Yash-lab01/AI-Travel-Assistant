@@ -14,7 +14,7 @@ from langchain_core.messages import HumanMessage
 
 from app.models.schemas import (
     TripRequest, TravelStyle, TravelPace, GroupType, AgentEvent,
-    ClarificationQuestion, ClarificationOption
+    ClarificationQuestion, ClarificationOption, EditIntent
 )
 from app.graph.state import TravelGraphState
 
@@ -358,6 +358,54 @@ def _dict_to_trip_request(data: dict, raw_message: str) -> TripRequest:
     )
 
 
+def classify_edit_intent(message: str, current_itinerary: Optional[Itinerary] = None) -> dict:
+    """Classifies follow-up message intent when an itinerary already exists."""
+    msg_l = message.lower().strip()
+
+    # Check for day match (e.g. Day 1, Day 2)
+    day_match = re.search(r'day\s*(\d+)', msg_l)
+    target_day = int(day_match.group(1)) if day_match else None
+
+    # Check for stop name match in current itinerary
+    matched_stop = None
+    if current_itinerary and current_itinerary.days:
+        for d in current_itinerary.days:
+            for s in d.stops:
+                if s.name and len(s.name) >= 3 and s.name.lower() in msg_l:
+                    matched_stop = s.name
+                    if not target_day:
+                        target_day = d.day_number
+                    break
+            if matched_stop:
+                break
+
+    # 1. New trip intent (e.g. "Plan 4 days in Tokyo", "Plan a new 3 day trip to Tokyo", "Take me to Paris instead")
+    if re.search(r'\b(new trip|plan\s+(?:a\s+)?(?:new\s+)?(?:\d+\s+days?\s+)?trip|plan\s+\d+\s+days?\s+(?:in|to)|take me to|fly to|explore a new destination)\b', msg_l) and not any(k in msg_l for k in ['swap', 'replace', 'remove', 'delete', 'change', 'tell me']):
+        return {"intent": EditIntent.new_trip.value, "target_day": None, "target_stop_name": None}
+
+    # 2. Swap / Replace stop
+    if re.search(r'\b(swap|replace|switch|different spot|alternative for|change stop)\b', msg_l):
+        return {"intent": EditIntent.swap_stop.value, "target_day": target_day, "target_stop_name": matched_stop}
+
+    # 3. Remove / Delete stop
+    if re.search(r'\b(remove|delete|drop|cut|omit|skip)\b', msg_l):
+        return {"intent": EditIntent.remove_stop.value, "target_day": target_day, "target_stop_name": matched_stop}
+
+    # 4. Tell me more / Informational
+    if re.search(r'\b(tell me more|more info|details about|story behind|history of|tips for|insider tips|what should i know|photo spot|guide for)\b', msg_l):
+        return {"intent": EditIntent.tell_me_more.value, "target_day": target_day, "target_stop_name": matched_stop}
+
+    # 5. Adjust pace
+    if re.search(r'\b(pace|slow|relax|fast|intense|fewer stops|more stops|packed|exhausting|leisure)\b', msg_l):
+        return {"intent": EditIntent.adjust_pace.value, "target_day": target_day, "target_stop_name": matched_stop}
+
+    # 6. Change budget
+    if re.search(r'\b(budget|cheaper|luxury|expensive|cost|money)\b', msg_l):
+        return {"intent": EditIntent.change_budget.value, "target_day": target_day, "target_stop_name": matched_stop}
+
+    return {"intent": EditIntent.general_edit.value, "target_day": target_day, "target_stop_name": matched_stop}
+
+
 def _safe_enum(enum_class, value: str, default):
     try:
         return enum_class(value)
@@ -368,10 +416,11 @@ def _safe_enum(enum_class, value: str, default):
 async def intake_node(state: TravelGraphState) -> dict:
     """
     Intake LangGraph node:
-    1. Extracts slots from user message (with fallback to previous turn or explicit state).
-    2. Incorporates any user-selected clarification answers.
-    3. If prompt is minimal and force_plan is False -> asks clarifying questions with chips.
-    4. Otherwise -> proceeds to Ranker & Planner.
+    1. Detects if this is a multi-turn edit to an existing itinerary vs a fresh trip plan.
+    2. Extracts slots from user message (with fallback to previous turn or explicit state).
+    3. Incorporates any user-selected clarification answers.
+    4. If prompt is minimal and force_plan is False -> asks clarifying questions with chips.
+    5. Otherwise -> proceeds to Ranker/Planner or Editor.
     """
     events = list(state.get("events", []))
     messages = state["messages"]
@@ -381,6 +430,30 @@ async def intake_node(state: TravelGraphState) -> dict:
     answers = state.get("clarification_answers") or {}
     explicit_dest = state.get("destination")
     explicit_days = state.get("num_days")
+    existing_itinerary = state.get("itinerary")
+    is_edit_session = state.get("is_edit", False) or existing_itinerary is not None
+
+    # ── Check for Multi-Turn Edit ─────────────────────────────────────────────
+    if is_edit_session and existing_itinerary and not answers and not force_plan:
+        edit_meta = classify_edit_intent(last_user_msg, existing_itinerary)
+        intent = edit_meta["intent"]
+
+        if intent != EditIntent.new_trip.value:
+            events.append(AgentEvent(
+                event_type="agent_start",
+                agent="intake_agent",
+                message=f"Detected edit request ({intent.replace('_', ' ')}). Routing to Editor Agent...",
+            ))
+            return {
+                "is_edit": True,
+                "edit_intent": intent,
+                "target_day": state.get("target_day") or edit_meta["target_day"],
+                "target_stop_id": state.get("target_stop_id"),
+                "target_stop_name": state.get("target_stop_name") or edit_meta["target_stop_name"],
+                "edit_instruction": last_user_msg,
+                "needs_clarification": False,
+                "events": events,
+            }
 
     events.append(AgentEvent(
         event_type="agent_start",
@@ -460,6 +533,7 @@ async def intake_node(state: TravelGraphState) -> dict:
             "trip_request": trip_request,
             "destination": trip_request.destination,
             "num_days": trip_request.num_days,
+            "is_edit": False,
             "needs_clarification": True,
             "clarification_questions": questions,
             "events": events,
@@ -476,7 +550,9 @@ async def intake_node(state: TravelGraphState) -> dict:
         "trip_request": trip_request,
         "destination": trip_request.destination,
         "num_days": trip_request.num_days,
+        "is_edit": False,
         "needs_clarification": False,
         "clarification_questions": [],
         "events": events,
     }
+

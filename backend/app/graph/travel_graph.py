@@ -18,14 +18,17 @@ from app.graph.state import TravelGraphState
 from app.agents.intake_agent import intake_node
 from app.agents.ranker_agent import ranker_node
 from app.agents.planner_agent import planner_node
+from app.agents.editor_agent import editor_node
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "checkpoints.db")
 
 
 def route_intake(state: TravelGraphState) -> str:
-    """If intake determines user needs clarification, stop and return clarifying questions."""
+    """Route after intake: stop for clarification, route to editor if editing existing itinerary, or ranker."""
     if state.get("needs_clarification"):
         return END
+    if state.get("is_edit") and state.get("itinerary"):
+        return "editor"
     return "ranker"
 
 
@@ -43,6 +46,7 @@ def build_graph():
     builder.add_node("intake",  intake_node)
     builder.add_node("ranker",  ranker_node)
     builder.add_node("planner", planner_node)
+    builder.add_node("editor",  editor_node)
 
     builder.set_entry_point("intake")
     builder.add_conditional_edges(
@@ -51,10 +55,12 @@ def build_graph():
         {
             END: END,
             "ranker": "ranker",
+            "editor": "editor",
         }
     )
     builder.add_edge("ranker", "planner")
     builder.add_edge("planner", END)
+    builder.add_edge("editor", END)
 
     return builder.compile(checkpointer=checkpointer)
 

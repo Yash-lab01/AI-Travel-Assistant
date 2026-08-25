@@ -39,3 +39,9 @@ class TravelGraphState(TypedDict):
     session_id: str
     is_edit: bool                                          # True if this is a follow-up edit, not a fresh plan
     edit_instruction: Optional[str]
+    edit_intent: Optional[str]                             # "swap_stop" | "remove_stop" | "adjust_pace" | "tell_me_more" | "new_trip"
+    target_day: Optional[int]                              # 1-indexed target day number
+    target_stop_id: Optional[str]                          # Specific stop UUID
+    target_stop_name: Optional[str]                        # Target attraction name
+    assistant_reply: Optional[str]                         # Direct conversational answer (e.g. for tell_me_more)
+

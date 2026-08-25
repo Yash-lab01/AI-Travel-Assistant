@@ -112,6 +112,25 @@ class ClarificationQuestion(BaseModel):
     options: list[ClarificationOption] = Field(default_factory=list)
 
 
+class EditIntent(str, Enum):
+    new_trip       = "new_trip"        # Start a brand new destination / trip
+    swap_stop      = "swap_stop"       # Replace a specific stop with an alternative
+    remove_stop    = "remove_stop"     # Delete a stop from a day
+    adjust_pace    = "adjust_pace"     # Change pacing (e.g. relaxed, fast)
+    change_budget  = "change_budget"   # Adjust budget or travel style
+    tell_me_more   = "tell_me_more"    # Ask for insider tips, story or details about a place
+    general_edit   = "general_edit"    # Conversational modification to the itinerary
+
+
+class StopEditRequest(BaseModel):
+    itinerary_id: str
+    day_number: int
+    stop_id: Optional[str] = None
+    stop_name: Optional[str] = None
+    action: Literal["swap", "remove", "tell_me_more"] = "swap"
+    custom_preference: Optional[str] = None  # e.g. "beach cafe", "museum", "scenic sunset point"
+
+
 class AgentEvent(BaseModel):
     """Streamed over SSE to the frontend to show agent progress."""
     event_type: Literal[
@@ -124,12 +143,13 @@ class AgentEvent(BaseModel):
         "narration_start",
         "narration_complete",
         "itinerary_ready",
+        "assistant_message",
         "error"
     ]
-    agent: Optional[str] = None   # e.g. "intake_agent", "planner_agent"
-    tool: Optional[str] = None    # e.g. "places_tool", "niche_scrape_tool"
+    agent: Optional[str] = None   # e.g. "intake_agent", "planner_agent", "editor_agent"
+    tool: Optional[str] = None    # e.g. "places_tool", "niche_scrape_tool", "routing_tool"
     message: str = ""
-    data: Optional[dict] = None   # Optional payload (e.g. clarification questions, partial stop data)
+    data: Optional[dict] = None   # Optional payload (e.g. clarification questions, partial stop data, assistant answer)
 
 
 class ChatMessage(BaseModel):
@@ -145,4 +165,8 @@ class ChatRequest(BaseModel):
     existing_itinerary_id: Optional[str] = None  # For follow-up edits
     force_plan: bool = False                     # If True, bypasses clarification questions
     answers: Optional[dict[str, str]] = None     # User-selected clarification answers
+    action: Optional[str] = None                 # Explicit action: "swap" | "remove" | "tell_me_more"
+    target_day: Optional[int] = None             # Target day number for edits
+    target_stop_id: Optional[str] = None         # Specific stop id being targeted
+    target_stop_name: Optional[str] = None       # Specific stop name being targeted
 

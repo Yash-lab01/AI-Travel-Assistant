@@ -18,14 +18,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.models.schemas import ChatRequest, Itinerary, AgentEvent
+from app.models.schemas import ChatRequest, Itinerary, AgentEvent, StopEditRequest
 from app.graph.travel_graph import travel_graph
+from app.agents.editor_agent import editor_node
 from app.vector_store.chroma_client import get_chroma_client
 
 app = FastAPI(
     title="WanderAI API",
     description="Versatile Multi-Agent Travel Planner API",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 # Allow Next.js frontend (localhost:3000)
@@ -41,7 +42,7 @@ app.add_middleware(
 # ── Health ───────────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.3.0"}
+    return {"status": "ok", "version": "0.4.0"}
 
 
 # ── Plan (REST) ──────────────────────────────────────────────────────────────
@@ -66,10 +67,14 @@ async def plan(request: ChatRequest):
         "itinerary": None,
         "events": [],
         "session_id": session_id,
-        "is_edit": request.existing_itinerary_id is not None,
-        "edit_instruction": request.message if request.existing_itinerary_id else None,
+        "is_edit": request.existing_itinerary_id is not None or request.action is not None,
+        "edit_instruction": request.message if (request.existing_itinerary_id or request.action) else None,
+        "edit_intent": request.action,
+        "target_day": request.target_day,
+        "target_stop_id": request.target_stop_id,
+        "target_stop_name": request.target_stop_name,
+        "assistant_reply": None,
     }
-
 
     result = await travel_graph.ainvoke(initial_state, config)
 
@@ -82,13 +87,15 @@ async def plan(request: ChatRequest):
 # ── Plan/Stream (SSE — streams AgentEvents, Clarifications, and Itinerary) ───
 @app.post("/plan/stream")
 async def plan_stream(request: ChatRequest):
-    """Stream agent events, interactive clarification questions, and final itinerary via SSE."""
+    """Stream agent events, interactive clarification questions, assistant messages, and final itinerary via SSE."""
     session_id = request.session_id or str(uuid.uuid4())
     config = {"configurable": {"thread_id": session_id}}
 
     initial_state = {
         "messages": [HumanMessage(content=request.message)],
         "trip_request": None,
+        "destination": request.destination,
+        "num_days": request.num_days,
         "force_plan": request.force_plan,
         "clarification_answers": request.answers,
         "needs_clarification": False,
@@ -99,18 +106,27 @@ async def plan_stream(request: ChatRequest):
         "itinerary": None,
         "events": [],
         "session_id": session_id,
-        "is_edit": request.existing_itinerary_id is not None,
-        "edit_instruction": request.message if request.existing_itinerary_id else None,
+        "is_edit": request.existing_itinerary_id is not None or request.action is not None,
+        "edit_instruction": request.message if (request.existing_itinerary_id or request.action) else None,
+        "edit_intent": request.action,
+        "target_day": request.target_day,
+        "target_stop_id": request.target_stop_id,
+        "target_stop_name": request.target_stop_name,
+        "assistant_reply": None,
     }
 
     async def event_generator():
         result = await travel_graph.ainvoke(initial_state, config)
         events: list[AgentEvent] = result.get("events", [])
         itinerary: Itinerary | None = result.get("itinerary")
+        assistant_reply: str | None = result.get("assistant_reply")
 
         for event in events:
             yield f"event: agent_event\ndata: {event.model_dump_json()}\n\n"
             await asyncio.sleep(0.04)
+
+        if assistant_reply:
+            yield f"event: assistant_message\ndata: {json.dumps({'message': assistant_reply})}\n\n"
 
         if itinerary:
             yield f"event: itinerary\ndata: {itinerary.model_dump_json()}\n\n"
@@ -126,6 +142,33 @@ async def plan_stream(request: ChatRequest):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# ── Direct Stop Editing Endpoint (PATCH /plan/{itinerary_id}/stop) ───────────
+@app.patch("/plan/{itinerary_id}/stop", response_model=Itinerary)
+async def edit_itinerary_stop(itinerary_id: str, request: StopEditRequest):
+    """
+    Direct targeted stop modification (swap or remove) for UI quick action buttons.
+    """
+    config = {"configurable": {"thread_id": itinerary_id}}
+    
+    # Run edit through the travel graph in edit mode
+    state_update = {
+        "messages": [HumanMessage(content=f"{request.action} stop on Day {request.day_number}")],
+        "is_edit": True,
+        "edit_intent": f"{request.action}_stop",
+        "target_day": request.day_number,
+        "target_stop_id": request.stop_id,
+        "target_stop_name": request.stop_name,
+        "edit_instruction": request.custom_preference or f"{request.action} stop on Day {request.day_number}",
+        "events": [],
+    }
+
+    result = await travel_graph.ainvoke(state_update, config)
+    itinerary = result.get("itinerary")
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="Itinerary not found or could not be modified.")
+    return itinerary
 
 
 # ── PDF Export Stub ──────────────────────────────────────────────────────────
