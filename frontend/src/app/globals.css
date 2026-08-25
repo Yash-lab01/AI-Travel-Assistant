@@ -206,6 +206,134 @@ html, body {
   box-shadow: 0 0 24px rgba(255, 191, 0, 0.5);
 }
 
+/* ── 100vh Minimalist Brand Showcase Intro Screen ───────────────── */
+.intro-hero-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  padding: 100px 24px 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.intro-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 20px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 191, 0, 0.08);
+  border: 1px solid var(--glass-border-amber);
+  color: var(--amber);
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  backdrop-filter: blur(12px);
+}
+
+.intro-brand-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.intro-emblem-glow {
+  font-size: clamp(44px, 7vw, 78px);
+  filter: drop-shadow(0 0 32px rgba(255, 191, 0, 0.6));
+  animation: float 4s ease-in-out infinite;
+}
+
+.intro-brand-title {
+  font-family: var(--font-heading);
+  font-size: clamp(64px, 12vw, 128px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(135deg, #ffffff 0%, #d8e3fb 40%, #FFF3B0 75%, #FFBF00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 8px 36px rgba(255, 191, 0, 0.35));
+}
+
+.intro-tagline {
+  font-size: clamp(17px, 2.2vw, 23px);
+  color: var(--text-secondary);
+  max-width: 720px;
+  line-height: 1.6;
+  margin-bottom: 48px;
+  font-weight: 400;
+}
+
+.intro-scroll-wrapper {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.intro-scroll-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 250ms var(--ease-out);
+  padding: 8px 16px;
+}
+
+.intro-scroll-btn:hover {
+  color: #ffffff;
+}
+
+.intro-scroll-btn:hover .intro-scroll-arrow {
+  border-color: var(--glass-border-amber);
+  background: rgba(255, 191, 0, 0.18);
+  box-shadow: 0 0 20px rgba(255, 191, 0, 0.4);
+}
+
+.intro-scroll-text {
+  font-family: var(--font-label);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.intro-scroll-arrow {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border-amber);
+  background: rgba(255, 191, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--amber);
+  font-size: 17px;
+  animation: bounceSlow 2s ease-in-out infinite;
+  transition: all 200ms ease;
+}
+
+@keyframes bounceSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
 /* ── Hero Section ────────────────────────────────────────────────── */
 .hero-section {
   position: relative;

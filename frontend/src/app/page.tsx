@@ -90,7 +90,7 @@ export default function Home() {
         {/* Navigation Bar */}
         <header className="site-header">
           <div className="header-left">
-            <div className="logo-group" onClick={() => scrollToSection('hero')}>
+            <div className="logo-group" onClick={() => scrollToSection('intro')}>
               <div className="logo-mark">🧭</div>
               <span className="logo-text">WanderAI</span>
             </div>
@@ -101,7 +101,8 @@ export default function Home() {
           </div>
 
           <nav className="nav-links">
-            <a className="nav-link" onClick={() => scrollToSection('hero')}>Overview</a>
+            <a className="nav-link" onClick={() => scrollToSection('intro')}>Home</a>
+            <a className="nav-link" onClick={() => scrollToSection('overview')}>Overview</a>
             <a className="nav-link" onClick={() => scrollToSection('how-it-works')}>Architecture</a>
             <a className="nav-link" onClick={() => scrollToSection('planner-studio')}>Interactive Studio</a>
           </nav>
@@ -135,17 +136,45 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Hero Section */}
-        <section id="hero" className="hero-section">
+        {/* 100vh Minimalist Brand Showcase Intro Screen */}
+        <section id="intro" className="intro-hero-screen">
+          <div className="intro-badge-pill">
+            <span className="live-dot" />
+            <span>AUTONOMOUS MULTI-AGENT TRAVEL STUDIO</span>
+          </div>
+
+          <div className="intro-brand-container">
+            <div className="intro-emblem-glow">🧭</div>
+            <h1 className="intro-brand-title">WanderAI</h1>
+          </div>
+
+          <p className="intro-tagline">
+            Intelligent day-by-day itineraries balancing iconic landmarks & authentic community hidden gems.
+          </p>
+
+          <div className="intro-scroll-wrapper">
+            <button
+              className="intro-scroll-btn"
+              onClick={() => scrollToSection('overview')}
+              aria-label="Scroll down to explore"
+            >
+              <span className="intro-scroll-text">Scroll to explore</span>
+              <div className="intro-scroll-arrow">↓</div>
+            </button>
+          </div>
+        </section>
+
+        {/* Main Overview & Detailed Description Section */}
+        <section id="overview" className="hero-section">
           <div className="hero-tag">
             <span>✨</span>
             <span>AUTONOMOUS MULTI-AGENT TRAVEL INTELLIGENCE · POWERED BY LANGGRAPH</span>
           </div>
 
-          <h1 className="hero-title">
+          <h2 className="hero-title">
             <span className="title-regular">Plan Any Journey.</span>
             <span className="title-highlight">Iconic Sights to Hidden Gems.</span>
-          </h1>
+          </h2>
 
           <p className="hero-subtitle">
             A versatile multi-agent travel companion that crafts complete, personalized day-by-day itineraries —
@@ -332,7 +361,7 @@ export default function Home() {
               <span className="footer-tag">Open-Meteo</span>
             </div>
 
-            <a className="footer-back-top" onClick={() => scrollToSection('hero')}>
+            <a className="footer-back-top" onClick={() => scrollToSection('intro')}>
               Back to Top ↑
             </a>
           </div>
