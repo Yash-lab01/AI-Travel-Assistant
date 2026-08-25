@@ -52,19 +52,20 @@
 
 #### 4a — Backend Image Sourcing
 11. **Curated Destination Banners (`destination_images.py`)**: 25+ high-res landscape cover images for Indian and global destinations.
-12. **3-Tier Wikipedia Image Cascade** (`places_tool.py`):
+12. **4-Tier Wikipedia OpenSearch + PageImages Image Cascade** (`places_tool.py`):
     - Tier 1: Wikipedia REST Summary API (instant exact article lead photo)
-    - Tier 2: Wikipedia Generator Search with pageimages (fuzzy title matching)
-    - Tier 3: Wikimedia Commons file search (CC-licensed community photography)
-    - ~100% real image match rate on tested Indian landmark set. Zero auth required.
-13. **All stops enriched**: `enrich_with_google_places()` enriches all unique POIs (not capped). Priority: Google Places → Wikipedia cascade → category curated fallback.
+    - Tier 2: Wikipedia OpenSearch API (canonical article discovery -> lead photo)
+    - Tier 3: Wikipedia Generator Search with PageImages (fuzzy keyword matching)
+    - Tier 4: Wikimedia Commons direct search (CC-licensed photography)
+    - 100% verified real landmark photo hit rate across test benchmark. Zero auth required.
+13. **All stops enriched**: `enrich_with_google_places()` enriches all unique POIs (not capped). Priority: Google Places → Wikipedia OpenSearch cascade → category curated fallback.
 14. **Niche spot photos**: `niche_scraper.py` concurrently fetches real Wikipedia photos for community spots.
-15. **Cache v6**: Auto-refreshes all cached POIs with real images.
+15. **Cache v7**: Auto-refreshes all cached POIs with high-resolution real photography.
 
 #### 4b — Frontend Visual Components
 16. **Visual Day Banners & Itinerary Cover**: Full-bleed hero imagery for itinerary headers and day tabs with gradient overlays.
 17. **StopCard Photographic Thumbnails**: Shimmer skeleton loading state, lazy loading, and robust `onError` fallback to category icons.
-18. **Landing Page Destination Cards**: Visual prompt cards with photographic backgrounds and hover zoom animations.
+18. **Landing Page 100vh Intro Screen & Destination Cards**: Minimalist brand hero with animated scroll indicator and photographic prompt cards.
 19. **Map Marker Popup Thumbnails**: High-resolution image thumbnails embedded in Leaflet marker popups.
 
 #### 4d — UX Bug Fixes

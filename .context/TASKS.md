@@ -107,27 +107,30 @@ Images are fully integrated across the app with zero-key fallback compatibility:
   - Achieves ~100% real image match rate for major landmarks; zero auth required
 - [x] **`places_tool.py` — Category fallback** — `_unsplash_fallback_url()` wraps `get_category_fallback_image()` for stops where Wikipedia also misses
 - [x] **Enrich ALL stops** — `enrich_with_google_places()` enriches all unique attractions with photos & ratings
-- [x] **Priority chain per stop**: Google Places photo → Wikipedia 3-tier cascade → category curated fallback
-- [x] **`schemas.py`** — added `cover_image_url: Optional[str]` to `Itinerary` and `DayPlan`
-- [x] **`planner_agent.py`** — populates `itinerary.cover_image_url` from `destination_images.py` and `day.cover_image_url` from first stop's photo
-- [x] **`niche_scraper.py`** — concurrently fetches real Wikipedia photos for niche/community spots too
-- [x] **Cache bumped to v6** — auto-refreshes all cached POIs with real photos
+### 4a — Backend Image Sourcing (COMPLETED ✅)
+- [x] **`destination_images.py`** — curated landscape hero banners (25+ destinations)
+- [x] **`places_tool.py` — OpenSearch + PageImages 4-tier real image cascade**:
+  - Tier 1: Wikipedia REST Summary API
+  - Tier 2: Wikipedia OpenSearch API (canonical article discovery -> lead photo)
+  - Tier 3: Wikipedia Generator Search with PageImages
+  - Tier 4: Wikimedia Commons direct search
+- [x] **`places_tool.py` — Cache bumped to `v7`** to auto-refresh all destinations with real high-resolution landmark photography
 
-### 4b — Frontend: Visual Stop Cards & Day Banners (COMPLETED ✅)
-- [x] **`ItineraryView.tsx` — StopCard imagery** — square visual photo thumbnail with `loading="lazy"`, shimmer skeleton, and `onError` fallback to category icon
-- [x] **`ItineraryView.tsx` — `DayBanner` component** — full-width hero photo per day using `day.cover_image_url` with dark-gradient text overlay, day badge, and weather note
-- [x] **`ItineraryView.tsx` — Destination hero banner** — top overview card showcasing high-res cover photography with trip summary metadata
+### 4b — Frontend Visual Components (COMPLETED ✅)
+- [x] **`ItineraryView.tsx` — Visual Day Banners & Itinerary Cover**
+- [x] **`ItineraryView.tsx` — StopCard photographic thumbnails** with shimmer skeleton & lazy loading
 - [x] **`globals.css`** — `.day-banner-card`, `.stop-card-image-wrap`, `@keyframes shimmer`, `.itinerary-cover-banner`
 - [x] **`MapView.tsx` — Leaflet popup photo thumbnails** — embeds 100px photo inside popup when a map marker is clicked
 
-### 4c — Landing Page Destination Cards (COMPLETED ✅)
-- [x] **`page.tsx` — `HERO_PROMPT_CARDS`** — added `image` field with curated photography for Goa, Rajasthan, Lisbon, Kyoto
-- [x] **`globals.css`** — photographic cards with dark gradient overlays, flag badge, tag chip, and hover zoom animation
+### 4c — Landing Page Destination Cards & 100vh Intro Screen (COMPLETED ✅)
+- [x] **`page.tsx` — 100vh Minimalist Brand Intro Screen (`#intro`)** — grand display typography, floating emblem glow, and animated "Scroll to explore ↓" button
+- [x] **`page.tsx` — Detailed Overview Section (`#overview`)** — headline, description lines, CTA buttons, curated photographic cards for Goa, Rajasthan, Lisbon, Kyoto, and live stats strip
+- [x] **`globals.css`** — `.intro-hero-screen`, `.intro-brand-title`, `.intro-scroll-arrow` bounce animation, and photographic prompt cards
 
 ### 4d — UX Bug Fixes (COMPLETED ✅)
 - [x] **`MapView.tsx`** — Leaflet `fitBounds` error fixed: `invalidateSize()` + 50ms defer + identical-coord setView fallback
 - [x] **`AgentEventFeed.tsx` + `ChatPanel.tsx`** — replaced global `scrollIntoView()` with internal container `scrollTop` to prevent viewport jump on page load
-- [x] **`page.tsx`** — `window.history.scrollRestoration = 'manual'` + `window.scrollTo(0,0)` on mount so page always starts at the hero section
+- [x] **`page.tsx`** — `window.history.scrollRestoration = 'manual'` + `window.scrollTo(0,0)` on mount so page always starts at the brand intro section
 
 ---
 

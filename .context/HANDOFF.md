@@ -63,8 +63,9 @@
 - **Backend**: FastAPI server `http://127.0.0.1:8000` — running with `--reload`.
 - **Frontend**: Next.js 16 `http://localhost:3000` — compiled with 0 errors.
 - **Pytest**: 15/15 tests passing.
-- **Chroma Cache**: Versioned at **v6** — all stale/mock data auto-bypassed.
-- **Image Resolution**: 3-tier Wikipedia REST → Search → Commons, ~100% real landmark coverage.
+- **Chroma Cache**: Versioned at **v7** — auto-invalidates old cache and fetches real photography via OpenSearch + PageImages.
+- **Image Resolution**: 4-tier Wikipedia REST → OpenSearch canonical discovery → PageImages → Commons.
+- **Landing Page**: Minimalist 100vh brand intro screen with glowing emblem, display typography, and animated scroll indicator into the full interactive workspace.
 - **Multi-Turn Editing**: Active with `editor_agent.py`, `PATCH /plan/{id}/stop`, and StopCard action buttons (`🔄 Swap`, `❌ Remove`, `💬 Tell Me More`).
 - **Git**: Separate atomic commits for `backend`, `frontend`, and `docs`.
 
