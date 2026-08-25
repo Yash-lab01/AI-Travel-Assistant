@@ -131,11 +131,21 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 
 ---
 
-## Phase 4e: Multi-Turn Conversational Editing & State Iteration (NEXT 🔜)
-- [ ] Multi-turn intent classifier node (`new_trip` | `edit_stop` | `adjust_pace` | `change_budget`)
-- [ ] LangGraph state checkpoint recovery for stop-level editing without full replan
-- [ ] UI "Swap / Remove / Tell me more" quick-action buttons on stop cards
-- [ ] `PATCH /plan/{id}/stop` endpoint for targeted stop replacement
+## Phase 4e: Multi-Turn Conversational Editing & State Iteration (COMPLETED ✅)
+- [x] Multi-turn intent classifier node (`classify_edit_intent` in `intake_agent.py` identifying `new_trip` | `swap_stop` | `remove_stop` | `adjust_pace` | `change_budget` | `tell_me_more`)
+- [x] **`editor_agent.py`** — dedicated LangGraph Editor Agent node for targeted state patching:
+  - [x] `swap_stop`: non-duplicate candidate search, category matching, 3-tier Wikipedia photo resolution, and narration generation
+  - [x] `remove_stop`: stop deletion from specific day
+  - [x] Transit time recalculation via `calculate_sequential_transit_times`
+  - [x] Cost recalculation for updated days and whole trip
+  - [x] `tell_me_more`: comprehensive insider guides & photo spots without altering itinerary
+  - [x] `adjust_pace`: relaxed / active daily density adjustment
+- [x] **LangGraph State Machine** — conditional routing in `travel_graph.py`: `intake -> editor -> END` for edits, preserving existing itinerary context
+- [x] **`PATCH /plan/{id}/stop` endpoint** in `main.py` + enhanced SSE streaming with `assistant_message` events
+- [x] **UI Quick Action Controls on StopCard** (`ItineraryView.tsx`) — `🔄 Swap`, `❌ Remove`, `💬 Tell Me More`
+- [x] **Quick Itinerary Adjustment Chips** (`ItineraryView.tsx`) — 🧘 Relaxed Pacing, 💎 More Hidden Gems, 🍲 Foodie & Cafes, 🌿 Scenic & Nature
+- [x] **15/15 unit tests passing** in pytest suite (`test_editor_agent.py`, `test_phase2_ranker.py`, `test_scoring.py`)
+- [x] **Next.js frontend build** compiling cleanly with zero TypeScript errors
 
 ---
 

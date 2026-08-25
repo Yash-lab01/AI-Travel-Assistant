@@ -71,20 +71,21 @@
 20. **Leaflet `fitBounds` fix**: `invalidateSize()` + 50ms defer + identical-coord `setView` fallback — eliminates console error on page load.
 21. **Page scroll-jump fix**: `AgentEventFeed.tsx` and `ChatPanel.tsx` now use internal container `scrollTop` instead of global `scrollIntoView`. `page.tsx` adds `scrollRestoration='manual'` and `scrollTo(0,0)` on mount.
 
+#### 4e — Multi-Turn Conversational Editing & State Iteration (100% ✅)
+22. **Multi-Turn Intent Classifier (`intake_agent.py`)**: Classifies follow-ups (`new_trip`, `swap_stop`, `remove_stop`, `adjust_pace`, `change_budget`, `tell_me_more`, `general_edit`) and extracts target stop and day parameters.
+23. **LangGraph Editor Agent (`editor_agent.py`)**: State patching node that swaps POIs (with candidate deduplication & 3-tier Wikipedia photo resolution), removes stops, recalculates sequential transit times, updates costs, and generates insider guides.
+24. **Interactive StopCard Quick Actions (`ItineraryView.tsx`)**: `🔄 Swap`, `❌ Remove`, and `💬 Tell Me More` buttons on each attraction card.
+25. **One-Click Quick Adjustment Chips**: Relaxed pacing, hidden gems, foodie focus, and scenic views adjustments.
+26. **Targeted Endpoints & SSE Messages**: `PATCH /plan/{itinerary_id}/stop` endpoint and SSE `assistant_message` streaming.
+
 ---
 
 ## What's Next
 
-### Phase 4e — Multi-Turn Conversational Editing (NEXT 🔜)
-> _Previously labelled "Phase 4b" in some older docs — now standardized to **Phase 4e**._
-- Intent classifier node: `new_trip` | `edit_stop` | `adjust_pace` | `change_budget`
-- LangGraph checkpoint recovery for stop-level editing without full replan
-- UI "Swap / Remove / Tell me more" quick-action buttons on stop cards
-- `PATCH /plan/{id}/stop` endpoint for targeted stop replacement
-
-### Phase 5 — Local Fine-Tuned Narration Model (LoRA)
+### Phase 5 — Local Fine-Tuned Narration Model (LoRA) (NEXT 🔜)
 - LoRA fine-tuning on Llama 3.2 3B with Unsloth + PEFT (Colab T4)
 - Local Ollama deployment for zero-latency atmospheric narration
+- Blind before/after evaluation in `eval_results.md`
 
 ### Phase 6 — Export, Sharing & Production Polish
 - Playwright PDF export, shareable URL slugs, Leaflet polyline route overlay

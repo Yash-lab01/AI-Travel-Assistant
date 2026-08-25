@@ -62,18 +62,17 @@
 
 - **Backend**: FastAPI server `http://127.0.0.1:8000` — running with `--reload`.
 - **Frontend**: Next.js 16 `http://localhost:3000` — compiled with 0 errors.
-- **Pytest**: 11/11 tests passing.
+- **Pytest**: 15/15 tests passing.
 - **Chroma Cache**: Versioned at **v6** — all stale/mock data auto-bypassed.
 - **Image Resolution**: 3-tier Wikipedia REST → Search → Commons, ~100% real landmark coverage.
-- **Git**: All changes committed with separate `backend:`, `frontend:`, `docs:` commits and pushed to GitHub (`main`).
+- **Multi-Turn Editing**: Active with `editor_agent.py`, `PATCH /plan/{id}/stop`, and StopCard action buttons (`🔄 Swap`, `❌ Remove`, `💬 Tell Me More`).
+- **Git**: Separate atomic commits for `backend`, `frontend`, and `docs`.
 
 ---
 
-## 4. Immediate Next Steps — Phase 4e: Multi-Turn Conversational Editing
+## 4. Immediate Next Steps — Phase 5: Local Fine-Tuned Narration Model (LoRA)
 
-> Phase naming: All "Phase 4b" references in older docs now standardized to **Phase 4e**.
-
-1. **Intent Classifier Node**: Add `classify_intent` node to LangGraph: `new_trip` | `edit_stop` | `adjust_pace` | `change_budget`.
-2. **LangGraph Checkpoint Recovery**: Use existing SQLite checkpointer to retrieve and patch prior `TravelGraphState` without full replan.
-3. **UI Edit Actions**: Add "Swap / Remove / Tell me more" quick-action buttons on `StopCard` in `ItineraryView.tsx` that pre-fill the chat input for the intent classifier.
-4. **`PATCH /plan/{id}/stop` Endpoint**: Targeted backend endpoint for single-stop replacement without full replanning.
+1. **Dataset Curation (`curate_dataset.py`)**: Collect 300+ pairs of atmospheric travel narrations for iconic and niche global landmarks.
+2. **LoRA Fine-Tuning Script (`train_lora.py`)**: Prepare Unsloth / PEFT training configuration on Llama 3.2 3B.
+3. **Local Ollama Integration**: Add local Ollama narrator fallback to `planner_agent.py` and `editor_agent.py`.
+4. **Before/After Evaluation**: Generate comparative samples in `eval_results.md`.
