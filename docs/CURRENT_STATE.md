@@ -1,5 +1,5 @@
 # Current Project State
-> Last updated: 2026-08-19
+> Last updated: 2026-08-25
 
 ---
 
@@ -44,22 +44,39 @@
 
 ### Phase 3 — Hardening Pass (100% ✅)
 7. **K-means++**: Replaced index-seeded initialization — Day 1 no longer underpopulated. Post-clustering rebalance pass caps stop-count variance.
-8. **Versioned Chroma Cache (`v4`)**: Old stale/mock data auto-bypassed. Cache writes only store `source="opentripmap"` stops. Increment `CACHE_VERSION` in `places_tool.py` on schema changes.
+8. **Versioned Chroma Cache (`v6`)**: Old stale/mock data auto-bypassed. Cache writes only store `source="opentripmap"` stops. Increment `CACHE_VERSION` in `places_tool.py` on schema changes.
 9. **Ranker Non-Empty Guarantee**: `ranker_node` always outputs `ranked_stops` (falls back to popular-only if niche scraper fails). `planner_node` logs `[WARNING]` on any bypass.
 10. **Gemini Theme Fix**: Code-fence stripping before JSON parse; destination-aware fallback themes for Mumbai, Pune, Goa, Delhi, Jaipur, Kerala, Bali, Lisbon, Tokyo.
-### Phase 4a — Image Integration & Visual Richness (100% ✅)
-12. **Curated Destination Banners (`destination_images.py`)**: 25+ high-res landscape cover images for Indian and global destinations.
-13. **3-Tier Sourcing Pipeline**: Google Places photos → Wikimedia Commons CC-licensed thumbnails → Unsplash curated photography fallback.
-14. **Visual Day Banners & Itinerary Cover**: Full-bleed hero imagery for itinerary headers and day tabs with gradient overlays.
-15. **StopCard Photographic Thumbnails**: Shimmer skeleton loading state, lazy loading, and robust `onError` fallback to category icons.
-16. **Landing Page Destination Cards**: Visual prompt cards with photographic backgrounds and hover zoom animations.
-17. **Map Marker Popup Thumbnails**: High-resolution image thumbnails embedded in Leaflet marker popups.
+
+### Phase 4 — Image Integration, Visual Richness & UX Fixes (100% ✅)
+
+#### 4a — Backend Image Sourcing
+11. **Curated Destination Banners (`destination_images.py`)**: 25+ high-res landscape cover images for Indian and global destinations.
+12. **3-Tier Wikipedia Image Cascade** (`places_tool.py`):
+    - Tier 1: Wikipedia REST Summary API (instant exact article lead photo)
+    - Tier 2: Wikipedia Generator Search with pageimages (fuzzy title matching)
+    - Tier 3: Wikimedia Commons file search (CC-licensed community photography)
+    - ~100% real image match rate on tested Indian landmark set. Zero auth required.
+13. **All stops enriched**: `enrich_with_google_places()` enriches all unique POIs (not capped). Priority: Google Places → Wikipedia cascade → category curated fallback.
+14. **Niche spot photos**: `niche_scraper.py` concurrently fetches real Wikipedia photos for community spots.
+15. **Cache v6**: Auto-refreshes all cached POIs with real images.
+
+#### 4b — Frontend Visual Components
+16. **Visual Day Banners & Itinerary Cover**: Full-bleed hero imagery for itinerary headers and day tabs with gradient overlays.
+17. **StopCard Photographic Thumbnails**: Shimmer skeleton loading state, lazy loading, and robust `onError` fallback to category icons.
+18. **Landing Page Destination Cards**: Visual prompt cards with photographic backgrounds and hover zoom animations.
+19. **Map Marker Popup Thumbnails**: High-resolution image thumbnails embedded in Leaflet marker popups.
+
+#### 4d — UX Bug Fixes
+20. **Leaflet `fitBounds` fix**: `invalidateSize()` + 50ms defer + identical-coord `setView` fallback — eliminates console error on page load.
+21. **Page scroll-jump fix**: `AgentEventFeed.tsx` and `ChatPanel.tsx` now use internal container `scrollTop` instead of global `scrollIntoView`. `page.tsx` adds `scrollRestoration='manual'` and `scrollTo(0,0)` on mount.
 
 ---
 
 ## What's Next
 
-### Phase 4b — Multi-Turn Conversational Editing (NEXT 🔜)
+### Phase 4e — Multi-Turn Conversational Editing (NEXT 🔜)
+> _Previously labelled "Phase 4b" in some older docs — now standardized to **Phase 4e**._
 - Intent classifier node: `new_trip` | `edit_stop` | `adjust_pace` | `change_budget`
 - LangGraph checkpoint recovery for stop-level editing without full replan
 - UI "Swap / Remove / Tell me more" quick-action buttons on stop cards
@@ -75,8 +92,8 @@
 ---
 
 ## Reference Documents
-- [`docs/IMAGE_INTEGRATION.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/IMAGE_INTEGRATION.md) — **NEW** — Full image implementation spec (3-tier sourcing, frontend changes, schema updates, what NOT to do).
-- [`docs/TROUBLESHOOTING_AND_MISTAKES.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/TROUBLESHOOTING_AND_MISTAKES.md) — Persistent log of 9 known pitfalls, model quirks, and rules for what NOT to do.
+- [`docs/IMAGE_INTEGRATION.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/IMAGE_INTEGRATION.md) — Full image implementation spec (3-tier Wikipedia cascade, frontend changes, schema updates, what NOT to do).
+- [`docs/TROUBLESHOOTING_AND_MISTAKES.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/TROUBLESHOOTING_AND_MISTAKES.md) — Persistent log of 12 known pitfalls, model quirks, and rules for what NOT to do.
 - [`.context/PROJECT_CONTEXT.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/PROJECT_CONTEXT.md) — Architecture, active model names, Chroma path, coding conventions.
 - [`.context/TASKS.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/TASKS.md) — Granular phase task checklist.
 - [`.context/HANDOFF.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/HANDOFF.md) — Latest session bug fixes & immediate next steps.

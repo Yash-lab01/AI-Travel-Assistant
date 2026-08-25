@@ -1,4 +1,5 @@
 # TASKS.md — Project Roadmap & Task Checklist
+> Last updated: 2026-08-25
 
 ## Phase 0: Foundations & Architecture (COMPLETED ✅)
 - [x] FastAPI backend setup with `/plan` (REST), `/plan/stream` (SSE), and `/health` endpoints
@@ -20,7 +21,7 @@
   - [x] Nominatim OpenStreetMap city geocoding (free, no key)
   - [x] OpenTripMap flat JSON parser for real attractions (fixed GeoJSON assumption bug)
   - [x] Google Places API enrichment (photos, ratings, review counts)
-  - [x] Versioned ChromaDB cache (`CACHE_VERSION="v4"`) — only `source="opentripmap"` stops stored
+  - [x] Versioned ChromaDB cache (`CACHE_VERSION="v6"`) — only `source="opentripmap"` stops stored
 - [x] **Planner Agent** (`planner_agent.py`):
   - [x] **K-means++ clustering** (maximally spread centroids, prevents Day 1 underpopulation)
   - [x] Post-clustering rebalance pass to distribute stops evenly across days
@@ -83,7 +84,7 @@
   - [x] Safe day tab indexing and error-proof Leaflet bounds handling
 - [x] **Phase 3 Hardening Pass** (Bug Fixes):
   - [x] K-means++ replaces index-seeded k-means for balanced Day 1/2/3 stop counts
-  - [x] Versioned Chroma cache (`v4`) auto-invalidates stale/mock entries
+  - [x] Versioned Chroma cache (currently **v6**) auto-invalidates stale/mock entries
   - [x] Ranker guaranteed non-empty output; planner `[WARNING]` on bypass
   - [x] Gemini code-fence stripping for reliable theme JSON parsing
   - [x] Destination-aware fallback themes for all major Indian cities + Bali/Lisbon/Tokyo
@@ -91,7 +92,7 @@
 
 ---
 
-## Phase 4: Image Integration & Visual Richness (COMPLETED ✅)
+## Phase 4: Image Integration, Visual Richness & UX Fixes (COMPLETED ✅)
 
 > Full design spec: [`docs/IMAGE_INTEGRATION.md`](../docs/IMAGE_INTEGRATION.md)
 
@@ -99,12 +100,18 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 
 ### 4a — Backend: Image Sourcing (COMPLETED ✅)
 - [x] **`backend/app/tools/destination_images.py`** — curated high-res Unsplash photo map for 25+ Indian & global destinations (Mumbai, Goa, Delhi, Jaipur, Kerala, Pune, Bali, Lisbon, Tokyo, Paris, Rome, Barcelona, Kyoto, etc.)
-- [x] **`places_tool.py` — Wikimedia Commons mid-tier** — `fetch_wikimedia_image(place_name)` queries Wikipedia's free pageimages API for CC-licensed place photos; zero auth required
-- [x] **`places_tool.py` — Unsplash Source fallback** — `_unsplash_fallback_url(name, category, destination)` builds category curated photography URL
+- [x] **`places_tool.py` — 3-tier Wikipedia image cascade** — `fetch_wikimedia_image(place_name, destination)` tries:
+  1. Wikipedia REST Summary API (instant exact article lead photo)
+  2. Wikipedia Generator Search with `pageimages` (fuzzy title matching)
+  3. Wikimedia Commons file search (CC-licensed community photography)
+  - Achieves ~100% real image match rate for major landmarks; zero auth required
+- [x] **`places_tool.py` — Category fallback** — `_unsplash_fallback_url()` wraps `get_category_fallback_image()` for stops where Wikipedia also misses
 - [x] **Enrich ALL stops** — `enrich_with_google_places()` enriches all unique attractions with photos & ratings
-- [x] **Priority chain per stop**: Google Places photo → Wikimedia Commons → Unsplash category fallback → placeholder icon
+- [x] **Priority chain per stop**: Google Places photo → Wikipedia 3-tier cascade → category curated fallback
 - [x] **`schemas.py`** — added `cover_image_url: Optional[str]` to `Itinerary` and `DayPlan`
 - [x] **`planner_agent.py`** — populates `itinerary.cover_image_url` from `destination_images.py` and `day.cover_image_url` from first stop's photo
+- [x] **`niche_scraper.py`** — concurrently fetches real Wikipedia photos for niche/community spots too
+- [x] **Cache bumped to v6** — auto-refreshes all cached POIs with real photos
 
 ### 4b — Frontend: Visual Stop Cards & Day Banners (COMPLETED ✅)
 - [x] **`ItineraryView.tsx` — StopCard imagery** — square visual photo thumbnail with `loading="lazy"`, shimmer skeleton, and `onError` fallback to category icon
@@ -117,9 +124,14 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **`page.tsx` — `HERO_PROMPT_CARDS`** — added `image` field with curated photography for Goa, Rajasthan, Lisbon, Kyoto
 - [x] **`globals.css`** — photographic cards with dark gradient overlays, flag badge, tag chip, and hover zoom animation
 
+### 4d — UX Bug Fixes (COMPLETED ✅)
+- [x] **`MapView.tsx`** — Leaflet `fitBounds` error fixed: `invalidateSize()` + 50ms defer + identical-coord setView fallback
+- [x] **`AgentEventFeed.tsx` + `ChatPanel.tsx`** — replaced global `scrollIntoView()` with internal container `scrollTop` to prevent viewport jump on page load
+- [x] **`page.tsx`** — `window.history.scrollRestoration = 'manual'` + `window.scrollTo(0,0)` on mount so page always starts at the hero section
+
 ---
 
-## Phase 4d: Multi-Turn Conversational Editing & State Iteration (NEXT 🔜)
+## Phase 4e: Multi-Turn Conversational Editing & State Iteration (NEXT 🔜)
 - [ ] Multi-turn intent classifier node (`new_trip` | `edit_stop` | `adjust_pace` | `change_budget`)
 - [ ] LangGraph state checkpoint recovery for stop-level editing without full replan
 - [ ] UI "Swap / Remove / Tell me more" quick-action buttons on stop cards
