@@ -26,7 +26,7 @@ OTM_KEY   = os.getenv("OPENTRIPMAP_API_KEY", "")
 GPLACES_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
 
 # Increment this when the parser or data schema changes to auto-invalidate Chroma cache
-CACHE_VERSION = "v6"
+CACHE_VERSION = "v7"
 
 # OTM category groups by travel style preference
 CATEGORY_MAP = {
@@ -250,11 +250,13 @@ async def enrich_with_google_places(name: str, lat: float, lon: float) -> dict:
 # ── Free Wikipedia & Wikimedia Commons image scraper (Zero-Key / Free Tier) ──
 async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
     """
-    Fetch a real, high-quality photograph from Wikipedia & Wikimedia Commons.
+    Fetch a real, high-quality photograph from Wikipedia, Wikivoyage & Wikimedia Commons.
     Cascade:
-    1. Wikipedia REST summary API (returns exact lead photo for named landmarks)
-    2. Wikipedia Generator Search with pageimages (fuzzy search matching article titles)
-    3. Wikimedia Commons file search (CC-licensed community photography)
+    1. Wikipedia REST summary API (returns exact lead photo for known article slugs)
+    2. Wikipedia OpenSearch API (resolves fuzzy search query to canonical article title -> lead photo)
+    3. Wikipedia Generator Search with PageImages (fuzzy keyword matching)
+    4. Wikimedia Commons Image Search (CC-licensed community photography)
+    5. Wikivoyage Travel Search (tourism listings & destination photography)
     Zero auth / completely free endpoints.
     """
     if not place_name or len(place_name.strip()) < 2:
@@ -262,25 +264,49 @@ async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
 
     import urllib.parse
     clean_name = place_name.split("(")[0].strip()
+    headers = {"User-Agent": "WanderAI/1.0 (travel-planner; contact: support@wanderai.local)"}
 
-    async with httpx.AsyncClient(timeout=5, follow_redirects=True) as client:
-        # 1. Try Wikipedia REST summary API (fast & exact)
+    async with httpx.AsyncClient(timeout=6, follow_redirects=True, headers=headers) as client:
+        # 1. Try Wikipedia REST summary API (fast & exact article name)
         try:
             encoded = urllib.parse.quote(clean_name.replace(" ", "_"))
-            resp = await client.get(
-                f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded}",
-                headers={"User-Agent": "WanderAI/1.0 (travel-planner)"}
-            )
+            resp = await client.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded}")
             if resp.status_code == 200:
                 d = resp.json()
-                if d.get("thumbnail", {}).get("source"):
-                    return d["thumbnail"]["source"]
-                if d.get("originalimage", {}).get("source"):
-                    return d["originalimage"]["source"]
+                thumb = d.get("thumbnail", {}).get("source") or d.get("originalimage", {}).get("source")
+                if thumb and not thumb.endswith(".svg"):
+                    return thumb
         except Exception:
             pass
 
-        # 2. Try Wikipedia generator search with pageimages
+        # 2. Try Wikipedia OpenSearch to find canonical title, then retrieve its lead photo
+        try:
+            search_query = f"{clean_name} {destination}".strip() if destination else clean_name
+            resp = await client.get(
+                "https://en.wikipedia.org/w/api.php",
+                params={
+                    "action": "opensearch",
+                    "search": search_query,
+                    "limit": 3,
+                    "namespace": 0,
+                    "format": "json",
+                }
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if len(data) > 1 and data[1]:
+                    for title in data[1]:
+                        encoded_title = urllib.parse.quote(title.replace(" ", "_"))
+                        s_resp = await client.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded_title}")
+                        if s_resp.status_code == 200:
+                            sd = s_resp.json()
+                            thumb = sd.get("thumbnail", {}).get("source") or sd.get("originalimage", {}).get("source")
+                            if thumb and not thumb.endswith(".svg"):
+                                return thumb
+        except Exception:
+            pass
+
+        # 3. Try Wikipedia Generator Search with PageImages
         try:
             search_query = f"{clean_name} {destination}".strip() if destination else clean_name
             resp = await client.get(
@@ -289,46 +315,44 @@ async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
                     "action": "query",
                     "generator": "search",
                     "gsrsearch": search_query,
-                    "gsrlimit": 1,
+                    "gsrlimit": 3,
                     "prop": "pageimages",
                     "piprop": "thumbnail|original",
                     "pithumbsize": 800,
                     "format": "json",
-                },
-                headers={"User-Agent": "WanderAI/1.0 (travel-planner)"}
+                }
             )
             if resp.status_code == 200:
                 pages = resp.json().get("query", {}).get("pages", {})
                 for page in pages.values():
                     thumb = page.get("thumbnail", {}).get("source") or page.get("original", {}).get("source")
-                    if thumb:
+                    if thumb and not thumb.endswith(".svg"):
                         return thumb
         except Exception:
             pass
 
-        # 3. Try Wikimedia Commons search
+        # 4. Try Wikimedia Commons search
         try:
             resp = await client.get(
                 "https://commons.wikimedia.org/w/api.php",
                 params={
                     "action": "query",
                     "generator": "search",
-                    "gsrsearch": clean_name,
+                    "gsrsearch": f"{clean_name} {destination}".strip(),
                     "gsrnamespace": 6,
-                    "gsrlimit": 1,
+                    "gsrlimit": 3,
                     "prop": "imageinfo",
                     "iiprop": "url",
                     "iiurlwidth": 800,
                     "format": "json",
-                },
-                headers={"User-Agent": "WanderAI/1.0 (travel-planner)"}
+                }
             )
             if resp.status_code == 200:
                 pages = resp.json().get("query", {}).get("pages", {})
                 for page in pages.values():
                     for info in page.get("imageinfo", []):
                         thumb = info.get("thumburl") or info.get("url")
-                        if thumb:
+                        if thumb and not thumb.endswith(".svg"):
                             return thumb
         except Exception:
             pass
