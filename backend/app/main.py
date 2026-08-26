@@ -22,6 +22,12 @@ from app.models.schemas import ChatRequest, Itinerary, AgentEvent, StopEditReque
 from app.graph.travel_graph import travel_graph
 from app.agents.editor_agent import editor_node
 from app.vector_store.chroma_client import get_chroma_client
+from app.db.history_store import (
+    save_itinerary,
+    get_all_histories,
+    get_itinerary_by_id,
+    delete_itinerary,
+)
 
 app = FastAPI(
     title="WanderAI API",
@@ -77,11 +83,18 @@ async def plan(request: ChatRequest):
     }
 
     result = await travel_graph.ainvoke(initial_state, config)
+    itinerary = result.get("itinerary")
 
-    if not result.get("itinerary"):
+    if not itinerary:
         raise HTTPException(status_code=400, detail="Itinerary generation requires clarification or failed.")
 
-    return result["itinerary"]
+    # Auto-save to trip history
+    try:
+        save_itinerary(itinerary)
+    except Exception as e:
+        print(f"[history_store] Warning: Auto-save failed: {e}")
+
+    return itinerary
 
 
 # ── Plan/Stream (SSE — streams AgentEvents, Clarifications, and Itinerary) ───
@@ -129,6 +142,12 @@ async def plan_stream(request: ChatRequest):
             yield f"event: assistant_message\ndata: {json.dumps({'message': assistant_reply})}\n\n"
 
         if itinerary:
+            # Auto-save to trip history database
+            try:
+                save_itinerary(itinerary)
+            except Exception as e:
+                print(f"[history_store] Warning: Stream auto-save failed: {e}")
+
             yield f"event: itinerary\ndata: {itinerary.model_dump_json()}\n\n"
 
         yield "event: done\ndata: {}\n\n"
@@ -168,7 +187,46 @@ async def edit_itinerary_stop(itinerary_id: str, request: StopEditRequest):
     itinerary = result.get("itinerary")
     if not itinerary:
         raise HTTPException(status_code=404, detail="Itinerary not found or could not be modified.")
+    
+    # Save updated itinerary to history
+    try:
+        save_itinerary(itinerary)
+    except Exception as e:
+        print(f"[history_store] Warning: Edit auto-save failed: {e}")
+
     return itinerary
+
+
+# ── Trip History Endpoints (Phase 4f) ─────────────────────────────────────────
+@app.get("/history")
+async def list_trip_history(limit: int = 50):
+    """Return lightweight summaries of all saved trips."""
+    return get_all_histories(limit=limit)
+
+
+@app.post("/history")
+async def save_trip_history(itinerary: Itinerary):
+    """Explicitly save/upsert an itinerary into the history database."""
+    saved_meta = save_itinerary(itinerary)
+    return {"status": "saved", "trip": saved_meta}
+
+
+@app.get("/history/{itinerary_id}", response_model=Itinerary)
+async def get_trip_history_item(itinerary_id: str):
+    """Retrieve full Itinerary JSON to restore a previous trip."""
+    itinerary = get_itinerary_by_id(itinerary_id)
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="Trip not found in history.")
+    return itinerary
+
+
+@app.delete("/history/{itinerary_id}")
+async def delete_trip_history_item(itinerary_id: str):
+    """Delete a saved itinerary from history."""
+    deleted = delete_itinerary(itinerary_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Trip not found in history.")
+    return {"status": "deleted", "id": itinerary_id}
 
 
 # ── PDF Export Stub ──────────────────────────────────────────────────────────
@@ -176,3 +234,4 @@ async def edit_itinerary_stop(itinerary_id: str, request: StopEditRequest):
 async def export_pdf(itinerary_id: str):
     """Stub PDF export endpoint."""
     return {"message": "PDF export available in Phase 6", "itinerary_id": itinerary_id}
+
