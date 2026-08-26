@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import ChatPanel from '@/components/ChatPanel';
 import ItineraryView from '@/components/ItineraryView';
 import TravelLiveWallpaper from '@/components/TravelLiveWallpaper';
-import { AgentEvent, Itinerary, StopEditRequest } from '@/types';
+import TripHistoryPanel from '@/components/TripHistoryPanel';
+import { AgentEvent, Itinerary, StopEditRequest, TripHistoryRecord } from '@/types';
 
 const HERO_PROMPT_CARDS = [
   {
@@ -43,6 +44,22 @@ export default function Home() {
   const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
   const [externalPrompt, setExternalPrompt] = useState<string | null>(null);
   const [externalAction, setExternalAction] = useState<StopEditRequest | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [savedHistoryCount, setSavedHistoryCount] = useState(0);
+
+  const updateHistoryCount = () => {
+    try {
+      const stored = localStorage.getItem('wanderai_trip_history');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setSavedHistoryCount(Array.isArray(parsed) ? parsed.length : 0);
+      } else {
+        setSavedHistoryCount(0);
+      }
+    } catch {
+      setSavedHistoryCount(0);
+    }
+  };
 
   // Ensure page always starts at top on initial load
   useEffect(() => {
@@ -51,6 +68,7 @@ export default function Home() {
         window.history.scrollRestoration = 'manual';
       }
       window.scrollTo(0, 0);
+      updateHistoryCount();
     }
   }, []);
 
@@ -65,6 +83,54 @@ export default function Home() {
       }, 300);
     }
   }, [itinerary]);
+
+  const handleItineraryReceived = (newItinerary: Itinerary) => {
+    setItinerary(newItinerary);
+
+    // Auto-save to localStorage (up to 10 trips)
+    try {
+      const stored = localStorage.getItem('wanderai_trip_history');
+      let currentTrips: TripHistoryRecord[] = stored ? JSON.parse(stored) : [];
+      currentTrips = currentTrips.filter((t) => t.id !== newItinerary.id);
+
+      const record: TripHistoryRecord = {
+        id: newItinerary.id,
+        destination: newItinerary.trip_request?.destination || 'Destination',
+        num_days: newItinerary.days?.length || 1,
+        total_cost_usd: newItinerary.total_cost_estimate_usd,
+        cover_image_url: newItinerary.cover_image_url || newItinerary.days?.[0]?.cover_image_url,
+        created_at: new Date().toISOString(),
+        itinerary: newItinerary,
+      };
+
+      currentTrips.unshift(record);
+      if (currentTrips.length > 10) currentTrips = currentTrips.slice(0, 10);
+      localStorage.setItem('wanderai_trip_history', JSON.stringify(currentTrips));
+      setSavedHistoryCount(currentTrips.length);
+    } catch (e) {
+      console.warn('Failed to auto-save to localStorage', e);
+    }
+
+    // Sync to backend SQLite /history
+    fetch('http://localhost:8000/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newItinerary),
+    }).catch((err) => console.warn('Failed to sync to backend /history', err));
+  };
+
+  const handleSelectSavedTrip = (savedItinerary: Itinerary) => {
+    setItinerary(savedItinerary);
+    setIsStreaming(false);
+    setTimeout(() => {
+      const visualizer = document.getElementById('itinerary-visualizer');
+      if (visualizer) {
+        visualizer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        scrollToSection('planner-studio');
+      }
+    }, 150);
+  };
 
   const handleHeroPromptSelect = (promptText: string) => {
     setExternalPrompt(promptText);
@@ -85,6 +151,15 @@ export default function Home() {
     <>
       {/* Travel-Themed Live Wallpaper Canvas */}
       <TravelLiveWallpaper />
+
+      {/* Slide-over Trip History Drawer */}
+      <TripHistoryPanel
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        onSelectTrip={handleSelectSavedTrip}
+        currentItineraryId={itinerary?.id}
+        onHistoryUpdated={updateHistoryCount}
+      />
 
       <div className="main-wrapper">
         {/* Navigation Bar */}
@@ -108,6 +183,19 @@ export default function Home() {
           </nav>
 
           <div className="header-right">
+            {/* History Trigger Button */}
+            <button
+              type="button"
+              className="btn-history-toggle"
+              onClick={() => setIsHistoryOpen(true)}
+              title="View saved trip history"
+            >
+              <span>🗂️ History</span>
+              {savedHistoryCount > 0 && (
+                <span className="history-badge-count">{savedHistoryCount}</span>
+              )}
+            </button>
+
             {itinerary && (
               <button
                 onClick={() => window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank')}
@@ -312,7 +400,7 @@ export default function Home() {
           {/* Centered Conversational Planning Hub */}
           <div className="studio-centered-flow">
             <ChatPanel
-              onItinerary={(it) => setItinerary(it)}
+              onItinerary={handleItineraryReceived}
               agentEvents={agentEvents}
               isStreaming={isStreaming}
               setAgentEvents={setAgentEvents}

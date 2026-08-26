@@ -127,3 +127,15 @@ export interface ChatMessage {
   num_days?: number;
 }
 
+export interface TripHistorySummary {
+  id: string;
+  destination: string;
+  num_days: number;
+  total_cost_usd?: number;
+  cover_image_url?: string | null;
+  created_at: string;
+}
+
+export interface TripHistoryRecord extends TripHistorySummary {
+  itinerary?: Itinerary;
+}
