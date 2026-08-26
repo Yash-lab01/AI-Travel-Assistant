@@ -83,7 +83,14 @@
 
 ## What's Next
 
-### Phase 5 — Local Fine-Tuned Narration Model (LoRA) (NEXT 🔜)
+### Phase 4f — Trip History & Saved Itinerary Browser (NEXT 🔜)
+- **Backend SQLite `history_store.py`** with `trip_history` table: `save_itinerary`, `get_all_histories`, `get_itinerary_by_id`, `delete_itinerary`.
+- **REST endpoints**: `GET /history`, `POST /history`, `GET /history/{id}`, `DELETE /history/{id}`.
+- **`TripHistoryPanel.tsx`** — slide-in sidebar with visual history cards (cover image, destination, date, Load/Delete actions).
+- **Auto-save on `itinerary` SSE event** to localStorage + backend. Load restores any past trip into the studio instantly.
+- **History badge in nav header** showing saved trip count.
+
+### Phase 5 — Local Fine-Tuned Narration Model (LoRA)
 - LoRA fine-tuning on Llama 3.2 3B with Unsloth + PEFT (Colab T4)
 - Local Ollama deployment for zero-latency atmospheric narration
 - Blind before/after evaluation in `eval_results.md`

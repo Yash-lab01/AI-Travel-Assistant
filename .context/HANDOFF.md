@@ -50,11 +50,11 @@
 ## 2. Documentation Updated
 
 - ✅ `.context/PROJECT_CONTEXT.md` — Corrected model names, Chroma path, coding conventions.
-- ✅ `.context/TASKS.md` — Updated to reflect all Phase 4 sub-tasks + Phase 4e naming standardized, cache v6.
-- ✅ `.context/HANDOFF.md` — This file (fully current as of 2026-08-25).
-- ✅ `docs/CURRENT_STATE.md` — Updated Phase 4 items and correct cache version.
+- ✅ `.context/TASKS.md` — Phase 4e complete, **Phase 4f (Trip History)** task list added.
+- ✅ `.context/HANDOFF.md` — This file (fully current as of 2026-08-26).
+- ✅ `docs/CURRENT_STATE.md` — Phase 4f in What's Next, Phase 5 & 6 roadmap updated.
 - ✅ `docs/TROUBLESHOOTING_AND_MISTAKES.md` — Entries #1–#12 covering all bugs encountered.
-- ✅ `docs/IMAGE_INTEGRATION.md` — Updated Tier 1 from old single-query to actual 3-tier cascade.
+- ✅ `docs/IMAGE_INTEGRATION.md` — Updated to 4-tier OpenSearch cascade.
 
 ---
 
@@ -71,9 +71,20 @@
 
 ---
 
-## 4. Immediate Next Steps — Phase 5: Local Fine-Tuned Narration Model (LoRA)
+## 4. Immediate Next Steps — Phase 4f: Trip History & Saved Itinerary Browser
 
-1. **Dataset Curation (`curate_dataset.py`)**: Collect 300+ pairs of atmospheric travel narrations for iconic and niche global landmarks.
-2. **LoRA Fine-Tuning Script (`train_lora.py`)**: Prepare Unsloth / PEFT training configuration on Llama 3.2 3B.
-3. **Local Ollama Integration**: Add local Ollama narrator fallback to `planner_agent.py` and `editor_agent.py`.
-4. **Before/After Evaluation**: Generate comparative samples in `eval_results.md`.
+### Backend
+1. **`backend/app/db/history_store.py`**: Create SQLite `trip_history` table; implement `save_itinerary`, `get_all_histories`, `get_itinerary_by_id`, `delete_itinerary`.
+2. **Add `/history` endpoints** to `main.py`: `GET /history`, `POST /history`, `GET /history/{id}`, `DELETE /history/{id}`.
+3. **`test_history_store.py`**: Unit tests for all CRUD operations.
+
+### Frontend
+4. **`types/index.ts`**: Add `TripHistoryRecord` type.
+5. **`TripHistoryPanel.tsx`**: Slide-in panel component showing history cards with cover photo, destination, date, Load & Delete actions.
+6. **`page.tsx`**: Wire auto-save on `onItinerary` + add 🗂️ History nav button with count badge that toggles the panel.
+7. **`globals.css`**: Add `.trip-history-panel`, `.history-card`, and `.history-badge` styles.
+
+### Notes
+- Keep last **10 trips** in `localStorage`, **50** in backend SQLite.
+- Timestamps should render as relative strings ("2 hours ago", "Yesterday").
+- No user auth required — history is per-browser for now.

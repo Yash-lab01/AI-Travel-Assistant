@@ -152,6 +152,32 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 
 ---
 
+## Phase 4f: Trip History & Saved Itinerary Browser
+
+### Backend
+- [ ] **`backend/app/db/history_store.py`** — SQLite `trip_history` table with `save_itinerary`, `get_all_histories`, `get_itinerary_by_id`, `delete_itinerary` helpers
+- [ ] **`GET /history`** in `main.py` — Returns lightweight summary list (id, destination, num_days, cover_image_url, created_at)
+- [ ] **`POST /history`** in `main.py` — Receives & persists full itinerary blob
+- [ ] **`GET /history/{id}`** in `main.py` — Returns full itinerary JSON for trip restore
+- [ ] **`DELETE /history/{id}`** in `main.py` — Removes a saved trip
+- [ ] **`backend/tests/test_history_store.py`** — Unit tests for save, get_all, get_by_id, delete
+
+### Frontend
+- [ ] **`TripHistoryRecord` type** (`types/index.ts`) — `{ id, destination, numDays, createdAt, coverImageUrl, itinerary }`
+- [ ] **`frontend/src/components/TripHistoryPanel.tsx`** — Slide-in sidebar with visual trip history cards (cover photo, destination, date, num_days)
+  - [ ] Each card: `Load Trip` button + `Delete` trash icon
+  - [ ] Auto-saves every new itinerary to localStorage on SSE `itinerary` event
+  - [ ] Syncs to backend `POST /history` on save
+  - [ ] On `Load Trip`: restores itinerary into planner view and scrolls to studio
+- [ ] **`page.tsx`** — 🗂️ History nav link in header (badge showing count) that opens `TripHistoryPanel`
+- [ ] **`globals.css`** — `.trip-history-panel`, `.history-card`, `.history-card-img`, `.history-badge` styles
+
+### Limits & Defaults
+- [ ] Keep last **10 trips** in `localStorage`; **50** in SQLite backend
+- [ ] Timestamps formatted as relative strings ("2 hours ago", "Yesterday")
+
+---
+
 ## Phase 5: Local Fine-Tuned Narration Model (LoRA)
 - [ ] Dataset curation (`curate_dataset.py`): CC-licensed travel writing
 - [ ] LoRA training (`train_lora.py`): Unsloth + PEFT on Llama 3.2 3B (Colab T4)
