@@ -62,29 +62,17 @@
 
 - **Backend**: FastAPI server `http://127.0.0.1:8000` — running with `--reload`.
 - **Frontend**: Next.js 16 `http://localhost:3000` — compiled with 0 errors.
-- **Pytest**: 15/15 tests passing.
+- **Pytest**: 19/19 tests passing.
 - **Chroma Cache**: Versioned at **v7** — auto-invalidates old cache and fetches real photography via OpenSearch + PageImages.
-- **Image Resolution**: 4-tier Wikipedia REST → OpenSearch canonical discovery → PageImages → Commons.
-- **Landing Page**: Minimalist 100vh brand intro screen with glowing emblem, display typography, and animated scroll indicator into the full interactive workspace.
-- **Multi-Turn Editing**: Active with `editor_agent.py`, `PATCH /plan/{id}/stop`, and StopCard action buttons (`🔄 Swap`, `❌ Remove`, `💬 Tell Me More`).
+- **Trip History (Phase 4f)**: SQLite `trip_history.db` backend store + dual-layer `localStorage` sync + slide-over `TripHistoryPanel` drawer.
+- **Multi-Turn Editing (Phase 4e)**: Active with `editor_agent.py`, `PATCH /plan/{id}/stop`, and StopCard action buttons (`🔄 Swap`, `❌ Remove`, `💬 Tell Me More`).
 - **Git**: Separate atomic commits for `backend`, `frontend`, and `docs`.
 
 ---
 
-## 4. Immediate Next Steps — Phase 4f: Trip History & Saved Itinerary Browser
+## 4. Immediate Next Steps — Phase 5: Local Fine-Tuned Narration Model (LoRA)
 
-### Backend
-1. **`backend/app/db/history_store.py`**: Create SQLite `trip_history` table; implement `save_itinerary`, `get_all_histories`, `get_itinerary_by_id`, `delete_itinerary`.
-2. **Add `/history` endpoints** to `main.py`: `GET /history`, `POST /history`, `GET /history/{id}`, `DELETE /history/{id}`.
-3. **`test_history_store.py`**: Unit tests for all CRUD operations.
-
-### Frontend
-4. **`types/index.ts`**: Add `TripHistoryRecord` type.
-5. **`TripHistoryPanel.tsx`**: Slide-in panel component showing history cards with cover photo, destination, date, Load & Delete actions.
-6. **`page.tsx`**: Wire auto-save on `onItinerary` + add 🗂️ History nav button with count badge that toggles the panel.
-7. **`globals.css`**: Add `.trip-history-panel`, `.history-card`, and `.history-badge` styles.
-
-### Notes
-- Keep last **10 trips** in `localStorage`, **50** in backend SQLite.
-- Timestamps should render as relative strings ("2 hours ago", "Yesterday").
-- No user auth required — history is per-browser for now.
+1. **Dataset Curation (`curate_dataset.py`)**: Collect 300+ pairs of atmospheric travel narrations for iconic and niche global landmarks.
+2. **LoRA Fine-Tuning Script (`train_lora.py`)**: Prepare Unsloth / PEFT training configuration on Llama 3.2 3B.
+3. **Local Ollama Integration**: Add local Ollama narrator fallback to `planner_agent.py` and `editor_agent.py`.
+4. **Before/After Evaluation**: Generate comparative samples in `eval_results.md`.

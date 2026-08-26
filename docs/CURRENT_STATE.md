@@ -79,18 +79,19 @@
 25. **One-Click Quick Adjustment Chips**: Relaxed pacing, hidden gems, foodie focus, and scenic views adjustments.
 26. **Targeted Endpoints & SSE Messages**: `PATCH /plan/{itinerary_id}/stop` endpoint and SSE `assistant_message` streaming.
 
+#### 4f — Trip History & Saved Itinerary Browser (100% ✅)
+27. **Backend SQLite Trip History Store (`history_store.py`)**: Auto-creates `backend/data/trip_history.db` with CRUD operations and auto-pruning to 50 trips.
+28. **Trip History REST Endpoints (`main.py`)**: `GET /history`, `POST /history`, `GET /history/{id}`, `DELETE /history/{id}`.
+29. **Dual-Layer Auto-Saving**: Every generated or edited itinerary is instantly saved to `localStorage` (up to 10 trips) and synced to the backend SQLite store.
+30. **Trip History Slide-Over Panel (`TripHistoryPanel.tsx`)**: Visual cards with landscape cover thumbnails, duration & cost tags, relative timestamps, instant load button, and delete action.
+31. **Nav Header History Badge (`page.tsx`)**: Dynamic badge indicator showing saved trip count and 1-click drawer toggle.
+32. **19/19 Unit Tests Passing**: Full CRUD and pruning test suite in `test_history_store.py`.
+
 ---
 
 ## What's Next
 
-### Phase 4f — Trip History & Saved Itinerary Browser (NEXT 🔜)
-- **Backend SQLite `history_store.py`** with `trip_history` table: `save_itinerary`, `get_all_histories`, `get_itinerary_by_id`, `delete_itinerary`.
-- **REST endpoints**: `GET /history`, `POST /history`, `GET /history/{id}`, `DELETE /history/{id}`.
-- **`TripHistoryPanel.tsx`** — slide-in sidebar with visual history cards (cover image, destination, date, Load/Delete actions).
-- **Auto-save on `itinerary` SSE event** to localStorage + backend. Load restores any past trip into the studio instantly.
-- **History badge in nav header** showing saved trip count.
-
-### Phase 5 — Local Fine-Tuned Narration Model (LoRA)
+### Phase 5 — Local Fine-Tuned Narration Model (LoRA) (NEXT 🔜)
 - LoRA fine-tuning on Llama 3.2 3B with Unsloth + PEFT (Colab T4)
 - Local Ollama deployment for zero-latency atmospheric narration
 - Blind before/after evaluation in `eval_results.md`
