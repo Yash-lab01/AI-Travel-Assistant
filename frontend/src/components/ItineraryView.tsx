@@ -6,6 +6,7 @@ import { formatCost, formatTotalCost } from '@/utils/currency';
 import { calculateDayTimeline, recalculateSequentialTransit } from '@/utils/timeline';
 import ShareModal from './ShareModal';
 import PackingListModal from './PackingListModal';
+import { useToast } from './Toast';
 
 const MapView = lazy(() => import('./MapView'));
 
@@ -21,6 +22,29 @@ const CATEGORY_ICONS: Record<string, string> = {
   beach:      '🏖️',
   default:    '📍',
 };
+
+function AnimatedCost({ value, destination }: { value?: number; destination?: string }) {
+  const [displayVal, setDisplayVal] = useState(0);
+  useEffect(() => {
+    if (value === undefined || value === null) return;
+    let current = 0;
+    const target = Math.round(value);
+    const step = Math.max(1, Math.floor(target / 20));
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        setDisplayVal(target);
+        clearInterval(timer);
+      } else {
+        setDisplayVal(current);
+      }
+    }, 20);
+    return () => clearInterval(timer);
+  }, [value]);
+
+  if (value === undefined || value === null) return null;
+  return <span>{formatTotalCost(displayVal, destination)}</span>;
+}
 
 function StopCard({
   stop,
@@ -58,6 +82,8 @@ function StopCard({
   isDragOver?: boolean;
 }) {
   const [imgError, setImgError] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
   if (!stop) return null;
   const icon = CATEGORY_ICONS[stop.category] ?? CATEGORY_ICONS.default;
   const photoUrl = stop.photo_urls && stop.photo_urls.length > 0 ? stop.photo_urls[0] : null;
@@ -67,6 +93,17 @@ function StopCard({
     ? `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lon}&travelmode=walking`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${stop.name}, ${destination || ''}`)}`;
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientY - rect.top - rect.height / 2) / 16;
+    const y = -(e.clientX - rect.left - rect.width / 2) / 16;
+    setTilt({ x: Math.max(-5, Math.min(5, x)), y: Math.max(-5, Math.min(5, y)) });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+  };
+
   return (
     <div
       draggable={isDraggable}
@@ -74,44 +111,34 @@ function StopCard({
       onDragOver={(e) => onDragOver?.(e, index)}
       onDrop={(e) => onDrop?.(e, index)}
       onDragEnd={onDragEnd}
+      className="stop-card-stagger"
       style={{
         transition: 'transform 200ms ease, opacity 200ms ease',
-        borderTop: isDragOver ? '2px solid #00DBE7' : 'none',
+        borderTop: isDragOver ? '2px solid var(--teal, #00DBE7)' : 'none',
       }}
     >
       {index > 0 && transitMin !== undefined && transitMin > 0 && (
         <div className="travel-connector">
-          <span style={{ fontSize: 13 }}>➔</span>
+          <span style={{ fontSize: 13, color: 'var(--teal)' }}>➔</span>
           <span>{transitMin} min {transitMin <= 12 ? 'walk' : 'transit'}</span>
         </div>
       )}
-      <div className={`stop-card ${stop.is_niche ? 'niche' : ''}`}>
-        {/* Grip Handle for Drag and Drop */}
-        {isDraggable && (
-          <div
-            className="stop-drag-handle"
-            title="Drag to reorder stops"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 4px',
-              color: 'var(--text-muted)',
-              cursor: 'grab',
-              fontSize: 16,
-              userSelect: 'none',
-            }}
-          >
-            ⋮⋮
-          </div>
-        )}
 
-        <div className="stop-card-image-wrap">
+      <div
+        className={`stop-card ${stop.is_niche ? 'niche' : ''}`}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          transform: `perspective(900px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+        }}
+      >
+        {/* Full-Bleed Top Photographic Banner */}
+        <div className="stop-card-banner">
           {photoUrl && !imgError ? (
             <img
               src={photoUrl}
               alt={stop.name || 'Attraction'}
-              className="stop-card-image"
+              className="stop-card-banner-img"
               loading="lazy"
               onError={() => setImgError(true)}
             />
@@ -120,33 +147,89 @@ function StopCard({
               {icon}
             </div>
           )}
-        </div>
+          
+          <div className="stop-card-banner-scrim" />
 
-        <div className="stop-card-body">
-          <div className="stop-card-top">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <div className="stop-name">{stop.name || 'Attraction'}</div>
-              {timeSlot && (
-                <span
+          {/* Floating Top Chips: Grip handle + Category + Time Slot */}
+          <div className="stop-card-banner-top-chips">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {isDraggable && (
+                <div
+                  className="stop-drag-handle"
+                  title="Drag to reorder stops"
                   style={{
-                    fontSize: 11,
-                    fontFamily: 'var(--font-label)',
-                    fontWeight: 700,
-                    color: 'var(--teal)',
-                    background: 'rgba(0, 219, 231, 0.1)',
-                    border: '1px solid rgba(0, 219, 231, 0.25)',
-                    padding: '2px 8px',
-                    borderRadius: 'var(--radius-full)',
+                    background: 'rgba(4, 14, 31, 0.75)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '3px 8px',
+                    color: 'var(--text-secondary)',
+                    cursor: 'grab',
+                    fontSize: 13,
+                    userSelect: 'none',
+                    lineHeight: 1,
                   }}
                 >
-                  🕒 {timeSlot}
-                </span>
+                  ⋮⋮
+                </div>
               )}
+              <span className="stop-category-pill" style={{ background: 'rgba(4, 14, 31, 0.75)', backdropFilter: 'blur(10px)' }}>
+                {icon} {stop.category || 'attraction'}
+              </span>
             </div>
-            {stop.is_niche && (
+
+            {timeSlot && (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontWeight: 700,
+                  color: 'var(--teal, #00DBE7)',
+                  background: 'rgba(4, 14, 31, 0.85)',
+                  border: '1px solid rgba(0, 219, 231, 0.4)',
+                  padding: '3px 9px',
+                  borderRadius: 'var(--radius-full)',
+                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+                }}
+              >
+                🕒 {timeSlot}
+              </span>
+            )}
+          </div>
+
+          {/* Floating Bottom Chips: Hidden Gem + Star Rating */}
+          <div className="stop-card-banner-bottom-chips">
+            {stop.is_niche ? (
               <div className="niche-badge" title="Surfaced via high community sentiment & low tourist saturation">
-                💎 HIDDEN GEM {stop.niche_score ? `${(stop.niche_score.hidden_gem_score * 100).toFixed(0)}%` : ''}
+                💎 LOCAL FAVORITE {stop.niche_score ? `${(stop.niche_score.hidden_gem_score * 100).toFixed(0)}%` : ''}
               </div>
+            ) : <div />}
+
+            {stop.rating && (
+              <span
+                style={{
+                  color: 'var(--amber, #FFBF00)',
+                  background: 'rgba(4, 14, 31, 0.85)',
+                  border: '1px solid rgba(255, 191, 0, 0.3)',
+                  padding: '2px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                }}
+              >
+                ★ {stop.rating}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Card Body Information */}
+        <div className="stop-card-body">
+          <div className="stop-card-top">
+            <h4 className="stop-name">{stop.name || 'Attraction'}</h4>
+            {stop.estimated_cost_usd !== undefined && (
+              <span className="stop-cost">{formatCost(stop.estimated_cost_usd, destination)}</span>
             )}
           </div>
 
@@ -159,19 +242,19 @@ function StopCard({
           )}
 
           <div className="stop-meta">
-            <span className="stop-category-pill">{stop.category || 'attraction'}</span>
-            <span style={{ color: 'var(--text-muted)' }}>⏱️ {stop.duration_minutes || 60} min</span>
-            {stop.estimated_cost_usd !== undefined && (
-              <span className="stop-cost">{formatCost(stop.estimated_cost_usd, destination)}</span>
-            )}
-            {stop.rating && (
-              <span style={{ color: 'var(--amber)' }}>★ {stop.rating}</span>
+            <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              ⏱️ {stop.duration_minutes || 60} min
+            </span>
+            {stop.address && (
+              <span style={{ color: 'var(--text-muted)', fontSize: 11, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={stop.address}>
+                📍 {stop.address}
+              </span>
             )}
           </div>
 
           {/* Actions & Feedback Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-            <div className="stop-card-actions">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 4, paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <div className="stop-card-actions" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button
                 type="button"
                 className="stop-action-btn swap"
@@ -223,7 +306,7 @@ function StopCard({
                   textDecoration: 'none',
                   background: 'rgba(0, 219, 231, 0.08)',
                   borderColor: 'rgba(0, 219, 231, 0.25)',
-                  color: '#00DBE7',
+                  color: 'var(--teal, #00DBE7)',
                 }}
                 title="Open turn-by-turn walking directions in Google Maps"
               >
@@ -232,17 +315,17 @@ function StopCard({
             </div>
 
             {/* Thumbs Up / Down Feedback */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <button
                 type="button"
                 onClick={() => onFeedback?.(stop.id, stop.name, 1, stop.category, stop.is_niche)}
                 style={{
-                  background: feedbackState === 1 ? 'rgba(74, 222, 128, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                  border: `1px solid ${feedbackState === 1 ? '#4ade80' : 'rgba(255, 255, 255, 0.1)'}`,
+                  background: feedbackState === 1 ? 'rgba(74, 222, 128, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                  border: `1px solid ${feedbackState === 1 ? '#4ade80' : 'rgba(255, 255, 255, 0.12)'}`,
                   color: feedbackState === 1 ? '#4ade80' : 'var(--text-muted)',
-                  borderRadius: 6,
-                  padding: '3px 7px',
-                  fontSize: 12,
+                  borderRadius: 8,
+                  padding: '4px 8px',
+                  fontSize: 13,
                   cursor: 'pointer',
                   transition: 'all 150ms',
                 }}
@@ -254,12 +337,12 @@ function StopCard({
                 type="button"
                 onClick={() => onFeedback?.(stop.id, stop.name, -1, stop.category, stop.is_niche)}
                 style={{
-                  background: feedbackState === -1 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                  border: `1px solid ${feedbackState === -1 ? '#ef4444' : 'rgba(255, 255, 255, 0.1)'}`,
+                  background: feedbackState === -1 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                  border: `1px solid ${feedbackState === -1 ? '#ef4444' : 'rgba(255, 255, 255, 0.12)'}`,
                   color: feedbackState === -1 ? '#ef4444' : 'var(--text-muted)',
-                  borderRadius: 6,
-                  padding: '3px 7px',
-                  fontSize: 12,
+                  borderRadius: 8,
+                  padding: '4px 8px',
+                  fontSize: 13,
                   cursor: 'pointer',
                   transition: 'all 150ms',
                 }}
@@ -339,6 +422,7 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'timeline'>('cards');
   const [feedbackMap, setFeedbackMap] = useState<Record<string, 1 | -1>>({});
+  const toast = useToast();
   
   // Drag and Drop state for current active day
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
@@ -354,6 +438,7 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
   const handleDownloadPdf = async () => {
     if (!itinerary || isDownloadingPdf) return;
     setIsDownloadingPdf(true);
+    toast.info('Generating high-fidelity PDF travel guide...', 'Exporting PDF');
     try {
       const res = await fetch('http://localhost:8000/export/pdf', {
         method: 'POST',
@@ -373,6 +458,7 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+        toast.success('PDF travel guide downloaded successfully!', 'PDF Exported');
         return;
       }
 
@@ -385,8 +471,10 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      toast.success('PDF travel guide downloaded successfully!', 'PDF Exported');
     } catch (err) {
       console.error('PDF download error:', err);
+      toast.warning('Opening PDF in new tab...', 'Fallback Export');
       window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank');
     } finally {
       setIsDownloadingPdf(false);
@@ -395,6 +483,12 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
 
   const handleFeedback = (stopId: string, stopName: string, rating: 1 | -1, category?: string, isNiche?: boolean) => {
     setFeedbackMap(prev => ({ ...prev, [stopId]: rating }));
+    
+    if (rating === 1) {
+      toast.success(`Liked "${stopName}"! Saved to model fine-tuning dataset.`, 'Feedback Saved 👍');
+    } else {
+      toast.info(`Marked "${stopName}" as not preferred.`, 'Feedback Recorded 👎');
+    }
     
     fetch('http://localhost:8000/feedback', {
       method: 'POST',
@@ -447,6 +541,7 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
 
     setDraggedIdx(null);
     setDragOverIdx(null);
+    toast.info('Transit times updated', 'Stops Reordered');
 
     // Sync to backend in background
     if (itinerary?.id) {
@@ -550,7 +645,7 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
                 )}
               </div>
               <p style={{ fontSize: 13, color: '#d8e3fb', marginTop: 6, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
-                Paced for <strong>{itinerary.trip_request?.pace || 'moderate'}</strong> speed · <strong>{itinerary.trip_request?.travel_style || 'balanced'}</strong> focus · Estimated Total: <strong style={{ color: 'var(--amber)' }}>{formatTotalCost(itinerary.total_cost_estimate_usd, destination)}</strong>
+                Paced for <strong>{itinerary.trip_request?.pace || 'moderate'}</strong> speed · <strong>{itinerary.trip_request?.travel_style || 'balanced'}</strong> focus · Estimated Total: <strong style={{ color: 'var(--amber)', fontFamily: 'var(--font-mono)' }}><AnimatedCost value={itinerary.total_cost_estimate_usd} destination={destination} /></strong>
               </p>
             </div>
 
@@ -579,6 +674,7 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
                   document.body.appendChild(a);
                   a.click();
                   document.body.removeChild(a);
+                  toast.success('Calendar (.ics) downloaded. Open it to sync to Google/Apple Calendar!', 'Calendar Synced 📅');
                 }}
                 className="btn-primary-sm"
                 style={{

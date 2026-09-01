@@ -6,6 +6,8 @@ import ItineraryView from '@/components/ItineraryView';
 import TravelLiveWallpaper from '@/components/TravelLiveWallpaper';
 import TripHistoryPanel from '@/components/TripHistoryPanel';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { ToastProvider } from '@/components/Toast';
+import { applyDestinationTheme } from '@/utils/destinationTheme';
 import { AgentEvent, Itinerary, StopEditRequest, TripHistoryRecord } from '@/types';
 
 const HERO_PROMPT_CARDS = [
@@ -48,6 +50,7 @@ export default function Home() {
   const [externalAction, setExternalAction] = useState<StopEditRequest | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [savedHistoryCount, setSavedHistoryCount] = useState(0);
+  const [activeMobileTab, setActiveMobileTab] = useState<'studio' | 'itinerary' | 'history' | 'about'>('studio');
 
   const updateHistoryCount = () => {
     try {
@@ -77,6 +80,7 @@ export default function Home() {
   // Auto-scroll to itinerary visualizer when it becomes available
   useEffect(() => {
     if (itinerary) {
+      applyDestinationTheme(itinerary.trip_request?.destination);
       setTimeout(() => {
         const itineraryEl = document.getElementById('itinerary-visualizer');
         if (itineraryEl) {
@@ -88,6 +92,7 @@ export default function Home() {
 
   const handleItineraryReceived = (newItinerary: Itinerary) => {
     setItinerary(newItinerary);
+    applyDestinationTheme(newItinerary.trip_request?.destination);
 
     // Auto-save to localStorage (up to 10 trips)
     try {
@@ -124,6 +129,7 @@ export default function Home() {
   const handleSelectSavedTrip = (savedItinerary: Itinerary) => {
     setItinerary(savedItinerary);
     setIsStreaming(false);
+    applyDestinationTheme(savedItinerary.trip_request?.destination);
     setTimeout(() => {
       const visualizer = document.getElementById('itinerary-visualizer');
       if (visualizer) {
@@ -150,8 +156,8 @@ export default function Home() {
   };
 
   return (
-    <>
-      {/* Travel-Themed Live Wallpaper Canvas */}
+    <ToastProvider>
+      {/* Travel-Themed Live Wallpaper Canvas & Aurora Glow */}
       <TravelLiveWallpaper />
 
       {/* Slide-over Trip History Drawer */}
@@ -235,7 +241,7 @@ export default function Home() {
 
           <div className="intro-brand-container">
             <div className="intro-emblem-glow">🧭</div>
-            <h1 className="intro-brand-title">WanderAI</h1>
+            <h1 className="intro-brand-title gradient-text-hero">WanderAI</h1>
           </div>
 
           <p className="intro-tagline">
@@ -262,8 +268,8 @@ export default function Home() {
           </div>
 
           <h2 className="hero-title">
-            <span className="title-regular">Plan Any Journey.</span>
-            <span className="title-highlight">Iconic Sights to Hidden Gems.</span>
+            <span className="title-regular">Plan Any Journey. </span>
+            <span className="title-highlight gradient-text-hero">Iconic Sights to Hidden Gems.</span>
           </h2>
 
           <p className="hero-subtitle">
@@ -462,7 +468,56 @@ export default function Home() {
             </a>
           </div>
         </footer>
+
+        {/* Mobile Sticky Bottom Navigation Bar */}
+        <nav className="mobile-bottom-nav">
+          <button
+            type="button"
+            className={`mobile-nav-btn ${activeMobileTab === 'studio' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveMobileTab('studio');
+              scrollToSection('planner-studio');
+            }}
+          >
+            <span>💬</span>
+            <span>Studio</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-nav-btn ${activeMobileTab === 'itinerary' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveMobileTab('itinerary');
+              const el = document.getElementById('itinerary-visualizer') || document.getElementById('planner-studio');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <span>📋</span>
+            <span>Itinerary</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-nav-btn ${activeMobileTab === 'history' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveMobileTab('history');
+              setIsHistoryOpen(true);
+            }}
+          >
+            <span>🗂️</span>
+            <span>History</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-nav-btn ${activeMobileTab === 'about' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveMobileTab('about');
+              scrollToSection('how-it-works');
+            }}
+          >
+            <span>🧭</span>
+            <span>Architecture</span>
+          </button>
+        </nav>
       </div>
-    </>
+    </ToastProvider>
   );
 }

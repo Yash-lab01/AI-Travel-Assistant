@@ -32,12 +32,21 @@
     --text-primary: #f8fafc;
     --text-secondary: #cbd5e1;
     --text-muted: #64748b;
-    --text-inverse: #040e1f;
+    --badge-gem: #A855F7;
+    --aurora-glow: #1e1b4b;
 
     /* ── Typography Tokens ─────────────────────────────────────── */
     --font-heading: 'Playfair Display', Georgia, serif;
     --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-label: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    --fw-light: 300;
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+    --fw-black: 900;
 
     /* ── Radii ─────────────────────────────────────────────────── */
     --radius-sm: 8px;
@@ -1191,7 +1200,7 @@ html, body {
 .stops-timeline-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
 }
 
 .travel-connector {
@@ -1201,29 +1210,74 @@ html, body {
   padding: 4px 16px;
   font-size: 12px;
   color: var(--text-muted);
-  font-family: var(--font-label);
+  font-family: var(--font-mono);
 }
 
+/* ── Staggered Entrance Animation ────────────────────────────────── */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stop-card-stagger {
+  animation: slideUpFade 420ms var(--ease-out) both;
+}
+.stop-card-stagger:nth-child(1) { animation-delay: 0ms; }
+.stop-card-stagger:nth-child(2) { animation-delay: 70ms; }
+.stop-card-stagger:nth-child(3) { animation-delay: 140ms; }
+.stop-card-stagger:nth-child(4) { animation-delay: 210ms; }
+.stop-card-stagger:nth-child(5) { animation-delay: 280ms; }
+.stop-card-stagger:nth-child(6) { animation-delay: 350ms; }
+.stop-card-stagger:nth-child(n+7) { animation-delay: 400ms; }
+
+/* ── Vertical Full-Bleed StopCard ─────────────────────────────────── */
 .stop-card {
+  position: relative;
   display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(17, 28, 45, 0.75);
+  flex-direction: column;
+  background: rgba(13, 25, 44, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  transition: all var(--dur-base) var(--ease-out);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+}
+
+.stop-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(0, 219, 231, 0.15), transparent 70%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .stop-card:hover {
-  background: rgba(21, 35, 58, 0.92);
-  border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: rgba(18, 32, 54, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 24px rgba(0, 219, 231, 0.12);
 }
 
 .stop-card.niche {
-  border-color: var(--glass-border-teal);
-  background: rgba(0, 219, 231, 0.05);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(168, 85, 247, 0.15);
+}
+
+.stop-card.niche::before {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(0, 219, 231, 0.2), transparent 70%);
 }
 
 @keyframes shimmer {
@@ -1231,29 +1285,58 @@ html, body {
   100% { background-position: 200% 0; }
 }
 
-.stop-card-image-wrap {
-  width: 100px;
-  height: 100px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  flex-shrink: 0;
+/* Full-bleed card top photo container */
+.stop-card-banner {
   position: relative;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+  width: 100%;
+  height: 175px;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 25%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.02) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  animation: shimmer 2s infinite;
 }
 
-.stop-card-image {
+.stop-card-banner-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform var(--dur-base) var(--ease-out);
+  transition: transform 400ms var(--ease-out);
 }
 
-.stop-card:hover .stop-card-image {
-  transform: scale(1.06);
+.stop-card:hover .stop-card-banner-img {
+  transform: scale(1.05);
+}
+
+.stop-card-banner-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(4, 14, 31, 0.2) 0%, rgba(4, 14, 31, 0.4) 40%, rgba(4, 14, 31, 0.95) 100%);
+  pointer-events: none;
+}
+
+.stop-card-banner-top-chips {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  z-index: 3;
+}
+
+.stop-card-banner-bottom-chips {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 3;
 }
 
 .stop-card-image-placeholder {
@@ -1262,73 +1345,86 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  background: rgba(255, 255, 255, 0.04);
+  font-size: 42px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .stop-card-body {
-  flex: 1;
+  padding: 16px 18px 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   min-width: 0;
+  position: relative;
+  z-index: 3;
 }
 
 .stop-card-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: baseline;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .stop-name {
   font-family: var(--font-heading);
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: #ffffff;
+  letter-spacing: -0.01em;
 }
 
 .niche-badge {
-  padding: 3px 8px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
-  background: rgba(0, 219, 231, 0.15);
-  border: 1px solid var(--teal);
-  color: var(--teal);
+  background: rgba(168, 85, 247, 0.18);
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  color: #c084fc;
   font-family: var(--font-label);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  box-shadow: 0 0 10px rgba(0, 219, 231, 0.25);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .stop-narration {
   font-size: 13.5px;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.65;
   font-style: italic;
+  letter-spacing: 0.01em;
 }
 
 .stop-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 4px;
+  gap: 10px;
+  margin-top: 2px;
   font-size: 12px;
+  flex-wrap: wrap;
 }
 
 .stop-category-pill {
   font-family: var(--font-label);
   text-transform: capitalize;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.06);
-  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .stop-cost {
   color: var(--amber);
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12.5px;
 }
 
 /* ── Sticky Map Pane ─────────────────────────────────────────────── */
@@ -1975,5 +2071,166 @@ html, body {
   background-size: 200% 100%;
   animation: skeletonShimmer 1.8s infinite ease-in-out;
 }
+
+/* ── Phase 8: Aurora Animated Gradient Background ───────────────── */
+.aurora-bg-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(130px);
+  -webkit-filter: blur(130px);
+  opacity: 0.18;
+  animation: auroraFloat 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+.aurora-blob-1 {
+  width: 750px;
+  height: 750px;
+  background: radial-gradient(circle, var(--aurora-glow, #1e1b4b) 0%, #312e81 40%, transparent 75%);
+  top: -15%;
+  left: -10%;
+  animation-duration: 24s;
+}
+
+.aurora-blob-2 {
+  width: 650px;
+  height: 650px;
+  background: radial-gradient(circle, var(--teal) 0%, #0369a1 40%, transparent 75%);
+  top: 35%;
+  right: -8%;
+  animation-duration: 20s;
+  animation-delay: -7s;
+}
+
+.aurora-blob-3 {
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, var(--amber) 0%, #9a3412 40%, transparent 75%);
+  bottom: -10%;
+  left: 25%;
+  animation-duration: 26s;
+  animation-delay: -14s;
+}
+
+@keyframes auroraFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(70px, 90px) scale(1.08);
+  }
+  66% {
+    transform: translate(-50px, 50px) scale(0.94);
+  }
+}
+
+/* ── Phase 8: Gradient Text Utilities ────────────────────────────── */
+.gradient-text-hero {
+  background: linear-gradient(135deg, #ffffff 0%, var(--amber) 45%, var(--teal) 85%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-amber {
+  background: var(--amber-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-teal {
+  background: var(--teal-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Phase 8: Toast Notification Animations ──────────────────────── */
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-card-animate {
+  animation: toastSlideIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Phase 8: Mobile Bottom Navigation Bar & Day Carousel ────────── */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: rgba(4, 14, 31, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid var(--glass-border);
+    padding: 8px 12px;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
+  }
+
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-label);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    min-width: 60px;
+    min-height: 44px;
+    transition: all 150ms ease;
+  }
+
+  .mobile-nav-btn.active {
+    color: var(--amber);
+    background: rgba(255, 191, 0, 0.1);
+  }
+
+  .day-tabs-mobile-scroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding: 4px 2px 8px;
+  }
+
+  .day-tabs-mobile-scroll > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+}
+
 
 

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Itinerary } from '@/types';
 import { formatCost } from '@/utils/currency';
+import { useToast } from './Toast';
 
 interface Props {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export default function ShareModal({
   isDownloadingPdf = false,
 }: Props) {
   const [copied, setCopied] = useState(false);
+  const toast = useToast();
 
   if (!isOpen || !itinerary) return null;
 
@@ -47,6 +49,7 @@ export default function ShareModal({
         document.body.removeChild(textarea);
       }
       setCopied(true);
+      toast.success('Share link copied to clipboard!', 'Link Copied 🔗');
       setTimeout(() => setCopied(false), 2500);
     } catch (err) {
       console.warn('Clipboard copy error:', err);

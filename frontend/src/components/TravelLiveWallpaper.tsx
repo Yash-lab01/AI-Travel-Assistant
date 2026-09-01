@@ -400,18 +400,28 @@ export default function TravelLiveWallpaper() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 0,
-        pointerEvents: 'none',
-        display: 'block',
-      }}
-      aria-hidden="true"
-    />
+    <>
+      {/* Aurora Dynamic Ambient Background Blurs */}
+      <div className="aurora-bg-layer" aria-hidden="true">
+        <div className="aurora-blob aurora-blob-1" />
+        <div className="aurora-blob aurora-blob-2" />
+        <div className="aurora-blob aurora-blob-3" />
+      </div>
+
+      {/* Global Route Coordinates Canvas */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none',
+          display: 'block',
+        }}
+        aria-hidden="true"
+      />
+    </>
   );
 }
