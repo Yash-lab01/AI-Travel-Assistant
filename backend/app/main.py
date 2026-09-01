@@ -6,7 +6,7 @@ Endpoints:
   GET  /health        - Health check
   GET  /export/pdf    - PDF export stub
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
@@ -14,6 +14,7 @@ import uuid
 import json
 import asyncio
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,6 +29,7 @@ from app.db.history_store import (
     get_itinerary_by_id,
     delete_itinerary,
 )
+from app.tools.pdf_generator import generate_itinerary_pdf, generate_itinerary_html
 
 app = FastAPI(
     title="WanderAI API",
@@ -229,9 +231,70 @@ async def delete_trip_history_item(itinerary_id: str):
     return {"status": "deleted", "id": itinerary_id}
 
 
-# ── PDF Export Stub ──────────────────────────────────────────────────────────
+# ── PDF Export Endpoints (Phase 6) ──────────────────────────────────────────
 @app.get("/export/pdf/{itinerary_id}")
-async def export_pdf(itinerary_id: str):
-    """Stub PDF export endpoint."""
-    return {"message": "PDF export available in Phase 6", "itinerary_id": itinerary_id}
+async def export_pdf_by_id(itinerary_id: str):
+    """
+    Generate and stream a high-fidelity PDF travel guide for a saved itinerary.
+    """
+    itinerary = get_itinerary_by_id(itinerary_id)
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="Itinerary not found.")
+
+    dest = itinerary.trip_request.destination if itinerary.trip_request else "Trip"
+    safe_dest = re.sub(r'[^a-zA-Z0-9_-]', '_', dest)
+    filename = f"WanderAI-{safe_dest}-{itinerary_id[:8]}.pdf"
+
+    pdf_bytes = await generate_itinerary_pdf(itinerary)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+@app.post("/export/pdf")
+async def export_pdf_direct(itinerary: Itinerary):
+    """
+    Generate and stream a high-fidelity PDF travel guide directly from an Itinerary payload.
+    """
+    dest = itinerary.trip_request.destination if itinerary.trip_request else "Trip"
+    safe_dest = re.sub(r'[^a-zA-Z0-9_-]', '_', dest)
+    short_id = (itinerary.id or "trip")[:8]
+    filename = f"WanderAI-{safe_dest}-{short_id}.pdf"
+
+    pdf_bytes = await generate_itinerary_pdf(itinerary)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+# ── Shareable Itinerary Endpoint (Phase 6) ────────────────────────────────────
+@app.get("/share/{slug_or_id}", response_model=Itinerary)
+async def get_shared_trip(slug_or_id: str):
+    """
+    Retrieve an itinerary for public sharing / read-only viewing.
+    """
+    itinerary = get_itinerary_by_id(slug_or_id)
+    if not itinerary:
+        # Also check all histories in case slug is mapped
+        histories = get_all_histories(limit=100)
+        for h in histories:
+            if h.get("id", "").startswith(slug_or_id) or slug_or_id in h.get("id", ""):
+                found = get_itinerary_by_id(h["id"])
+                if found:
+                    return found
+        raise HTTPException(status_code=404, detail="Shared trip not found.")
+    return itinerary
+
 
