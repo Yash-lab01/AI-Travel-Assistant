@@ -19,7 +19,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.models.schemas import ChatRequest, Itinerary, AgentEvent, StopEditRequest
+from app.models.schemas import (
+    ChatRequest,
+    Itinerary,
+    AgentEvent,
+    StopEditRequest,
+    StopReorderRequest,
+    StopFeedbackRequest,
+    PackingListResponse,
+)
 from app.graph.travel_graph import travel_graph
 from app.agents.editor_agent import editor_node
 from app.vector_store.chroma_client import get_chroma_client
@@ -30,11 +38,15 @@ from app.db.history_store import (
     delete_itinerary,
 )
 from app.tools.pdf_generator import generate_itinerary_pdf, generate_itinerary_html
+from app.tools.ical_generator import generate_itinerary_ical
+from app.tools.packing_list_generator import generate_smart_packing_list
+from app.tools.routing_tool import calculate_sequential_transit_times
+from app.db.feedback_store import record_stop_feedback
 
 app = FastAPI(
     title="WanderAI API",
     description="Versatile Multi-Agent Travel Planner API",
-    version="0.4.0",
+    version="0.5.0",
 )
 
 # Allow Next.js frontend (localhost:3000)
@@ -50,7 +62,7 @@ app.add_middleware(
 # ── Health ───────────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.4.0"}
+    return {"status": "ok", "version": "0.5.0"}
 
 
 # ── Plan (REST) ──────────────────────────────────────────────────────────────
@@ -173,7 +185,6 @@ async def edit_itinerary_stop(itinerary_id: str, request: StopEditRequest):
     """
     config = {"configurable": {"thread_id": itinerary_id}}
     
-    # Run edit through the travel graph in edit mode
     state_update = {
         "messages": [HumanMessage(content=f"{request.action} stop on Day {request.day_number}")],
         "is_edit": True,
@@ -197,6 +208,124 @@ async def edit_itinerary_stop(itinerary_id: str, request: StopEditRequest):
         print(f"[history_store] Warning: Edit auto-save failed: {e}")
 
     return itinerary
+
+
+# ── Stop Reordering Endpoint (Phase 7) ──────────────────────────────────────
+@app.post("/plan/{itinerary_id}/reorder", response_model=Itinerary)
+async def reorder_itinerary_stops(itinerary_id: str, req: StopReorderRequest):
+    """
+    Reorder stops within a specific day and re-calculate sequential transit times.
+    """
+    itinerary = get_itinerary_by_id(itinerary_id)
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="Itinerary not found.")
+
+    target_day = next((d for d in itinerary.days if d.day_number == req.day_number), None)
+    if not target_day:
+        raise HTTPException(status_code=404, detail=f"Day {req.day_number} not found in itinerary.")
+
+    stop_map = {s.id: s for s in target_day.stops}
+    reordered_stops = [stop_map[sid] for sid in req.stop_ids if sid in stop_map]
+
+    # If any stops were not in the reordered list, append them
+    for s in target_day.stops:
+        if s.id not in req.stop_ids:
+            reordered_stops.append(s)
+
+    # Recalculate sequential transit times
+    updated_stops = calculate_sequential_transit_times(reordered_stops)
+    target_day.stops = updated_stops
+
+    # Update in database
+    try:
+        save_itinerary(itinerary)
+    except Exception as e:
+        print(f"[history_store] Warning: Reorder save failed: {e}")
+
+    return itinerary
+
+
+# ── User Feedback Endpoint (Phase 7) ────────────────────────────────────────
+@app.post("/feedback")
+async def submit_stop_feedback(feedback: StopFeedbackRequest):
+    """
+    Record user thumbs up/down rating on an individual stop.
+    Saves to SQLite and appends to backend/data/user_feedback.jsonl.
+    """
+    try:
+        result = record_stop_feedback(feedback)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to record feedback: {e}")
+
+
+# ── Smart Packing List Endpoints (Phase 7) ──────────────────────────────────
+@app.post("/trip/{itinerary_id}/packing-list", response_model=PackingListResponse)
+async def get_packing_list_for_itinerary(itinerary_id: str):
+    """
+    Generate an activity- & weather-aware smart packing checklist for a saved trip.
+    """
+    itinerary = get_itinerary_by_id(itinerary_id)
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="Itinerary not found.")
+
+    return await generate_smart_packing_list(itinerary)
+
+
+@app.post("/trip/packing-list", response_model=PackingListResponse)
+async def get_packing_list_direct(itinerary: Itinerary):
+    """
+    Generate a smart packing list directly from an in-memory Itinerary payload.
+    """
+    return await generate_smart_packing_list(itinerary)
+
+
+# ── iCalendar (.ics) Export Endpoints (Phase 7) ──────────────────────────────
+@app.get("/export/ical/{itinerary_id}")
+async def export_ical_by_id(itinerary_id: str):
+    """
+    Generate and stream an RFC 5545 .ics iCalendar file for Google/Apple/Outlook Calendar.
+    """
+    itinerary = get_itinerary_by_id(itinerary_id)
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="Itinerary not found.")
+
+    dest = itinerary.trip_request.destination if itinerary.trip_request else "Trip"
+    safe_dest = re.sub(r'[^a-zA-Z0-9_-]', '_', dest)
+    filename = f"WanderAI-{safe_dest}-{itinerary_id[:8]}.ics"
+
+    ical_content = generate_itinerary_ical(itinerary)
+
+    return Response(
+        content=ical_content,
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+@app.post("/export/ical")
+async def export_ical_direct(itinerary: Itinerary):
+    """
+    Generate and stream an RFC 5545 .ics iCalendar file directly from an Itinerary payload.
+    """
+    dest = itinerary.trip_request.destination if itinerary.trip_request else "Trip"
+    safe_dest = re.sub(r'[^a-zA-Z0-9_-]', '_', dest)
+    short_id = (itinerary.id or "trip")[:8]
+    filename = f"WanderAI-{safe_dest}-{short_id}.ics"
+
+    ical_content = generate_itinerary_ical(itinerary)
+
+    return Response(
+        content=ical_content,
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
 
 
 # ── Trip History Endpoints (Phase 4f) ─────────────────────────────────────────
@@ -296,5 +425,6 @@ async def get_shared_trip(slug_or_id: str):
                     return found
         raise HTTPException(status_code=404, detail="Shared trip not found.")
     return itinerary
+
 
 

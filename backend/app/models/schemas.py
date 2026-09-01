@@ -77,6 +77,7 @@ class Stop(BaseModel):
     niche_score: Optional[NicheScore] = None
     opening_hours: Optional[dict] = None
     travel_time_from_prev_minutes: Optional[int] = None
+    time_slot: Optional[str] = None # e.g. "09:30 AM - 11:00 AM"
 
 
 class DayPlan(BaseModel):
@@ -131,6 +132,41 @@ class StopEditRequest(BaseModel):
     custom_preference: Optional[str] = None  # e.g. "beach cafe", "museum", "scenic sunset point"
 
 
+class StopReorderRequest(BaseModel):
+    day_number: int
+    stop_ids: list[str] = Field(..., description="Ordered list of stop IDs for this day")
+
+
+class StopFeedbackRequest(BaseModel):
+    itinerary_id: Optional[str] = None
+    stop_id: str
+    stop_name: str
+    destination: str
+    rating: Literal[1, -1]  # 1 for thumbs-up, -1 for thumbs-down
+    category: Optional[str] = None
+    is_niche: bool = False
+    comment: Optional[str] = None
+
+
+class PackingListItem(BaseModel):
+    item: str
+    category: str       # "clothing", "weather", "electronics", "health_docs", "activity"
+    reason: Optional[str] = None
+    is_essential: bool = True
+
+
+class PackingListCategory(BaseModel):
+    name: str
+    icon: str
+    items: list[PackingListItem] = Field(default_factory=list)
+
+
+class PackingListResponse(BaseModel):
+    destination: str
+    weather_summary: Optional[str] = None
+    categories: list[PackingListCategory] = Field(default_factory=list)
+
+
 class AgentEvent(BaseModel):
     """Streamed over SSE to the frontend to show agent progress."""
     event_type: Literal[
@@ -169,4 +205,5 @@ class ChatRequest(BaseModel):
     target_day: Optional[int] = None             # Target day number for edits
     target_stop_id: Optional[str] = None         # Specific stop id being targeted
     target_stop_name: Optional[str] = None       # Specific stop name being targeted
+
 
