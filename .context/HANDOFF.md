@@ -52,7 +52,8 @@
 - ✅ `.context/PROJECT_CONTEXT.md` — Corrected model names, Chroma path, coding conventions.
 - ✅ `.context/TASKS.md` — Phase 4e complete, **Phase 4f (Trip History)** task list added.
 - ✅ `.context/HANDOFF.md` — This file (fully current as of 2026-08-26).
-- ✅ `docs/CURRENT_STATE.md` — Phase 4f in What's Next, Phase 5 & 6 roadmap updated.
+- ✅ `docs/CURRENT_STATE.md` — Phase 5 in Completed, Phase 6 roadmap updated.
+- ✅ `docs/eval_results.md` — Evaluation report for fine-tuned LoRA travel narrator vs baseline.
 - ✅ `docs/TROUBLESHOOTING_AND_MISTAKES.md` — Entries #1–#12 covering all bugs encountered.
 - ✅ `docs/IMAGE_INTEGRATION.md` — Updated to 4-tier OpenSearch cascade.
 
@@ -62,17 +63,17 @@
 
 - **Backend**: FastAPI server `http://127.0.0.1:8000` — running with `--reload`.
 - **Frontend**: Next.js 16 `http://localhost:3000` — compiled with 0 errors.
-- **Pytest**: 19/19 tests passing.
+- **Pytest**: 24/24 tests passing.
 - **Chroma Cache**: Versioned at **v7** — auto-invalidates old cache and fetches real photography via OpenSearch + PageImages.
+- **Local LoRA Travel Narrator (Phase 5)**: `ml/curate_dataset.py` (320 samples), `ml/train_lora.py` (Unsloth QLoRA), `ml/Modelfile`, `backend/app/tools/ollama_narrator.py` zero-latency client.
 - **Trip History (Phase 4f)**: SQLite `trip_history.db` backend store + dual-layer `localStorage` sync + slide-over `TripHistoryPanel` drawer.
 - **Multi-Turn Editing (Phase 4e)**: Active with `editor_agent.py`, `PATCH /plan/{id}/stop`, and StopCard action buttons (`🔄 Swap`, `❌ Remove`, `💬 Tell Me More`).
-- **Git**: Separate atomic commits for `backend`, `frontend`, and `docs`.
+- **Git**: Separate atomic commits for `backend`, `frontend`/`ml`, and `docs`.
 
 ---
 
-## 4. Immediate Next Steps — Phase 5: Local Fine-Tuned Narration Model (LoRA)
+## 4. Immediate Next Steps — Phase 6: Export, Sharing & Production Polish
 
-1. **Dataset Curation (`curate_dataset.py`)**: Collect 300+ pairs of atmospheric travel narrations for iconic and niche global landmarks.
-2. **LoRA Fine-Tuning Script (`train_lora.py`)**: Prepare Unsloth / PEFT training configuration on Llama 3.2 3B.
-3. **Local Ollama Integration**: Add local Ollama narrator fallback to `planner_agent.py` and `editor_agent.py`.
-4. **Before/After Evaluation**: Generate comparative samples in `eval_results.md`.
+1. **PDF Export Endpoint (`/export/pdf/{itinerary_id}`)**: Generate downloadable high-fidelity PDF travel brochures using Playwright / ReportLab with daily breakdowns, maps, and photos.
+2. **Shareable Itinerary URLs (`/trip/{slug}`)**: Generate short URL slugs for public viewable itineraries.
+3. **Leaflet Polyline Overlays**: Add colored sequential polyline routes connecting each day's stops on the map.

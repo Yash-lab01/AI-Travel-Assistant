@@ -87,17 +87,23 @@
 31. **Nav Header History Badge (`page.tsx`)**: Dynamic badge indicator showing saved trip count and 1-click drawer toggle.
 32. **19/19 Unit Tests Passing**: Full CRUD and pruning test suite in `test_history_store.py`.
 
+### Phase 5 — Local Fine-Tuned Narration Model (LoRA) (100% ✅)
+33. **Dataset Curation (`ml/curate_dataset.py`)**: 320 structured atmospheric travel writing pairs exported to `ml/dataset/train.jsonl` (288) and `ml/dataset/eval.jsonl` (32).
+34. **LoRA Fine-Tuning Script (`ml/train_lora.py`)**: Unsloth + PEFT + TRL pipeline for Llama 3.2 3B Instruct (4-bit QLoRA, rank=16, alpha=32, target projections, GGUF export).
+35. **Google Colab Runnable Notebook (`ml/train_colab_notebook.ipynb`)**: Ready-to-run GPU notebook with dataset loading, SFTTrainer loop, inference test, and GGUF packaging.
+36. **Ollama Modelfile (`ml/Modelfile`)**: Pre-configured parameters (temperature=0.4, anti-cliché system prompt) for Ollama serving.
+37. **Local Ollama Narrator Tool (`backend/app/tools/ollama_narrator.py`)**: Zero-latency local LLM client integrated into `planner_agent.py` and `editor_agent.py` with multi-tier fallback.
+38. **Qualitative & Automated Benchmark Evaluation (`docs/eval_results.md`)**: Comprehensive 10-landmark evaluation demonstrating 88.0/100 quality score and 0% cliché frequency.
+39. **24/24 Pytest Unit Tests Passing**: 100% passing across test suite including mock Ollama tests.
+
 ---
 
 ## What's Next
 
-### Phase 5 — Local Fine-Tuned Narration Model (LoRA) (NEXT 🔜)
-- LoRA fine-tuning on Llama 3.2 3B with Unsloth + PEFT (Colab T4)
-- Local Ollama deployment for zero-latency atmospheric narration
-- Blind before/after evaluation in `eval_results.md`
-
-### Phase 6 — Export, Sharing & Production Polish
-- Playwright PDF export, shareable URL slugs, Leaflet polyline route overlay
+### Phase 6 — Export, Sharing & Production Polish (NEXT 🔜)
+- Headless Playwright PDF export endpoint (`/export/pdf/{itinerary_id}`)
+- Shareable public itinerary URL slugs (`/trip/{slug}`)
+- Leaflet polyline route overlay connecting stops sequentially
 
 ---
 
