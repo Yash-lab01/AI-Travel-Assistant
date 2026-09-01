@@ -31,6 +31,7 @@ export default function MapView({ stops, activeDay }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
   const leafletMarkersRef = useRef<any[]>([]);
+  const leafletPolylinesRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -89,11 +90,16 @@ export default function MapView({ stops, activeDay }: Props) {
     const L = window.L;
     if (!map || !L) return;
 
-    // Clear existing markers
+    // Clear existing markers & polylines
     leafletMarkersRef.current.forEach(m => {
       try { m.remove(); } catch {}
     });
     leafletMarkersRef.current = [];
+
+    leafletPolylinesRef.current.forEach(p => {
+      try { p.remove(); } catch {}
+    });
+    leafletPolylinesRef.current = [];
 
     if (!stops || stops.length === 0) return;
 
@@ -181,6 +187,34 @@ export default function MapView({ stops, activeDay }: Props) {
         console.warn('Marker create error:', err);
       }
     });
+
+    // Draw sequential polyline route connecting day stops (Stop 1 -> Stop 2 -> ...)
+    if (latLngs.length >= 2) {
+      try {
+        // Outer ambient glow line
+        const glowLine = L.polyline(latLngs, {
+          color: '#00DBE7',
+          weight: 7,
+          opacity: 0.25,
+          lineCap: 'round',
+          lineJoin: 'round',
+        }).addTo(map);
+
+        // Inner crisp dashed line
+        const routeLine = L.polyline(latLngs, {
+          color: '#00DBE7',
+          weight: 3,
+          opacity: 0.85,
+          dashArray: '8, 8',
+          lineCap: 'round',
+          lineJoin: 'round',
+        }).addTo(map);
+
+        leafletPolylinesRef.current.push(glowLine, routeLine);
+      } catch (err) {
+        console.warn('Route polyline error:', err);
+      }
+    }
 
     // Auto-fit bounds safely with container layout validation
     if (latLngs.length === 1) {

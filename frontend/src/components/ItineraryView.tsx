@@ -194,6 +194,8 @@ function DayBanner({ day, destination }: { day: DayPlan; destination: string }) 
   );
 }
 
+import ShareModal from './ShareModal';
+
 interface Props {
   itinerary: Itinerary | null;
   isLoading: boolean;
@@ -203,6 +205,53 @@ interface Props {
 
 export default function ItineraryView({ itinerary, isLoading, onStopAction, onQuickEdit }: Props) {
   const [activeDay, setActiveDay] = useState(0);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!itinerary || isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    try {
+      // First try direct POST with in-memory payload for instant guaranteed export
+      const res = await fetch('http://localhost:8000/export/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itinerary),
+      });
+
+      if (!res.ok) {
+        // Fallback to GET by ID
+        const getRes = await fetch(`http://localhost:8000/export/pdf/${itinerary.id}`);
+        if (!getRes.ok) throw new Error('PDF export failed');
+        const blob = await getRes.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `WanderAI-${itinerary.trip_request?.destination || 'trip'}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `WanderAI-${itinerary.trip_request?.destination || 'trip'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF download error:', err);
+      // Fallback: open in new tab
+      window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -260,13 +309,32 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
               </p>
             </div>
 
-            <button
-              onClick={() => window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank')}
-              className="btn-primary-sm"
-              style={{ padding: '9px 18px', fontSize: 13, boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}
-            >
-              <span>📄 Export PDF</span>
-            </button>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                className="btn-primary-sm"
+                style={{ padding: '9px 16px', fontSize: 13, boxShadow: '0 4px 16px rgba(0,0,0,0.6)', cursor: isDownloadingPdf ? 'wait' : 'pointer' }}
+                title="Download printable PDF travel guide"
+              >
+                <span>{isDownloadingPdf ? '⏳ PDF...' : '📄 PDF'}</span>
+              </button>
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className="btn-primary-sm"
+                style={{
+                  padding: '9px 16px',
+                  fontSize: 13,
+                  background: 'rgba(0, 219, 231, 0.2)',
+                  borderColor: '#00DBE7',
+                  color: '#00DBE7',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+                }}
+                title="Share itinerary link"
+              >
+                <span>🔗 Share</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -290,15 +358,42 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
             </p>
           </div>
 
-          <button
-            onClick={() => window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank')}
-            className="btn-primary-sm"
-            style={{ padding: '8px 16px', fontSize: 13 }}
-          >
-            <span>📄 Export Itinerary</span>
-          </button>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="btn-primary-sm"
+              style={{ padding: '8px 14px', fontSize: 13, cursor: isDownloadingPdf ? 'wait' : 'pointer' }}
+              title="Download printable PDF travel guide"
+            >
+              <span>{isDownloadingPdf ? '⏳ PDF...' : '📄 PDF'}</span>
+            </button>
+            <button
+              onClick={() => setIsShareModalOpen(true)}
+              className="btn-primary-sm"
+              style={{
+                padding: '8px 14px',
+                fontSize: 13,
+                background: 'rgba(0, 219, 231, 0.15)',
+                borderColor: '#00DBE7',
+                color: '#00DBE7',
+              }}
+              title="Share itinerary link"
+            >
+              <span>🔗 Share</span>
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Share Modal Dialog */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        itinerary={itinerary}
+        onDownloadPdf={handleDownloadPdf}
+        isDownloadingPdf={isDownloadingPdf}
+      />
 
       {/* Quick Interactive Adjustments Strip */}
       <div className="quick-edits-bar">
