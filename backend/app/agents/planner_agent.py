@@ -190,7 +190,7 @@ async def _assign_day_themes(
             from langchain_core.messages import HumanMessage, SystemMessage
 
             llm = ChatGoogleGenerativeAI(
-                model="gemini-3.5-flash",
+                model="gemini-2.5-flash",
                 google_api_key=GEMINI_KEY,
                 temperature=0.5,
             )
@@ -265,14 +265,14 @@ async def _generate_narrations(stops: list[Stop], destination: str) -> list[str]
     except Exception as oe:
         print(f"[planner_agent] Local Ollama narration notice: {oe}")
 
-    # 2. Try Gemini 3.5 Flash
+    # 2. Try Gemini 2.5 Flash
     if GEMINI_KEY:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             from langchain_core.messages import HumanMessage
 
             llm = ChatGoogleGenerativeAI(
-                model="gemini-3.5-flash",
+                model="gemini-2.5-flash",
                 google_api_key=GEMINI_KEY,
                 temperature=0.35,
             )

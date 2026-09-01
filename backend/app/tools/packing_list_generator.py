@@ -146,12 +146,12 @@ async def generate_smart_packing_list(itinerary: Itinerary) -> PackingListRespon
         f"Travel Style: {itinerary.trip_request.travel_style if itinerary.trip_request else 'balanced'}\n"
     )
 
-    # 1. Try Gemini 2.0 Flash
+    # 1. Try Gemini 2.5 Flash
     if GOOGLE_KEY:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 google_api_key=GOOGLE_KEY,
                 temperature=0.3,
             )
@@ -191,7 +191,7 @@ async def generate_smart_packing_list(itinerary: Itinerary) -> PackingListRespon
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="llama-3.1-8b-instant", groq_api_key=GROQ_KEY, temperature=0.3)
+            llm = ChatGroq(model="llama3-8b-8192", groq_api_key=GROQ_KEY, temperature=0.3)
             messages = [
                 {"role": "system", "content": PACKING_SYSTEM_PROMPT},
                 {"role": "user", "content": user_context},

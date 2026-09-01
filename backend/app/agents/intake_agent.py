@@ -215,7 +215,7 @@ async def _generate_dynamic_clarification_questions(
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 google_api_key=GOOGLE_KEY,
                 temperature=0.4,
             )
@@ -246,7 +246,7 @@ async def _generate_dynamic_clarification_questions(
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="llama-3.1-8b-instant", groq_api_key=GROQ_KEY, temperature=0.4)
+            llm = ChatGroq(model="llama3-8b-8192", groq_api_key=GROQ_KEY, temperature=0.4)
             messages = [
                 {"role": "system", "content": CLARIFICATION_SYSTEM_PROMPT},
                 {"role": "user", "content": user_context},
@@ -308,12 +308,12 @@ def safe_extract_text(content: Any) -> str:
 
 
 async def _extract_with_llm(text: str) -> Optional[dict]:
-    # 1. Try Gemini 3.5 Flash first (fastest, high rate limit)
+    # 1. Try Gemini 2.5 Flash first (latest stable, high rate limit)
     if GOOGLE_KEY:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             llm = ChatGoogleGenerativeAI(
-                model="gemini-3.5-flash",
+                model="gemini-2.5-flash",
                 google_api_key=GOOGLE_KEY,
                 temperature=0.0,
             )
