@@ -188,52 +188,53 @@ export default function MapView({ stops, activeDay }: Props) {
       }
     });
 
-    // Draw sequential polyline route connecting day stops (Stop 1 -> Stop 2 -> ...)
-    if (latLngs.length >= 2) {
-      try {
-        // Outer ambient glow line
-        const glowLine = L.polyline(latLngs, {
-          color: '#00DBE7',
-          weight: 7,
-          opacity: 0.25,
-          lineCap: 'round',
-          lineJoin: 'round',
-        }).addTo(map);
-
-        // Inner crisp dashed line
-        const routeLine = L.polyline(latLngs, {
-          color: '#00DBE7',
-          weight: 3,
-          opacity: 0.85,
-          dashArray: '8, 8',
-          lineCap: 'round',
-          lineJoin: 'round',
-        }).addTo(map);
-
-        leafletPolylinesRef.current.push(glowLine, routeLine);
-      } catch (err) {
-        console.warn('Route polyline error:', err);
-      }
-    }
-
-    // Auto-fit bounds safely with container layout validation
-    if (latLngs.length === 1) {
-      try {
-        map.setView(latLngs[0], 14, { animate: true });
-      } catch {}
-    } else if (latLngs.length > 1) {
+    // Draw sequential route polylines + auto-fit bounds inside setTimeout so they
+    // run after invalidateSize() has settled the map container dimensions.
+    // (Drawing polylines before the map has a valid pixel origin causes the
+    // "Cannot read properties of undefined (reading 'x')" crash in _clipPoints.)
+    if (latLngs.length >= 1) {
       setTimeout(() => {
         try {
           if (!leafletMapRef.current || !mapContainerRef.current) return;
           leafletMapRef.current.invalidateSize();
-          const bounds = L.latLngBounds(latLngs);
-          if (bounds.isValid()) {
-            const ne = bounds.getNorthEast();
-            const sw = bounds.getSouthWest();
-            if (ne && sw && ne.lat === sw.lat && ne.lng === sw.lng) {
-              leafletMapRef.current.setView([ne.lat, ne.lng], 14, { animate: true });
-            } else {
-              leafletMapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true });
+
+          // Draw route polylines
+          if (latLngs.length >= 2) {
+            // Outer ambient glow line
+            const glowLine = L.polyline(latLngs, {
+              color: '#00DBE7',
+              weight: 7,
+              opacity: 0.25,
+              lineCap: 'round',
+              lineJoin: 'round',
+            }).addTo(leafletMapRef.current);
+
+            // Inner crisp dashed line
+            const routeLine = L.polyline(latLngs, {
+              color: '#00DBE7',
+              weight: 3,
+              opacity: 0.85,
+              dashArray: '8, 8',
+              lineCap: 'round',
+              lineJoin: 'round',
+            }).addTo(leafletMapRef.current);
+
+            leafletPolylinesRef.current.push(glowLine, routeLine);
+          }
+
+          // Auto-fit bounds
+          if (latLngs.length === 1) {
+            leafletMapRef.current.setView(latLngs[0], 14, { animate: true });
+          } else {
+            const bounds = L.latLngBounds(latLngs);
+            if (bounds.isValid()) {
+              const ne = bounds.getNorthEast();
+              const sw = bounds.getSouthWest();
+              if (ne && sw && ne.lat === sw.lat && ne.lng === sw.lng) {
+                leafletMapRef.current.setView([ne.lat, ne.lng], 14, { animate: true });
+              } else {
+                leafletMapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true });
+              }
             }
           }
         } catch {

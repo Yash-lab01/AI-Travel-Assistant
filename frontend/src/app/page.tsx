@@ -43,6 +43,7 @@ export default function Home() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
   const [externalPrompt, setExternalPrompt] = useState<string | null>(null);
+  const [externalEditInstruction, setExternalEditInstruction] = useState<string | null>(null);
   const [externalAction, setExternalAction] = useState<StopEditRequest | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [savedHistoryCount, setSavedHistoryCount] = useState(0);
@@ -409,6 +410,8 @@ export default function Home() {
               onExternalPromptConsumed={() => setExternalPrompt(null)}
               externalAction={externalAction}
               onExternalActionConsumed={() => setExternalAction(null)}
+              externalEditInstruction={externalEditInstruction}
+              onExternalEditInstructionConsumed={() => setExternalEditInstruction(null)}
             />
           </div>
 
@@ -422,8 +425,8 @@ export default function Home() {
                   setExternalAction(req);
                   scrollToSection('planner-studio');
                 }}
-                onQuickEdit={(prompt) => {
-                  setExternalPrompt(prompt);
+                onQuickEdit={(instruction) => {
+                  setExternalEditInstruction(instruction);
                   scrollToSection('planner-studio');
                 }}
               />

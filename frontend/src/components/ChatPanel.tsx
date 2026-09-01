@@ -21,6 +21,9 @@ interface Props {
   onExternalPromptConsumed?: () => void;
   externalAction?: StopEditRequest | null;
   onExternalActionConsumed?: () => void;
+  /** Quick-edit instruction from ItineraryView chips — always edits the CURRENT itinerary */
+  externalEditInstruction?: string | null;
+  onExternalEditInstructionConsumed?: () => void;
 }
 
 export default function ChatPanel({
@@ -33,6 +36,8 @@ export default function ChatPanel({
   onExternalPromptConsumed,
   externalAction,
   onExternalActionConsumed,
+  externalEditInstruction,
+  onExternalEditInstructionConsumed,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -71,7 +76,7 @@ export default function ChatPanel({
     }
   }, [messages, activeClarification]);
 
-  // Handle external prompt triggers (e.g. from Hero chips or quick edit chips)
+  // Handle external prompt triggers (e.g. from Hero destination chips — brand-new trip)
   useEffect(() => {
     if (externalPrompt && !isStreaming) {
       handleSend(externalPrompt);
@@ -80,6 +85,16 @@ export default function ChatPanel({
       }
     }
   }, [externalPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle quick-edit instruction chips from ItineraryView — must preserve existing_itinerary_id
+  useEffect(() => {
+    if (externalEditInstruction && !isStreaming) {
+      handleSend(externalEditInstruction, { action: 'edit_whole' });
+      if (onExternalEditInstructionConsumed) {
+        onExternalEditInstructionConsumed();
+      }
+    }
+  }, [externalEditInstruction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle external stop quick actions (Swap, Remove, Tell Me More)
   useEffect(() => {
