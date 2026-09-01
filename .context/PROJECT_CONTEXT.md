@@ -12,8 +12,8 @@
 | **Backend Runtime** | Python 3.12+, FastAPI, Uvicorn (async) |
 | **Agent Orchestration** | LangGraph `StateGraph` (async execution with `ainvoke`/`astream`) |
 | **Checkpointer** | SQLite Checkpointer (`backend/data/checkpoints.db`) |
-| **LLMs (Active — Zero Cost Strategy)** | • **Groq `openai/gpt-oss-20b`**: Fast structured slot-filling (Intake Agent)<br>• **Gemini 3.5 Flash (`GOOGLE_AI_STUDIO_API_KEY`)**: Day themes, storytelling & narrations<br>• **Local LoRA (Ollama `Llama 3.2 3B`)**: Atmospheric stop narration (Phase 5, future) |
-| **⚠️ Deprecated Models (DO NOT USE)** | `gemini-2.5-flash` (returns 404), `llama-3.1-8b-instant` (returns 404) |
+| **LLMs (Active — Zero Cost Strategy)** | • **Groq `llama-3.1-8b-instant`**: Fast structured slot-filling (Intake Agent) and dynamic clarification generation<br>• **Gemini 2.0 Flash (`GOOGLE_API_KEY`)**: Day themes, storytelling & narrations, dynamic clarification questions (primary)<br>• **Local LoRA (Ollama `Llama 3.2 3B`)**: Atmospheric stop narration (Phase 5) |
+| **⚠️ Deprecated Models (DO NOT USE)** | `gemini-3.5-flash` (may 404 — use `gemini-2.0-flash`), `gemini-2.5-flash` (returns 404) |
 | **Place & Travel Data** | • **Nominatim (OpenStreetMap)**: Free city geocoding<br>• **OpenTripMap API** (`format=json` → flat dicts, NOT GeoJSON): Attractions & POI categories<br>• **Google Places API**: Photo & rating enrichment<br>• **Tavily API**: Niche travel search & blog extraction |
 | **Vector Store** | ChromaDB (Embedded on-disk at `backend/data/chroma_db/` — `niche_spots` & `itineraries`, no Docker) |
 | **Scoring Engine** | Custom log-normalized hidden gem formula (unit tested with 7/7 tests passing) |
@@ -122,3 +122,4 @@ AI Travel Assistant/
 - **Frontend**: Client components with `'use client'`, styling in `globals.css` using CSS custom properties (`--amber`, `--teal`, `--glass-bg`), clean TypeScript types.
 - **Git Commits**: Conventional commits format (`feat(scope): ...`, `fix(scope): ...`, `docs: ...`). **Always make separate, atomic commits** for `docs`, `frontend`, and `backend` (never bundle them all into a single monolithic commit) so commit messages are direct and easy to track.
 - **Context Updates**: Whenever making changes, update `.context/TASKS.md`, `.context/HANDOFF.md`, and `docs/TROUBLESHOOTING_AND_MISTAKES.md` if a new bug/pattern was encountered.
+- **Clarification Question Chain**: `intake_node` uses a 3-tier chain: (1) Static `DESTINATION_QUESTIONS` dict for known cities (Goa, Mumbai, Lisbon…) — fastest, no LLM call; (2) `_generate_dynamic_clarification_questions()` for unknown destinations — Gemini 2.0 Flash → Groq fallback generates contextual questions from the *actual* user prompt; (3) `_get_generic_clarification_questions()` as last resort if all LLMs fail.

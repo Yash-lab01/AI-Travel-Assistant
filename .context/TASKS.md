@@ -208,3 +208,40 @@ Images are fully integrated across the app with zero-key fallback compatibility:
   - [x] Auto-fit map bounds dynamically accommodating both marker pins and route paths
 - [x] **31/31 unit tests passing** in pytest suite (`test_export_and_share.py`, `test_ollama_narrator.py`, `test_history_store.py`, `test_editor_agent.py`, `test_scoring.py`)
 - [x] **Next.js production build** compiling with 0 TypeScript / Turbopack errors and `/trip/[slug]` dynamic route
+
+---
+
+## Phase 7: Bug Fixes, Dynamic Clarifications & Polish (IN PROGRESS 🔄)
+
+### 7A — Critical Bug Fixes (COMPLETED ✅)
+- [x] **Quick-edit chips no longer treat instruction as a new trip**:
+  - Root cause: `onQuickEdit` was routing through `externalPrompt` → `handleSend()` with no action context, causing backend to run full planner from scratch with unrelated results
+  - Fix: Added `externalEditInstruction` prop to `ChatPanel`; triggers `handleSend(instruction, { action: 'edit_whole' })` which sends `existing_itinerary_id` to backend
+  - Updated `page.tsx` to wire `ItineraryView.onQuickEdit` → `setExternalEditInstruction` (was `setExternalPrompt`)
+- [x] **Leaflet route polyline crash fixed** (`TypeError: Cannot read properties of undefined (reading 'x')`):
+  - Root cause: Polylines were drawn synchronously before `invalidateSize()` settled the map container's pixel projection
+  - Fix: Moved polyline construction inside the `setTimeout(50ms)` block alongside `invalidateSize()` in `MapView.tsx`
+
+### 7B — Dynamic LLM-Powered Clarification Questions (COMPLETED ✅)
+- [x] **Problem**: Clarification preference chips were fixed/hardcoded — same generic options (travel_style, pace) appeared for every prompt regardless of what the user mentioned
+  - E.g. "3 days in Kyoto, anime and gaming culture" showed identical chips as "3 days in Kyoto, Zen temples and ramen"
+- [x] **Solution**: `_generate_dynamic_clarification_questions()` in `intake_agent.py`:
+  - Uses Gemini 2.0 Flash (primary) / Groq Llama 3.1 8B (fallback) to generate 2–3 questions contextual to the *actual* user prompt
+  - Questions and chip labels are now specific to what the user mentioned (vibe, interest area, cuisine type, region)
+  - Falls back to static `DESTINATION_QUESTIONS` template (for known cities: Goa, Mumbai, Lisbon, Rajasthan, etc.) then generic 2-question set if LLM unavailable
+- [x] Architecture: `CLARIFICATION_SYSTEM_PROMPT` instructs LLM to generate JSON matching `ClarificationQuestion` schema; response parsed with regex + `json.loads`; full Gemini → Groq → static fallback chain
+
+### 7C — Next: UI Polish & Phase 7 Features (PLANNED)
+- [ ] Concrete time-slot scheduling (09:30 AM – 11:00 AM style per stop)
+- [ ] `dnd-kit` drag-and-drop stop reordering with auto-transit recalculation
+- [ ] Framer Motion animations on stop add/swap/remove
+- [ ] Skeleton shimmer loading states during SSE generation
+- [ ] React error boundaries + SSE read timeout (30s) + error state UI
+- [ ] Empty state UI for history panel (first-time user)
+- [ ] User feedback thumbs (👍/👎 per stop) → `ml/dataset/user_feedback.jsonl`
+- [ ] Dietary filter chips (Vegan, Halal, Vegetarian, Gluten-Free)
+- [ ] Smart weather-aware packing list generator (1 LLM call using Open-Meteo data)
+- [ ] `.ics` calendar export (`GET /export/ical/{itinerary_id}`)
+- [ ] Google Maps navigation deep links per stop card
+- [ ] Polished `README.md` with architecture diagram + screenshots
+- [ ] 2–3 min demo video (Loom or YouTube)

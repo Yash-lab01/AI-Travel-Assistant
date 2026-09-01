@@ -1,79 +1,67 @@
 # HANDOFF.md — Active Session Handoff
-> Last updated: 2026-08-25
+> Last updated: 2026-09-02
 
 ## 1. Bugs Diagnosed & Resolved (All Sessions)
 
-1. **`AttributeError: 'list' object has no attribute 'strip'` in LLM Invocations**:
-   - **Root Cause**: In recent `langchain_google_genai` releases, `response.content` returns a list of dictionaries instead of a plain string.
-   - **Fix**: `safe_extract_text(content: Any)` added to `intake_agent.py`, `planner_agent.py`, and `niche_scraper.py`.
-
-2. **OpenTripMap Flat JSON vs GeoJSON Parser Miss & Mock Fallback**:
-   - **Root Cause**: `fetch_otm_places` looked for `properties.xid` (GeoJSON). OTM returns flat JSON, so all real places were skipped.
-   - **Fix**: Parser updated to read both flat JSON and GeoJSON shapes. Regional centroids added for Pune, Mumbai, Delhi, Jaipur, Goa, Kerala, Bali, Tokyo, Lisbon.
-
-3. **Frontend Day Switching & Map Crash on Tab Click**:
-   - **Root Cause**: `planner_agent.py` didn't strictly guarantee k clusters; `days[activeDay]` became `undefined`. Leaflet `fitBounds` on empty arrays threw errors.
-   - **Fix**: Strict k-cluster guarantee in `_kmeans_cluster`; safe `validActiveDay` indexing in `ItineraryView.tsx`; lat/lon validation in `MapView.tsx`.
-
-4. **Chroma Cache Serving Stale Mock Stops Across Cities**:
-   - **Fix**: `CACHE_VERSION` system added to `places_tool.py`. Currently at **v6**. Increment when schema or parser changes.
-
-5. **K-means Day 1 Consistently Underpopulated (1-2 Stops)**:
-   - **Fix**: Replaced with **K-means++** initialization + post-clustering rebalance pass.
-
-6. **Ranker Agent Bypassed — Planner Fetched Its Own OTM Data**:
-   - **Fix**: `ranker_node` now guarantees never-empty `ranked_stops`. `planner_node` logs `[WARNING]` if ever triggered as last resort.
-
-7. **Day Themes Always Show Generic Fallback Strings**:
-   - **Fix**: Added code-fence stripping before JSON parse. Added destination-aware fallback themes for all major cities.
-
-8. **Wikipedia Exact Title Miss — Generic Category Images on All Places**:
-   - **Root Cause**: Old `fetch_wikimedia_image` used only exact `titles=` query; failed for most OTM place names.
-   - **Fix**: Implemented **3-tier image cascade** in `places_tool.py`:
-     1. Wikipedia REST Summary API (`/api/rest_v1/page/summary/{name}`)
-     2. Wikipedia Generator Search (`action=query&generator=search&gsrsearch={name}`)
-     3. Wikimedia Commons file search (`gsrnamespace=6`)
-   - Result: ~100% real landmark image match rate tested on 23 Indian places.
-   - Same cascade now used in `niche_scraper.py` for community spots.
-   - **Cache bumped to v6** to auto-refresh all cached POIs.
-
-9. **Leaflet `fitBounds` Error: "Bounds are not valid"**:
-   - **Root Cause**: `map.fitBounds()` called before DOM layout calculated (0×0 container) or all stops at identical coords.
-   - **Fix** in `MapView.tsx`: `invalidateSize()` + 50ms `setTimeout` defer + identical-coord `setView` fallback.
-
-10. **Page Auto-Scrolling to Chat Section on Initial Load**:
-    - **Root Cause**: `AgentEventFeed.tsx` called `element.scrollIntoView()` on mount with empty events array, which jumps the global viewport.
-    - **Fix**: Replaced with internal container `scrollTop`/`scrollTo` in both `AgentEventFeed.tsx` and `ChatPanel.tsx`. Added `window.history.scrollRestoration = 'manual'` + `window.scrollTo(0,0)` in `page.tsx`.
+1. **`AttributeError: 'list' object has no attribute 'strip'` in LLM Invocations**: `safe_extract_text()` added to `intake_agent.py`, `planner_agent.py`, `niche_scraper.py`.
+2. **OpenTripMap Flat JSON vs GeoJSON Parser Miss**: Parser updated; regional centroids added for all major cities.
+3. **Frontend Day Switching & Map Crash on Tab Click**: Strict k-cluster guarantee; safe `validActiveDay` indexing; lat/lon validation.
+4. **Chroma Cache Serving Stale Mock Stops**: `CACHE_VERSION` system at **v6** in `places_tool.py`.
+5. **K-means Day 1 Underpopulated**: Replaced with K-means++ initialization + post-clustering rebalance.
+6. **Ranker Agent Bypassed**: `ranker_node` now guarantees never-empty `ranked_stops`.
+7. **Day Themes Always Show Generic Fallback**: Code-fence stripping + destination-aware fallback themes.
+8. **Wikipedia Exact Title Miss — Generic Category Images**: 4-tier image cascade (Wikipedia REST → Generator Search → Wikimedia Commons → Unsplash/Pexels). Cache bumped to v6.
+9. **Leaflet `fitBounds` Error on initial render**: `invalidateSize()` + 50ms `setTimeout` defer + identical-coord fallback.
+10. **Page Auto-Scrolling to Chat on Load**: Internal container scroll in `AgentEventFeed.tsx`/`ChatPanel.tsx` + `scrollRestoration = 'manual'` in `page.tsx`.
+11. **Quick-edit chips broke the trip (Phase 7)**: Chips routed through `externalPrompt` → new trip with no context. Fixed by adding `externalEditInstruction` prop to `ChatPanel` so `existing_itinerary_id` is always sent.
+12. **Leaflet polyline crash `TypeError: Cannot read undefined 'x'` (Phase 7)**: Polylines drawn before `invalidateSize()`. Fixed by moving polyline construction inside the 50ms `setTimeout`.
 
 ---
 
 ## 2. Documentation Updated
 
-- ✅ `.context/PROJECT_CONTEXT.md` — Corrected model names, Chroma path, coding conventions.
-- ✅ `.context/TASKS.md` — Phase 4e complete, **Phase 4f (Trip History)** task list added.
-- ✅ `.context/HANDOFF.md` — This file (fully current as of 2026-08-26).
-- ✅ `docs/CURRENT_STATE.md` — All Phases 0 through 6 marked 100% completed.
-- ✅ `docs/eval_results.md` — Evaluation report for fine-tuned LoRA travel narrator vs baseline.
-- ✅ `docs/TROUBLESHOOTING_AND_MISTAKES.md` — Entries #1–#12 covering all bugs encountered.
-- ✅ `docs/IMAGE_INTEGRATION.md` — Updated to 4-tier OpenSearch cascade.
+- ✅ `.context/TASKS.md` — Phase 7 section added (7A bugs, 7B dynamic clarifications, 7C planned)
+- ✅ `.context/HANDOFF.md` — This file (fully current as of 2026-09-02)
+- ✅ `.context/PROJECT_CONTEXT.md` — Dynamic clarification architecture documented
+- ✅ `docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md` — Overkill features removed; Phase 7 roadmap refined for portfolio
+- ✅ `README.md` — Updated feature list to include Phase 7 changes
 
 ---
 
 ## 3. Current Working State
 
-- **Backend**: FastAPI server `http://127.0.0.1:8000` — running with `--reload`.
-- **Frontend**: Next.js 16 `http://localhost:3000` — compiled with 0 errors.
+- **Backend**: FastAPI `http://127.0.0.1:8000` running with `--reload`.
+- **Frontend**: Next.js 16 `http://localhost:3000`, 0 TypeScript errors.
 - **Pytest**: 31/31 tests passing.
-- **PDF Export (Phase 6)**: High-fidelity Playwright PDF brochure generation (`GET /export/pdf/{id}` & `POST /export/pdf`).
-- **Shareable Public Trips (Phase 6)**: Standalone read-only public route `/trip/[slug]` + `ShareModal` (Copy Link, WhatsApp, X, Email) + `GET /share/{slug}`.
-- **Sequential Route Polylines (Phase 6)**: Dual-layer glowing polylines connecting daily stops sequentially in `MapView.tsx`.
-- **Local LoRA Travel Narrator (Phase 5)**: `ml/curate_dataset.py` (320 samples), `ml/train_lora.py` (Unsloth QLoRA), `ml/Modelfile`, `backend/app/tools/ollama_narrator.py` zero-latency client.
-- **Trip History (Phase 4f)**: SQLite `trip_history.db` backend store + dual-layer `localStorage` sync + slide-over `TripHistoryPanel` drawer.
-- **Multi-Turn Editing (Phase 4e)**: Active with `editor_agent.py`, `PATCH /plan/{id}/stop`, and StopCard action buttons (`🔄 Swap`, `❌ Remove`, `💬 Tell Me More`).
-- **Git**: Separate atomic commits for `backend`, `frontend`, and `docs`.
+- **Dynamic Clarifications (Phase 7B)**: `_generate_dynamic_clarification_questions()` in `intake_agent.py` — Gemini 2.0 Flash → Groq Llama 3.1 8B → static fallback chain. Questions are now prompt-specific.
+- **Quick-edit chips fix (Phase 7A)**: `externalEditInstruction` prop routes edits with correct `existing_itinerary_id`.
+- **Polyline crash fix (Phase 7A)**: Polylines now drawn inside `setTimeout` after `invalidateSize()`.
+- **PDF Export (Phase 6)**: `GET /export/pdf/{id}` & `POST /export/pdf`. Playwright Chromium — **must install via `python -m playwright install chromium`**.
+- **Shareable Public Trips (Phase 6)**: `/trip/[slug]` + `ShareModal` + `GET /share/{slug}`.
+- **Sequential Route Polylines (Phase 6)**: Dual-layer glowing polylines in `MapView.tsx`.
+- **Local LoRA Travel Narrator (Phase 5)**: `ml/ollama_narrator.py` zero-latency client.
+- **Trip History (Phase 4f)**: SQLite + `localStorage` + `TripHistoryPanel` drawer.
+- **Multi-Turn Editing (Phase 4e)**: `editor_agent.py` + StopCard actions (Swap, Remove, Tell Me More) + quick-edit chips.
 
 ---
 
-## 4. Completed Project Milestone Summary
+## 4. Phase 7 Next Steps
 
-All 7 developmental phases (Phase 0 through Phase 6) are completely implemented, thoroughly tested, and ready for deployment.
+**7C — UI Polish (not yet started):**
+- Concrete time-slot scheduling per stop (09:30 AM – 11:00 AM)
+- `dnd-kit` drag-and-drop reordering
+- Framer Motion animations on stop state changes
+- Skeleton shimmer loading states
+- React error boundaries + SSE timeout
+- Empty history panel state
+- User feedback (👍/👎) → `ml/dataset/user_feedback.jsonl`
+- Dietary filter chips
+- Smart packing list generator
+- `.ics` calendar export
+- Google Maps navigation deep links
+
+---
+
+## 5. Completed Project Milestone Summary
+
+Phases 0–6 fully implemented and tested. Phase 7A and 7B complete. Phase 7C in progress.

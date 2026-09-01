@@ -15,7 +15,7 @@
 
 Most AI travel demos are a thin wrapper around a single LLM prompt. WanderAI is an autonomous multi-agent state machine where each agent has a distinct role, real tools, and spatial awareness:
 
-1. **Conversational Intake with Clarifying Questions** — Detects brief or underspecified prompts ("3 days in Goa") and asks 2–3 targeted follow-up questions (budget, vibe, pace, cuisine preferences) before planning. Users can answer interactively or skip with one click.
+1. **Dynamic LLM-Powered Clarifying Questions** — Detects brief or underspecified prompts ("3 days in Goa") and uses Gemini 2.0 Flash to generate 2–3 *contextual* preference questions tailored to exactly what the user mentioned. "3 days in Kyoto, anime culture" gets completely different chips than "3 days in Kyoto, Zen temples and ramen." Curated static templates for well-known destinations (Goa, Mumbai, Lisbon, Rajasthan) override for maximum speed; unknown global destinations get fully LLM-generated questions.
 
 2. **Hidden Gem Engine** — A log-normalized scoring formula cross-references mainstream popularity (Google Places review counts) against niche community sentiment (Reddit, travel blogs via Tavily) to surface spots that are *actually* under-the-radar, not just under-reviewed.
 
@@ -23,9 +23,11 @@ Most AI travel demos are a thin wrapper around a single LLM prompt. WanderAI is 
 
 4. **Regional Multi-Zone Dispersion** — For wide destinations (Goa, Rajasthan, Bali, Mumbai, Kerala), the planner queries distinct sub-zone centroids per day, ensuring each day explores a genuinely different part of the destination.
 
-5. **Live Data at Runtime** — Every itinerary fetches real-time weather forecasts (Open-Meteo), realistic transit times (haversine routing), live attraction data (OpenTripMap), and optional photo/rating enrichment (Google Places).
+5. **Live Data at Runtime** — Every itinerary fetches real-time weather forecasts (Open-Meteo), realistic transit times (haversine routing), live attraction data (OpenTripMap), and 4-tier real photography (Wikipedia REST → Wikimedia Commons → Unsplash → Pexels).
 
-6. **Smart ₹/$ Currency** — Detects Indian destinations and displays all cost estimates in `₹ INR`; international trips use `$ USD`.
+6. **Full Export & Share Suite** — Playwright PDF brochure export, shareable public `/trip/[slug]` URLs, and a share modal with 1-click WhatsApp, X, and Email integrations.
+
+7. **Smart ₹/$ Currency** — Detects Indian destinations and displays all cost estimates in `₹ INR`; international trips use `$ USD`.
 
 ---
 
