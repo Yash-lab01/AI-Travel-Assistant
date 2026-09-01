@@ -191,7 +191,7 @@ async def generate_smart_packing_list(itinerary: Itinerary) -> PackingListRespon
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="llama3-8b-8192", groq_api_key=GROQ_KEY, temperature=0.3)
+            llm = ChatGroq(model="qwen/qwen3.6-27b", groq_api_key=GROQ_KEY, temperature=0.3)
             messages = [
                 {"role": "system", "content": PACKING_SYSTEM_PROMPT},
                 {"role": "user", "content": user_context},

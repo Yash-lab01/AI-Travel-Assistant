@@ -73,7 +73,7 @@ Make it atmospheric and evocative. Avoid generic phrases."""
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="llama3-8b-8192", groq_api_key=GROQ_KEY, temperature=0.6)
+            llm = ChatGroq(model="qwen/qwen3.6-27b", groq_api_key=GROQ_KEY, temperature=0.6)
             resp = await llm.ainvoke(prompt)
             text = safe_extract_text(resp.content).strip(' "')
             if text and len(text) > 10:
@@ -110,7 +110,7 @@ Keep it punchy, practical, and formatted in clean markdown bullet points."""
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="llama3-8b-8192", groq_api_key=GROQ_KEY, temperature=0.5)
+            llm = ChatGroq(model="qwen/qwen3.6-27b", groq_api_key=GROQ_KEY, temperature=0.5)
             resp = await llm.ainvoke(prompt)
             text = safe_extract_text(resp.content).strip()
             if text and len(text) > 30:

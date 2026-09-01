@@ -246,7 +246,7 @@ async def _generate_dynamic_clarification_questions(
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="llama3-8b-8192", groq_api_key=GROQ_KEY, temperature=0.4)
+            llm = ChatGroq(model="qwen/qwen3.6-27b", groq_api_key=GROQ_KEY, temperature=0.4)
             messages = [
                 {"role": "system", "content": CLARIFICATION_SYSTEM_PROMPT},
                 {"role": "user", "content": user_context},
