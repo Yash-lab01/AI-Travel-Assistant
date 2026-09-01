@@ -190,7 +190,21 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 
 ---
 
-## Phase 6: Export, Sharing & Production Polish
-- [ ] Headless Playwright PDF export endpoint (`/export/pdf/{itinerary_id}`)
-- [ ] Shareable public itinerary URL slugs (`/trip/{slug}`)
-- [ ] Leaflet polyline route overlay connecting stops sequentially
+## Phase 6: Export, Sharing & Production Polish (COMPLETED ✅)
+- [x] **Headless Playwright PDF export (`backend/app/tools/pdf_generator.py`)**:
+  - [x] Print-optimized HTML generator with Google Fonts (`Outfit`, `Playfair Display`), cover banners, day themes, weather forecasts, numbered stop cards, real photos, durations, costs, and atmospheric narrations
+  - [x] Playwright Chromium converter generating A4 PDF brochures with `print_background=True`
+  - [x] `GET /export/pdf/{itinerary_id}` for saved trips and `POST /export/pdf` for immediate in-memory export
+- [x] **Shareable public itinerary URLs (`frontend/src/app/trip/[slug]/page.tsx`)**:
+  - [x] Standalone read-only public trip page with responsive layout, day switcher tabs, MapView with route lines, and StopCard lists
+  - [x] Backend `GET /share/{slug_or_id}` endpoint retrieving saved itineraries
+  - [x] "✨ Plan Your Own Trip" CTA header button linking to `/`
+- [x] **Interactive Share Modal (`frontend/src/components/ShareModal.tsx`)**:
+  - [x] 1-click Copy Public Share Link with instant "✅ Copied!" feedback
+  - [x] Direct WhatsApp, X (Twitter), and Email share integrations
+  - [x] PDF download shortcut inside modal
+- [x] **Sequential Leaflet Route Overlays (`frontend/src/components/MapView.tsx`)**:
+  - [x] Dual-layer glowing route polyline connecting daily stops sequentially (Stop 1 → Stop 2 → Stop 3)
+  - [x] Auto-fit map bounds dynamically accommodating both marker pins and route paths
+- [x] **31/31 unit tests passing** in pytest suite (`test_export_and_share.py`, `test_ollama_narrator.py`, `test_history_store.py`, `test_editor_agent.py`, `test_scoring.py`)
+- [x] **Next.js production build** compiling with 0 TypeScript / Turbopack errors and `/trip/[slug]` dynamic route

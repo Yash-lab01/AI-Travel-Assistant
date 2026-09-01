@@ -52,7 +52,7 @@
 - ✅ `.context/PROJECT_CONTEXT.md` — Corrected model names, Chroma path, coding conventions.
 - ✅ `.context/TASKS.md` — Phase 4e complete, **Phase 4f (Trip History)** task list added.
 - ✅ `.context/HANDOFF.md` — This file (fully current as of 2026-08-26).
-- ✅ `docs/CURRENT_STATE.md` — Phase 5 in Completed, Phase 6 roadmap updated.
+- ✅ `docs/CURRENT_STATE.md` — All Phases 0 through 6 marked 100% completed.
 - ✅ `docs/eval_results.md` — Evaluation report for fine-tuned LoRA travel narrator vs baseline.
 - ✅ `docs/TROUBLESHOOTING_AND_MISTAKES.md` — Entries #1–#12 covering all bugs encountered.
 - ✅ `docs/IMAGE_INTEGRATION.md` — Updated to 4-tier OpenSearch cascade.
@@ -63,17 +63,17 @@
 
 - **Backend**: FastAPI server `http://127.0.0.1:8000` — running with `--reload`.
 - **Frontend**: Next.js 16 `http://localhost:3000` — compiled with 0 errors.
-- **Pytest**: 24/24 tests passing.
-- **Chroma Cache**: Versioned at **v7** — auto-invalidates old cache and fetches real photography via OpenSearch + PageImages.
+- **Pytest**: 31/31 tests passing.
+- **PDF Export (Phase 6)**: High-fidelity Playwright PDF brochure generation (`GET /export/pdf/{id}` & `POST /export/pdf`).
+- **Shareable Public Trips (Phase 6)**: Standalone read-only public route `/trip/[slug]` + `ShareModal` (Copy Link, WhatsApp, X, Email) + `GET /share/{slug}`.
+- **Sequential Route Polylines (Phase 6)**: Dual-layer glowing polylines connecting daily stops sequentially in `MapView.tsx`.
 - **Local LoRA Travel Narrator (Phase 5)**: `ml/curate_dataset.py` (320 samples), `ml/train_lora.py` (Unsloth QLoRA), `ml/Modelfile`, `backend/app/tools/ollama_narrator.py` zero-latency client.
 - **Trip History (Phase 4f)**: SQLite `trip_history.db` backend store + dual-layer `localStorage` sync + slide-over `TripHistoryPanel` drawer.
 - **Multi-Turn Editing (Phase 4e)**: Active with `editor_agent.py`, `PATCH /plan/{id}/stop`, and StopCard action buttons (`🔄 Swap`, `❌ Remove`, `💬 Tell Me More`).
-- **Git**: Separate atomic commits for `backend`, `frontend`/`ml`, and `docs`.
+- **Git**: Separate atomic commits for `backend`, `frontend`, and `docs`.
 
 ---
 
-## 4. Immediate Next Steps — Phase 6: Export, Sharing & Production Polish
+## 4. Completed Project Milestone Summary
 
-1. **PDF Export Endpoint (`/export/pdf/{itinerary_id}`)**: Generate downloadable high-fidelity PDF travel brochures using Playwright / ReportLab with daily breakdowns, maps, and photos.
-2. **Shareable Itinerary URLs (`/trip/{slug}`)**: Generate short URL slugs for public viewable itineraries.
-3. **Leaflet Polyline Overlays**: Add colored sequential polyline routes connecting each day's stops on the map.
+All 7 developmental phases (Phase 0 through Phase 6) are completely implemented, thoroughly tested, and ready for deployment.
