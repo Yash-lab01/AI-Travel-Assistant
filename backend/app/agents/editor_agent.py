@@ -46,13 +46,23 @@ def safe_extract_text(content: Any) -> str:
 
 async def _generate_stop_narration(stop_name: str, category: str, destination: str) -> str:
     """Generate concise atmospheric narration for a swapped stop."""
+    # 1. Try local Ollama fine-tuned narrator first
+    try:
+        from app.tools.ollama_narrator import generate_stop_narration, is_ollama_available
+        if await is_ollama_available():
+            local_narr = await generate_stop_narration(stop_name, category, destination)
+            if local_narr:
+                return local_narr
+    except Exception:
+        pass
+
     prompt = f"""Write a 1-sentence engaging travel narration (max 22 words) for {stop_name}, a {category} in {destination}.
 Make it atmospheric and evocative. Avoid generic phrases."""
 
     if GOOGLE_KEY:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
-            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GOOGLE_KEY, temperature=0.6)
+            llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=GOOGLE_KEY, temperature=0.6)
             resp = await llm.ainvoke(prompt)
             text = safe_extract_text(resp.content).strip(' "')
             if text and len(text) > 10:

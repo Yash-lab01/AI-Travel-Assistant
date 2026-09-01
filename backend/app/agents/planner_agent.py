@@ -248,47 +248,57 @@ Example for 3 days: ["Heritage Lanes & Sacred Temples", "Coastal Promenades & Co
     return [fallbacks[i % len(fallbacks)] for i in range(len(clusters))]
 
 
-# ── Narration generation with Gemini ──────────────────────────────────────────
+# ── Narration generation (Local Ollama fine-tuned -> Gemini 3.5 Flash -> Fallback) ──
 async def _generate_narrations(stops: list[Stop], destination: str) -> list[str]:
     """Generate 1-2 sentence atmospheric narration for each stop."""
     if not stops:
         return []
 
-    if not GEMINI_KEY:
-        return [s.description for s in stops]
-
+    # 1. Try Local Ollama fine-tuned model first if running
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        from langchain_core.messages import HumanMessage
+        from app.tools.ollama_narrator import generate_stop_narrations_batch, is_ollama_available
+        if await is_ollama_available():
+            ollama_narrations = await generate_stop_narrations_batch(stops, destination)
+            if all(n is not None for n in ollama_narrations):
+                print(f"[planner_agent] Successfully generated {len(stops)} narrations using local Ollama model")
+                return [n for n in ollama_narrations if n is not None]
+    except Exception as oe:
+        print(f"[planner_agent] Local Ollama narration notice: {oe}")
 
-        llm = ChatGoogleGenerativeAI(
-            model="gemini-3.5-flash",
-            google_api_key=GEMINI_KEY,
-            temperature=0.35,
-        )
+    # 2. Try Gemini 3.5 Flash
+    if GEMINI_KEY:
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            from langchain_core.messages import HumanMessage
 
-        stops_desc = "\n".join(
-            f"- {s.name} ({s.category}): {s.description}" for s in stops
-        )
+            llm = ChatGoogleGenerativeAI(
+                model="gemini-3.5-flash",
+                google_api_key=GEMINI_KEY,
+                temperature=0.35,
+            )
 
-        prompt = f"""Write a 1-2 sentence atmospheric, vivid narration for each of these stops in {destination}.
+            stops_desc = "\n".join(
+                f"- {s.name} ({s.category}): {s.description}" for s in stops
+            )
+
+            prompt = f"""Write a 1-2 sentence atmospheric, vivid narration for each of these stops in {destination}.
 Make them evocative and specific — no generic phrases like "a must-see landmark". Use present tense. Reference the stop's actual character.
 Return ONLY a valid JSON array of strings, one per stop. No markdown.
 
 Stops:
 {stops_desc}"""
 
-        response = await llm.ainvoke([HumanMessage(content=prompt)])
-        raw = safe_extract_text(response.content)
-        raw = re.sub(r'```(?:json)?', '', raw).strip('`').strip()
-        match = re.search(r'\[.*\]', raw, re.DOTALL)
-        if match:
-            narrations = json.loads(match.group())
-            if len(narrations) >= len(stops):
-                return narrations[:len(stops)]
+            response = await llm.ainvoke([HumanMessage(content=prompt)])
+            raw = safe_extract_text(response.content)
+            raw = re.sub(r'```(?:json)?', '', raw).strip('`').strip()
+            match = re.search(r'\[.*\]', raw, re.DOTALL)
+            if match:
+                narrations = json.loads(match.group())
+                if len(narrations) >= len(stops):
+                    return narrations[:len(stops)]
 
-    except Exception as e:
-        print(f"[planner_agent] Narration failed: {e}")
+        except Exception as e:
+            print(f"[planner_agent] Gemini narration failed: {e}")
 
     return [s.description for s in stops]
 
