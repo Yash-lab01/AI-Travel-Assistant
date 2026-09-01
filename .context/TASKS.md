@@ -264,3 +264,35 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **36/36 unit tests passing** in pytest suite (`test_phase7_features.py`, `test_export_and_share.py`, `test_ollama_narrator.py`, `test_history_store.py`, `test_editor_agent.py`, `test_scoring.py`, `test_phase2_ranker.py`)
 - [x] **Next.js production build** compiling with 0 errors
 
+---
+
+## Phase 8: UI/UX Design System Overhaul & Visual Polish (COMPLETED ✅)
+- [x] **Aurora Animated Gradient Background**:
+  - Added 3-blob dynamic ambient lighting mesh (`.aurora-blob-1`, `.aurora-blob-2`, `.aurora-blob-3`) in `globals.css` and `TravelLiveWallpaper.tsx`
+  - Subtle drifting keyframe animation (`@keyframes auroraFloat`) producing living frosted-glass depth
+- [x] **Vertical Full-Bleed StopCard Layout & 3D Spring Tilt Physics**:
+  - Redesigned StopCard to vertical card layout with 175px photographic banner, gradient scrim, and overlaid chips
+  - Interactive 3D perspective spring tilt physics tracking cursor position (`onMouseMove`)
+  - Staggered cascade entrance animation (`@keyframes slideUpFade` with `:nth-child` delays)
+  - Tabular mono typography (`JetBrains Mono`) for time slots, distances, durations, and costs
+- [x] **Destination-Reactive Theme Engine (`destinationTheme.ts`)**:
+  - Automatically classifies destination into 5 distinct archetypes:
+    - 🌴 Tropical (Sunset Coral `#FF6B35` + Lagoon `#00C897`)
+    - 🇵🇹 European (Warm Gold `#D4AF37` + Twilight Violet `#8B5CF6`)
+    - 👑 Desert / Heritage (Dune Amber `#F4A261` + Spice Red `#E63946`)
+    - 🏔️ Mountain / Alpine (Glacier Blue `#38BDF8` + Pine Green `#10B981`)
+    - 🏙️ Metropolis (Golden Amber `#FFBF00` + Electric Cyan `#00DBE7`)
+  - Injects dynamic CSS variables on document root upon itinerary generation or history selection
+- [x] **Toast Notification System (`Toast.tsx`)**:
+  - Zero-dependency floating animated toast notification manager
+  - Dispatched on feedback thumbs rating, iCal download, PDF export, and share link clipboard copy
+- [x] **Mobile Sticky Bottom Navigation & Swipeable Day Carousel**:
+  - Sticky bottom tab navigation bar on `< 768px` viewports (`[💬 Studio] [📋 Itinerary] [🗂️ History] [🧭 Architecture]`)
+  - Touch-friendly 44×44px interactive tap targets
+  - Horizontal swipeable day tabs with CSS `scroll-snap-type: x mandatory`
+- [x] **Typography & Hero Visuals**:
+  - Loaded Google Fonts (`JetBrains Mono`, `Outfit`, `Playfair Display`, `Sora`)
+  - Luminous gradient text (`.gradient-text-hero`) on hero headlines
+  - Animated live count-up for trip total cost estimates
+
+
