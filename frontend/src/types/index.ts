@@ -45,6 +45,7 @@ export interface Stop {
   niche_score?: NicheScore;
   opening_hours?: Record<string, string>;
   travel_time_from_prev_minutes?: number;
+  time_slot?: string;
 }
 
 export interface DayPlan {
@@ -89,6 +90,35 @@ export interface StopEditRequest {
   stop_name?: string;
   action: StopEditAction;
   custom_preference?: string;
+}
+
+export interface StopFeedback {
+  stop_id: string;
+  stop_name: string;
+  destination: string;
+  rating: 1 | -1;
+  itinerary_id?: string;
+  category?: string;
+  is_niche?: boolean;
+}
+
+export interface PackingListItem {
+  item: string;
+  category: string;
+  reason?: string;
+  is_essential: boolean;
+}
+
+export interface PackingListCategory {
+  name: string;
+  icon: string;
+  items: PackingListItem[];
+}
+
+export interface PackingListResponse {
+  destination: string;
+  weather_summary?: string;
+  categories: PackingListCategory[];
 }
 
 export interface AgentEvent {
@@ -139,3 +169,4 @@ export interface TripHistorySummary {
 export interface TripHistoryRecord extends TripHistorySummary {
   itinerary?: Itinerary;
 }
+

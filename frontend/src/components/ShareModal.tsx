@@ -263,13 +263,14 @@ export default function ShareModal({
           </div>
         </div>
 
-        {/* PDF Download Option */}
-        {onDownloadPdf && (
-          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '14px', textAlign: 'center' }}>
+        {/* Export & Download Options */}
+        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+          {onDownloadPdf && (
             <button
               onClick={onDownloadPdf}
               disabled={isDownloadingPdf}
               style={{
+                width: '100%',
                 background: 'rgba(255, 255, 255, 0.08)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '8px',
@@ -278,17 +279,49 @@ export default function ShareModal({
                 fontSize: '13px',
                 fontWeight: 600,
                 cursor: isDownloadingPdf ? 'wait' : 'pointer',
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
                 transition: 'all 0.2s ease',
               }}
             >
-              {isDownloadingPdf ? '⏳ Generating PDF Brochure...' : '📥 Download Printable PDF Brochure'}
+              {isDownloadingPdf ? '⏳ Generating PDF Brochure...' : '📄 Download Printable PDF Brochure'}
             </button>
-          </div>
-        )}
+          )}
+
+          <button
+            onClick={() => {
+              const url = `http://localhost:8000/export/ical/${itinerary.id}`;
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `WanderAI-${dest}.ics`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            }}
+            style={{
+              width: '100%',
+              background: 'rgba(0, 219, 231, 0.1)',
+              border: '1px solid rgba(0, 219, 231, 0.3)',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              color: '#00DBE7',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            📅 Export to Calendar (.ics / Google / Apple)
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+

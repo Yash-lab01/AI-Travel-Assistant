@@ -1938,3 +1938,42 @@ html, body {
   }
 }
 
+/* ── Phase 7: Drag & Drop, Skeletons & Micro-Animations ───────────── */
+.stop-drag-handle {
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.stop-drag-handle:hover {
+  color: var(--teal) !important;
+  transform: scale(1.15);
+}
+
+.stop-card[draggable="true"] {
+  cursor: grab;
+}
+
+.stop-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s infinite ease-in-out;
+}
+
+

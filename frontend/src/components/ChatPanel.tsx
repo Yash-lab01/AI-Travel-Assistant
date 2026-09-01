@@ -138,6 +138,18 @@ export default function ChatPanel({
     }));
   };
 
+  const [dietaryPreference, setDietaryPreference] = useState<string | null>(null);
+  const [streamError, setStreamError] = useState<string | null>(null);
+  const lastPromptRef = useRef<{ text?: string; options?: any }>({});
+
+  const DIETARY_CHIPS = [
+    { label: '🌱 Vegan', value: 'vegan' },
+    { label: '🕌 Halal', value: 'halal' },
+    { label: '🥗 Vegetarian', value: 'vegetarian' },
+    { label: '🌾 Gluten-Free', value: 'gluten-free' },
+    { label: '🕊️ Jain', value: 'jain' },
+  ];
+
   const handleSend = async (
     textToSend?: string,
     options?: {
@@ -152,21 +164,32 @@ export default function ChatPanel({
     let outgoingMessage = (textToSend !== undefined ? textToSend : input).trim();
     if (!outgoingMessage && !options?.forcePlan && !options?.customAnswers) return;
 
+    lastPromptRef.current = { text: textToSend !== undefined ? textToSend : input, options };
+    setStreamError(null);
+
     const explicitDest = pendingTrip?.destination || activeClarification?.destination;
     const explicitDays = pendingTrip?.num_days || activeClarification?.num_days;
+
+    let finalAnswers = { ...(options?.customAnswers || selectedAnswers) };
+    if (dietaryPreference) {
+      finalAnswers['dietary'] = dietaryPreference;
+    }
 
     if (options?.forcePlan) {
       const dest = explicitDest || 'Goa';
       const days = explicitDays || 3;
-      outgoingMessage = `${days} days in ${dest}`;
+      outgoingMessage = `${days} days in ${dest}${dietaryPreference ? `, ${dietaryPreference} food` : ''}`;
       setMessages(prev => [...prev, { role: 'user', content: `⚡ Plan ${days} days in ${dest} with standard defaults` }]);
     } else if (options?.customAnswers) {
       const dest = explicitDest || 'Goa';
       const days = explicitDays || 3;
       const answerSummary = Object.values(options.customAnswers).join(', ');
-      outgoingMessage = `${days} days in ${dest}${answerSummary ? `, ${answerSummary}` : ''}`;
+      outgoingMessage = `${days} days in ${dest}${answerSummary ? `, ${answerSummary}` : ''}${dietaryPreference ? `, ${dietaryPreference}` : ''}`;
       setMessages(prev => [...prev, { role: 'user', content: `🚀 Plan ${days} days in ${dest} (${answerSummary})` }]);
     } else if (outgoingMessage) {
+      if (dietaryPreference && !outgoingMessage.toLowerCase().includes(dietaryPreference)) {
+        outgoingMessage += ` (${dietaryPreference} dining)`;
+      }
       setInput('');
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
       setMessages(prev => [...prev, { role: 'user', content: outgoingMessage }]);
@@ -176,10 +199,16 @@ export default function ChatPanel({
     setAgentEvents([]);
     setIsStreaming(true);
 
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => {
+      abortController.abort();
+    }, 45000); // 45 second safety watchdog
+
     try {
       const res = await fetch('http://localhost:8000/plan/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: abortController.signal,
         body: JSON.stringify({
           session_id: sessionId,
           message: outgoingMessage,
@@ -187,13 +216,15 @@ export default function ChatPanel({
           num_days: explicitDays,
           existing_itinerary_id: currentItineraryId,
           force_plan: options?.forcePlan || false,
-          answers: options?.customAnswers || selectedAnswers,
+          answers: finalAnswers,
           action: options?.action,
           target_day: options?.targetDay,
           target_stop_id: options?.targetStopId,
           target_stop_name: options?.targetStopName,
         }),
       });
+
+      clearTimeout(timeoutId);
 
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
@@ -267,10 +298,16 @@ export default function ChatPanel({
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      const isAbort = err?.name === 'AbortError';
+      const errMsg = isAbort
+        ? 'Connection to planner timed out after 45 seconds.'
+        : `Connection interrupted (${err.message || err}). Ensure backend is active at localhost:8000.`;
+      setStreamError(errMsg);
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: `Sorry, something went wrong. Make sure the backend is running at localhost:8000. (${err})` },
+        { role: 'assistant', content: `⚠️ ${errMsg}` },
       ]);
     } finally {
       setIsStreaming(false);
@@ -298,6 +335,37 @@ export default function ChatPanel({
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} />
           <span>Multi-Agent Swarm Ready</span>
         </div>
+      </div>
+
+      {/* Dietary Filter Bar */}
+      <div style={{ padding: '8px 16px', background: 'rgba(4, 14, 31, 0.4)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, fontFamily: 'var(--font-label)', color: 'var(--text-muted)', fontWeight: 600, marginRight: 2 }}>
+          DIETARY BIAS:
+        </span>
+        {DIETARY_CHIPS.map((chip) => {
+          const isSelected = dietaryPreference === chip.value;
+          return (
+            <button
+              key={chip.value}
+              type="button"
+              onClick={() => setDietaryPreference(isSelected ? null : chip.value)}
+              style={{
+                background: isSelected ? 'rgba(0, 219, 231, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                border: `1px solid ${isSelected ? '#00DBE7' : 'rgba(255, 255, 255, 0.1)'}`,
+                color: isSelected ? '#00DBE7' : 'var(--text-muted)',
+                borderRadius: 'var(--radius-full, 9999px)',
+                padding: '3px 9px',
+                fontSize: 11,
+                cursor: 'pointer',
+                fontWeight: 600,
+                transition: 'all 150ms',
+              }}
+              title={`Bias recommendations towards ${chip.label}`}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Messages Scroll Area */}
@@ -362,6 +430,42 @@ export default function ChatPanel({
           <div className="chat-bubble assistant" style={{ opacity: 0.9, display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--teal)', animation: 'pulseDot 1.2s infinite' }} />
             <span>Multi-Agent reasoning in progress (scoring, routing & weather)...</span>
+          </div>
+        )}
+
+        {/* Error / Timeout Banner */}
+        {streamError && (
+          <div
+            style={{
+              margin: '8px 16px',
+              padding: '10px 14px',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: 8,
+              fontSize: 12.5,
+              color: '#fca5a5',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span>{streamError}</span>
+            <button
+              type="button"
+              onClick={() => handleSend(lastPromptRef.current.text, lastPromptRef.current.options)}
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                padding: '4px 10px',
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Retry ↺
+            </button>
           </div>
         )}
       </div>

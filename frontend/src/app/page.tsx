@@ -5,6 +5,7 @@ import ChatPanel from '@/components/ChatPanel';
 import ItineraryView from '@/components/ItineraryView';
 import TravelLiveWallpaper from '@/components/TravelLiveWallpaper';
 import TripHistoryPanel from '@/components/TripHistoryPanel';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { AgentEvent, Itinerary, StopEditRequest, TripHistoryRecord } from '@/types';
 
 const HERO_PROMPT_CARDS = [
@@ -400,36 +401,40 @@ export default function Home() {
 
           {/* Centered Conversational Planning Hub */}
           <div className="studio-centered-flow">
-            <ChatPanel
-              onItinerary={handleItineraryReceived}
-              agentEvents={agentEvents}
-              isStreaming={isStreaming}
-              setAgentEvents={setAgentEvents}
-              setIsStreaming={setIsStreaming}
-              externalPrompt={externalPrompt}
-              onExternalPromptConsumed={() => setExternalPrompt(null)}
-              externalAction={externalAction}
-              onExternalActionConsumed={() => setExternalAction(null)}
-              externalEditInstruction={externalEditInstruction}
-              onExternalEditInstructionConsumed={() => setExternalEditInstruction(null)}
-            />
+            <ErrorBoundary fallbackTitle="Chat Studio Error">
+              <ChatPanel
+                onItinerary={handleItineraryReceived}
+                agentEvents={agentEvents}
+                isStreaming={isStreaming}
+                setAgentEvents={setAgentEvents}
+                setIsStreaming={setIsStreaming}
+                externalPrompt={externalPrompt}
+                onExternalPromptConsumed={() => setExternalPrompt(null)}
+                externalAction={externalAction}
+                onExternalActionConsumed={() => setExternalAction(null)}
+                externalEditInstruction={externalEditInstruction}
+                onExternalEditInstructionConsumed={() => setExternalEditInstruction(null)}
+              />
+            </ErrorBoundary>
           </div>
 
           {/* Expansive Side-by-Side Itinerary & Map Visualizer */}
           {(itinerary || isStreaming) && (
             <div id="itinerary-visualizer" className="itinerary-full-wrapper" style={{ marginTop: 48 }}>
-              <ItineraryView
-                itinerary={itinerary}
-                isLoading={isStreaming && !itinerary}
-                onStopAction={(req) => {
-                  setExternalAction(req);
-                  scrollToSection('planner-studio');
-                }}
-                onQuickEdit={(instruction) => {
-                  setExternalEditInstruction(instruction);
-                  scrollToSection('planner-studio');
-                }}
-              />
+              <ErrorBoundary fallbackTitle="Itinerary Visualizer Error">
+                <ItineraryView
+                  itinerary={itinerary}
+                  isLoading={isStreaming && !itinerary}
+                  onStopAction={(req) => {
+                    setExternalAction(req);
+                    scrollToSection('planner-studio');
+                  }}
+                  onQuickEdit={(instruction) => {
+                    setExternalEditInstruction(instruction);
+                    scrollToSection('planner-studio');
+                  }}
+                />
+              </ErrorBoundary>
             </div>
           )}
         </section>

@@ -205,11 +205,21 @@ export default function TripHistoryPanel({
             </div>
           ) : historyRecords.length === 0 ? (
             <div className="history-empty-state">
-              <div className="history-empty-icon">🧭</div>
-              <h3 className="history-empty-title">No saved journeys yet</h3>
-              <p className="history-empty-desc">
-                When you generate an itinerary, it will be automatically saved here so you can revisit and fine-tune it anytime.
+              <div className="history-empty-icon" style={{ fontSize: 44, animation: 'float 3s ease-in-out infinite' }}>🧭</div>
+              <h3 className="history-empty-title" style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: '#fff', margin: '8px 0' }}>
+                No Saved Journeys Yet
+              </h3>
+              <p className="history-empty-desc" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 16 }}>
+                Every itinerary you design is automatically backed up here for seamless access across your sessions.
               </p>
+              <button
+                type="button"
+                className="btn-primary-sm"
+                onClick={onClose}
+                style={{ margin: '0 auto', fontSize: 12.5, padding: '7px 16px' }}
+              >
+                <span>✨ Plan Your First Journey</span>
+              </button>
             </div>
           ) : (
             <div className="history-cards-list">
