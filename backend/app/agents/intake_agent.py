@@ -142,7 +142,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
 
 
 def _get_generic_clarification_questions(destination: str) -> list[ClarificationQuestion]:
-    """Fallback clarifying questions for any global destination."""
+    """Basic static fallback clarifying questions — used only when LLM generation fails."""
     raw_qs = [
         {
             "id": "travel_style",
@@ -175,6 +175,104 @@ def _get_generic_clarification_questions(destination: str) -> list[Clarification
         )
         for q in raw_qs
     ]
+
+
+# ── LLM-powered contextual clarification question generator ─────────────────
+CLARIFICATION_SYSTEM_PROMPT = """You are a travel preference assistant. Based on the user's travel request, generate 2-3 contextual clarification questions with chip options that are SPECIFIC to what they mentioned.
+
+Rules:
+- Question 1: Always about travel style / experience TYPE — but options must reflect what they actually mentioned (e.g. if they said "beaches and nightlife", offer variants of that, not generic options)
+- Question 2: Always about daily pace (slow / moderate / packed)
+- Question 3 (optional): A third question specific to the destination or interest (e.g. cuisine type for foodie trips, region for wide destinations, vibe for city trips)
+- Each question must have 2-4 options. Each option needs a label (max 5 words), a value (one of: slow/moderate/fast/balanced/niche/popular/cultural/foodie/adventure/relaxed or a freeform preference string), and an emoji icon.
+- Make labels feel fresh, specific, and destination-aware. Avoid generic labels like "Cultural" or "Historical".
+
+Respond ONLY with valid JSON matching this exact schema:
+{
+  "questions": [
+    {
+      "id": "string (snake_case)",
+      "question": "string",
+      "category": "string (travel_style|pace|region_vibe|food|activity)",
+      "options": [
+        {"label": "string", "value": "string", "icon": "emoji"}
+      ]
+    }
+  ]
+}"""
+
+
+async def _generate_dynamic_clarification_questions(
+    user_message: str,
+    destination: str,
+    num_days: int,
+) -> list[ClarificationQuestion]:
+    """Use LLM to generate contextual clarification questions based on the specific user prompt."""
+    user_context = f"User request: '{user_message}'\nDestination: {destination}\nDuration: {num_days} days"
+
+    # Try Gemini first (fast, high quality)
+    if GOOGLE_KEY:
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            llm = ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash",
+                google_api_key=GOOGLE_KEY,
+                temperature=0.4,
+            )
+            messages = [
+                {"role": "system", "content": CLARIFICATION_SYSTEM_PROMPT},
+                {"role": "user", "content": user_context},
+            ]
+            response = await llm.ainvoke(messages)
+            raw = safe_extract_text(response.content)
+            match = re.search(r'\{.*\}', raw, re.DOTALL)
+            if match:
+                data = json.loads(match.group())
+                questions = [
+                    ClarificationQuestion(
+                        id=q["id"],
+                        question=q["question"],
+                        category=q["category"],
+                        options=[ClarificationOption(**opt) for opt in q["options"]]
+                    )
+                    for q in data.get("questions", [])
+                ]
+                if questions:
+                    return questions
+        except Exception as e:
+            print(f"[intake] Dynamic clarification (Gemini) failed: {e}")
+
+    # Try Groq fallback
+    if GROQ_KEY:
+        try:
+            from langchain_groq import ChatGroq
+            llm = ChatGroq(model="llama-3.1-8b-instant", groq_api_key=GROQ_KEY, temperature=0.4)
+            messages = [
+                {"role": "system", "content": CLARIFICATION_SYSTEM_PROMPT},
+                {"role": "user", "content": user_context},
+            ]
+            response = await llm.ainvoke(messages)
+            raw = safe_extract_text(response.content)
+            match = re.search(r'\{.*\}', raw, re.DOTALL)
+            if match:
+                data = json.loads(match.group())
+                questions = [
+                    ClarificationQuestion(
+                        id=q["id"],
+                        question=q["question"],
+                        category=q["category"],
+                        options=[ClarificationOption(**opt) for opt in q["options"]]
+                    )
+                    for q in data.get("questions", [])
+                ]
+                if questions:
+                    return questions
+        except Exception as e:
+            print(f"[intake] Dynamic clarification (Groq) failed: {e}")
+
+    # Final fallback: static generic questions
+    print(f"[intake] Falling back to generic clarification questions for {destination}")
+    return _get_generic_clarification_questions(destination)
 
 
 # ── Slot extraction with LLM ────────────────────────────────────────────────
@@ -505,6 +603,7 @@ async def intake_node(state: TravelGraphState) -> dict:
         matched_key = next((k for k in DESTINATION_QUESTIONS if k in dest_lower), None)
 
         if matched_key:
+            # Use curated destination-specific template (fast, no LLM call)
             raw_qs = DESTINATION_QUESTIONS[matched_key]
             questions = [
                 ClarificationQuestion(
@@ -516,7 +615,12 @@ async def intake_node(state: TravelGraphState) -> dict:
                 for q in raw_qs
             ]
         else:
-            questions = _get_generic_clarification_questions(trip_request.destination)
+            # Generate dynamic contextual questions from the user's actual prompt via LLM
+            questions = await _generate_dynamic_clarification_questions(
+                user_message=last_user_msg,
+                destination=trip_request.destination,
+                num_days=trip_request.num_days,
+            )
 
         events.append(AgentEvent(
             event_type="clarification_needed",
