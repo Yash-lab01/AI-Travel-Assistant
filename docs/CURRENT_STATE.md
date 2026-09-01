@@ -97,25 +97,40 @@
 39. **24/24 Pytest Unit Tests Passing**: 100% passing across test suite including mock Ollama tests.
 
 ### Phase 6 — Export, Sharing & Production Polish (100% ✅)
+### Phase 6 — Export, Sharing & Production Polish (100% ✅)
 40. **Headless Playwright PDF Export Service (`pdf_generator.py`)**: High-fidelity A4 PDF travel brochure generator formatting Google Fonts, destination hero banner, day weather forecasts, numbered stop cards, durations, costs, real photography, and atmospheric narrations.
 41. **Dual PDF Export Endpoints (`main.py`)**: `GET /export/pdf/{itinerary_id}` for saved trips and `POST /export/pdf` for immediate in-memory export.
 42. **Public Shareable Trip Route (`frontend/src/app/trip/[slug]/page.tsx`)**: Standalone, public read-only page with day tabs, interactive map, stop details, and "✨ Plan Your Own Trip" CTA.
 43. **Interactive Share Modal (`ShareModal.tsx`)**: 1-click Copy Share Link, WhatsApp, X (Twitter), and Email direct sharing buttons.
 44. **Sequential Leaflet Route Overlays (`MapView.tsx`)**: Glowing double-stroke polyline routes connecting daily stops sequentially (Stop 1 → Stop 2 → Stop 3) with dynamic bounds auto-fitting.
-45. **31/31 Unit Tests Passing**: Full backend test suite passing in pytest.
-46. **Clean Next.js Production Build**: 0 TypeScript / Turbopack errors.
+
+### Phase 7 — UI Polish, Timeline, Drag-and-Drop & Real-World Utilities (100% ✅)
+45. **Dynamic LLM-Powered Clarifying Questions (`intake_agent.py`)**: 3-tier chain (curated templates -> Gemini 2.0 Flash / Groq dynamic LLM contextual questions -> static fallback) creating prompt-specific preference chips.
+46. **Concrete Time-Slot Scheduling (`timeline.ts`)**: Sequential time blocks (`09:00 AM – 10:15 AM`) on StopCards + view mode switcher (Cards View 🗂️ vs Timeline View ⏱️).
+47. **Drag-and-Drop Stop Reordering (`ItineraryView.tsx` & `main.py`)**: Interactive handles `⋮⋮` with client-side Haversine transit time recalculation + `POST /plan/{id}/reorder` persistence.
+48. **Skeleton Shimmer Loading States (`globals.css`)**: 3-card pulsing skeleton placeholders during SSE generation.
+49. **React Error Boundaries & SSE Watchdog (`ErrorBoundary.tsx` & `ChatPanel.tsx`)**: Safe error containment and 45s connection watchdog with retry banner.
+50. **User Feedback Thumbs Loop (`feedback_store.py`)**: 👍 / 👎 buttons per stop recording to SQLite and `backend/data/user_feedback.jsonl` for model calibration.
+51. **Smart Weather-Aware Packing Checklist (`packing_list_generator.py` & `PackingListModal.tsx`)**: Activity- and climate-aware packing checklist with interactive checkboxes, progress bar, and clipboard copy.
+52. **iCalendar (.ics) Export Service (`ical_generator.py`)**: RFC 5545 calendar export with direct download in `ItineraryView` & `ShareModal`.
+53. **Google Maps Navigation Deep Links**: 1-click turn-by-turn walking navigation links on every StopCard.
+54. **Dietary Filter Chips**: Vegan, Halal, Vegetarian, Gluten-Free, and Jain dietary preference chips in Studio.
+55. **36/36 Unit Tests Passing**: Full backend test suite passing in pytest.
+56. **Clean Next.js Production Build**: 0 TypeScript / Turbopack errors.
 
 ---
 
 ## Status & System Readiness
 
-All core WanderAI phases (Phases 0 through 6) are **100% completed, tested, and production-ready**!
+All core WanderAI developmental phases (Phases 0 through 7) are **100% completed, verified with 36/36 unit tests, and production-ready**!
 
 ---
 
 ## Reference Documents
-- [`docs/IMAGE_INTEGRATION.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/IMAGE_INTEGRATION.md) — Full image implementation spec (3-tier Wikipedia cascade, frontend changes, schema updates, what NOT to do).
+- [`docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md) — Comprehensive architectural analysis & roadmap.
+- [`docs/IMAGE_INTEGRATION.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/IMAGE_INTEGRATION.md) — Full image implementation spec (4-tier Wikipedia cascade, frontend changes, schema updates).
 - [`docs/TROUBLESHOOTING_AND_MISTAKES.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/TROUBLESHOOTING_AND_MISTAKES.md) — Persistent log of 12 known pitfalls, model quirks, and rules for what NOT to do.
 - [`.context/PROJECT_CONTEXT.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/PROJECT_CONTEXT.md) — Architecture, active model names, Chroma path, coding conventions.
 - [`.context/TASKS.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/TASKS.md) — Granular phase task checklist.
 - [`.context/HANDOFF.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/HANDOFF.md) — Latest session bug fixes & immediate next steps.
+

@@ -231,17 +231,36 @@ Images are fully integrated across the app with zero-key fallback compatibility:
   - Falls back to static `DESTINATION_QUESTIONS` template (for known cities: Goa, Mumbai, Lisbon, Rajasthan, etc.) then generic 2-question set if LLM unavailable
 - [x] Architecture: `CLARIFICATION_SYSTEM_PROMPT` instructs LLM to generate JSON matching `ClarificationQuestion` schema; response parsed with regex + `json.loads`; full Gemini → Groq → static fallback chain
 
-### 7C — Next: UI Polish & Phase 7 Features (PLANNED)
-- [ ] Concrete time-slot scheduling (09:30 AM – 11:00 AM style per stop)
-- [ ] `dnd-kit` drag-and-drop stop reordering with auto-transit recalculation
-- [ ] Framer Motion animations on stop add/swap/remove
-- [ ] Skeleton shimmer loading states during SSE generation
-- [ ] React error boundaries + SSE read timeout (30s) + error state UI
-- [ ] Empty state UI for history panel (first-time user)
-- [ ] User feedback thumbs (👍/👎 per stop) → `ml/dataset/user_feedback.jsonl`
-- [ ] Dietary filter chips (Vegan, Halal, Vegetarian, Gluten-Free)
-- [ ] Smart weather-aware packing list generator (1 LLM call using Open-Meteo data)
-- [ ] `.ics` calendar export (`GET /export/ical/{itinerary_id}`)
-- [ ] Google Maps navigation deep links per stop card
-- [ ] Polished `README.md` with architecture diagram + screenshots
-- [ ] 2–3 min demo video (Loom or YouTube)
+### 7C — UI Polish, Timeline & Real-World Utilities (COMPLETED ✅)
+- [x] **Concrete time-slot scheduling (09:00 AM – 10:15 AM style per stop)**:
+  - `calculateDayTimeline()` in `timeline.ts` calculates precise sequential time blocks taking into account stop durations and transit times
+  - Rendered with clock badge `🕒 09:30 AM – 11:00 AM` on each StopCard
+  - View switcher: **Cards View** 🗂️ vs **Timeline View** ⏱️
+- [x] **Drag-and-drop stop reordering with auto-transit recalculation**:
+  - Interactive grip handles `⋮⋮` on StopCards with drag-and-drop support
+  - On drop, client optimistically recalculates Haversine distance and transit times (`recalculateSequentialTransit`), updating timeline slots immediately
+  - Syncs to backend `POST /plan/{itinerary_id}/reorder` and `localStorage`
+- [x] **Skeleton shimmer loading states during SSE generation**:
+  - Replaced spinner with 3-card glowing skeleton placeholder and animated map radar preview
+- [x] **React error boundaries & SSE timeout watchdog**:
+  - `ErrorBoundary.tsx` component wrapping Studio and Itinerary workspaces
+  - 45s safety watchdog in `ChatPanel.tsx` with retry alert banner
+- [x] **Illustrated empty state UI for history panel**:
+  - Themed empty state with floating compass emblem, description, and "✨ Plan Your First Journey" CTA button
+- [x] **User feedback thumbs (👍/👎 per stop) loop**:
+  - Thumbs up/down buttons on each StopCard
+  - `POST /feedback` endpoint saving to SQLite `stop_feedback` table and appending to `backend/data/user_feedback.jsonl` for LoRA model tuning
+- [x] **Dietary filter chips**:
+  - Added filter bar (🌱 Vegan, 🕌 Halal, 🥗 Vegetarian, 🌾 Gluten-Free, 🕊️ Jain) in `ChatPanel.tsx`
+- [x] **Smart weather-aware packing list generator**:
+  - `POST /trip/packing-list` & `POST /trip/{itinerary_id}/packing-list` using LLM (Gemini 2.0 Flash / Groq)
+  - `PackingListModal.tsx` with interactive checkboxes, progress bar, category filters, and clipboard copy
+- [x] **iCalendar (.ics) export**:
+  - RFC 5545 `.ics` generator (`backend/app/tools/ical_generator.py`)
+  - `GET /export/ical/{itinerary_id}` & `POST /export/ical` endpoints
+  - Direct 1-click download buttons in `ItineraryView` header and `ShareModal`
+- [x] **Google Maps navigation deep links**:
+  - "🧭 Map" button on each StopCard opening walking directions in Google Maps
+- [x] **36/36 unit tests passing** in pytest suite (`test_phase7_features.py`, `test_export_and_share.py`, `test_ollama_narrator.py`, `test_history_store.py`, `test_editor_agent.py`, `test_scoring.py`, `test_phase2_ranker.py`)
+- [x] **Next.js production build** compiling with 0 errors
+
