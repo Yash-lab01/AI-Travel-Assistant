@@ -197,7 +197,7 @@ html, body {
   font-size: 12px;
   font-weight: 600;
   padding: 8px 18px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--amber-gradient);
   color: var(--text-inverse);
   border: none;
@@ -424,7 +424,7 @@ html, body {
   font-size: 15px;
   font-weight: 700;
   padding: 14px 32px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--amber-gradient);
   color: var(--text-inverse);
   border: none;
@@ -447,7 +447,7 @@ html, body {
   font-size: 15px;
   font-weight: 600;
   padding: 14px 30px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--glass-bg);
   color: var(--text-primary);
   border: 1px solid var(--glass-border);

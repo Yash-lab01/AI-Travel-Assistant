@@ -179,7 +179,7 @@ export default function Home() {
             </div>
             <div className="badge">
               <span className="live-dot" />
-              <span>Multi-Agent Swarm</span>
+              <span>Live · 6 Agents</span>
             </div>
           </div>
 
@@ -236,7 +236,7 @@ export default function Home() {
         <section id="intro" className="intro-hero-screen">
           <div className="intro-badge-pill">
             <span className="live-dot" />
-            <span>AUTONOMOUS MULTI-AGENT TRAVEL STUDIO</span>
+            <span>✦ DESCRIBE YOUR TRIP · AI BUILDS THE REST</span>
           </div>
 
           <div className="intro-brand-container">
@@ -268,19 +268,19 @@ export default function Home() {
             <span>6 AGENTS · LANGGRAPH STATE MACHINE · REAL PLACE DATA</span>
           </div>
 
-          <h2 className="hero-title" style={{ textAlign: 'left', alignItems: 'flex-start' }}>
+          <h2 className="hero-title">
             <span className="title-regular">Tell it where you&apos;re going.</span>
             <span className="title-highlight gradient-text-hero">It handles everything else.</span>
           </h2>
 
-          <p className="hero-subtitle" style={{ textAlign: 'left' }}>
+          <p className="hero-subtitle">
             WanderAI runs a LangGraph pipeline: intake agent extracts your destination and dates,
             a planner agent fetches live place data from OpenTripMap and Google Places, a niche-scoring
             agent finds hidden gems using a log-normalized community sentiment formula, a geo-clustering
             agent groups stops into walk-friendly daily areas, and a narrator agent writes each stop.
           </p>
 
-          <div className="hero-actions" style={{ justifyContent: 'flex-start' }}>
+          <div className="hero-actions">
             <button
               className="btn-hero-primary"
               onClick={() => scrollToSection('planner-studio')}
@@ -526,7 +526,7 @@ export default function Home() {
             }}
           >
             <span>🧭</span>
-            <span>Architecture</span>
+            <span>How It Works</span>
           </button>
         </nav>
       </div>
