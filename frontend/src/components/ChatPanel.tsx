@@ -202,7 +202,7 @@ export default function ChatPanel({
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => {
       abortController.abort();
-    }, 45000); // 45 second safety watchdog
+    }, 90000); // 90 second safety watchdog for cold multi-agent generation
 
     try {
       const res = await fetch('http://localhost:8000/plan/stream', {

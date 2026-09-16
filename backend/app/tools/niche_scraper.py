@@ -76,6 +76,7 @@ async def discover_niche_spots(destination: str) -> list[Stop]:
         center_lat, center_lon = 38.7223, -9.1393
 
     stops: list[Stop] = []
+    scored_candidates: list[dict] = []
 
     # ── 4. Score Each Candidate with VADER & Formula ────────────────────────
     for i, item in enumerate(extracted_raw):
@@ -509,6 +510,64 @@ def _get_fallback_candidates(destination: str) -> list[dict]:
                 "review_count": 620,
                 "estimated_cost_usd": 15,
                 "duration_minutes": 120,
+            },
+        ]
+    elif "kashmir" in dest_lower or "srinagar" in dest_lower or "gulmarg" in dest_lower or "pahalgam" in dest_lower:
+        return [
+            {
+                "name": "Dal Lake Shikara Sunrise & Floating Market",
+                "category": "viewpoint",
+                "context": "Early morning tranquil wooden shikara row across Dal Lake mist to witness the 200-year-old floating vegetable and flower market.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 24,
+                "review_count": 2100,
+                "estimated_cost_usd": 12,
+                "duration_minutes": 90,
+            },
+            {
+                "name": "Pari Mahal (Palace of Fairies)",
+                "category": "attraction",
+                "context": "Seven-terraced 17th-century Mughal astronomical observatory and palace perched on Zabarwan mountain slopes overlooking Dal Lake.",
+                "source_type": "tavily_blog",
+                "cross_platform": True,
+                "mention_count": 18,
+                "review_count": 1400,
+                "estimated_cost_usd": 3,
+                "duration_minutes": 75,
+            },
+            {
+                "name": "Ahdoos Heritage Wazwan & Bakery",
+                "category": "restaurant",
+                "context": "Legendary 1918 culinary institution along the Jhelum river renowned for authentic 36-course Kashmiri Wazwan, Gushtaba, and walnut pies.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 21,
+                "review_count": 1850,
+                "estimated_cost_usd": 15,
+                "duration_minutes": 75,
+            },
+            {
+                "name": "Betaab Valley & Aru Alpine Meadows",
+                "category": "nature",
+                "context": "Pristine emerald pine forests, snow-fed Lidder river rapids, and high-altitude alpine grasslands in Pahalgam.",
+                "source_type": "reddit",
+                "cross_platform": True,
+                "mention_count": 19,
+                "review_count": 1600,
+                "estimated_cost_usd": 5,
+                "duration_minutes": 120,
+            },
+            {
+                "name": "Zaina Kadal Artisan Copperware Quarter",
+                "category": "market",
+                "context": "Centuries-old Downtown Srinagar heritage alleyways where master coppersmiths engrave intricate traditional Kashmiri samovars.",
+                "source_type": "reddit",
+                "cross_platform": False,
+                "mention_count": 14,
+                "review_count": 780,
+                "estimated_cost_usd": 20,
+                "duration_minutes": 60,
             },
         ]
     else:

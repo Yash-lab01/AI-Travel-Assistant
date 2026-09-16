@@ -1,7 +1,7 @@
 'use client';
 
 import { Itinerary, DayPlan, Stop, StopEditRequest } from '@/types';
-import { useState, lazy, Suspense, useEffect } from 'react';
+import { useState, lazy, Suspense, useEffect, useMemo } from 'react';
 import { formatCost, formatTotalCost } from '@/utils/currency';
 import { calculateDayTimeline, recalculateSequentialTransit } from '@/utils/timeline';
 import ShareModal from './ShareModal';
@@ -23,18 +23,78 @@ const CATEGORY_ICONS: Record<string, string> = {
   default:    '📍',
 };
 
-const CATEGORY_FALLBACK_IMAGES: Record<string, string> = {
-  attraction: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80',
-  museum:     'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?w=800&auto=format&fit=crop&q=80',
-  restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
-  cafe:       'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80',
-  viewpoint:  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
-  park:       'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80',
-  market:     'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800&auto=format&fit=crop&q=80',
-  bar:        'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop&q=80',
-  beach:      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
-  default:    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80',
+const CATEGORY_FALLBACK_POOLS: Record<string, string[]> = {
+  attraction: [
+    'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1541849546-216549ae216d?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=800&auto=format&fit=crop&q=80',
+  ],
+  museum: [
+    'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=800&auto=format&fit=crop&q=80',
+  ],
+  restaurant: [
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=800&auto=format&fit=crop&q=80',
+  ],
+  cafe: [
+    'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80',
+  ],
+  viewpoint: [
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop&q=80',
+  ],
+  park: [
+    'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?w=800&auto=format&fit=crop&q=80',
+  ],
+  nature: [
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop&q=80',
+  ],
+  market: [
+    'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1516594798947-e65505dbb29d?w=800&auto=format&fit=crop&q=80',
+  ],
+  bar: [
+    'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800&auto=format&fit=crop&q=80',
+  ],
+  beach: [
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop&q=80',
+  ],
+  default: [
+    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
+  ],
 };
+
+function getCategoryFallbackPhoto(category?: string, name?: string): string {
+  const cat = (category || 'default').toLowerCase();
+  const pool = CATEGORY_FALLBACK_POOLS[cat] || CATEGORY_FALLBACK_POOLS.default;
+  const str = name || 'stop';
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const idx = Math.abs(hash) % pool.length;
+  return pool[idx];
+}
 
 function AnimatedCost({ value, destination }: { value?: number; destination?: string }) {
   const [displayVal, setDisplayVal] = useState(0);
@@ -100,7 +160,7 @@ function StopCard({
 
   if (!stop) return null;
   const icon = CATEGORY_ICONS[stop.category] ?? CATEGORY_ICONS.default;
-  const categoryFallback = CATEGORY_FALLBACK_IMAGES[stop.category] ?? CATEGORY_FALLBACK_IMAGES.default;
+  const categoryFallback = useMemo(() => getCategoryFallbackPhoto(stop.category, stop.name), [stop.category, stop.name]);
   const primaryPhoto = stop.photo_urls && stop.photo_urls.length > 0 ? stop.photo_urls[0] : null;
   const displayPhotoUrl = (!imgError && primaryPhoto) ? primaryPhoto : (!fallbackError ? categoryFallback : null);
   const transitMin = transitBefore !== undefined ? transitBefore : stop.travel_time_from_prev_minutes;

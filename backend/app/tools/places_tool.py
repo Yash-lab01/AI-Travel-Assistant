@@ -26,7 +26,7 @@ OTM_KEY   = os.getenv("OPENTRIPMAP_API_KEY", "")
 GPLACES_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
 
 # Increment this when the parser or data schema changes to auto-invalidate Chroma cache
-CACHE_VERSION = "v8"
+CACHE_VERSION = "v9"
 
 # OTM category groups by travel style preference
 CATEGORY_MAP = {
@@ -42,6 +42,22 @@ ALL_KINDS = "historic,cultural,natural,foods,interesting_places,architecture"
 
 # ── Regional Sub-Zone Centroids for Multi-Day Geographic Dispersion ─────────
 REGIONAL_SUBZONES: dict[str, list[dict]] = {
+    "kashmir": [
+        {"name": "Srinagar (Dal Lake, Mughal Gardens & Downtown)", "lat": 34.0837, "lon": 74.7973},
+        {"name": "Gulmarg (Apharwat Peak, Gondola & Pine Valleys)", "lat": 34.0484, "lon": 74.3805},
+        {"name": "Pahalgam (Betaab Valley, Aru & Lidder River)",    "lat": 34.0156, "lon": 75.3188},
+        {"name": "Sonamarg (Thajiwas Glacier & Mountain Passes)",  "lat": 34.3000, "lon": 75.2900},
+    ],
+    "himachal": [
+        {"name": "Manali (Old Manali, Solang Valley & Hadimba)",    "lat": 32.2396, "lon": 77.1887},
+        {"name": "Naggar & Kullu Valley (Castles & Art Galleries)", "lat": 32.1465, "lon": 77.1706},
+        {"name": "Kasol & Parvati Valley (Pine Treks & Cafes)",     "lat": 32.0100, "lon": 77.3150},
+    ],
+    "ladakh": [
+        {"name": "Leh Central (Leh Palace, Shanti Stupa & Market)", "lat": 34.1526, "lon": 77.5771},
+        {"name": "Indus Valley Monasteries (Thiksey & Hemis)",      "lat": 34.0575, "lon": 77.6669},
+        {"name": "Nubra Valley & Hunder Sand Dunes",               "lat": 34.5760, "lon": 77.4280},
+    ],
     "goa": [
         {"name": "North Goa (Calangute, Anjuna & Coastal Forts)", "lat": 15.58, "lon": 73.76},
         {"name": "Central Goa (Panjim, Fontainhas & Old Goa)",   "lat": 15.50, "lon": 73.83},
@@ -96,10 +112,45 @@ REGIONAL_SUBZONES: dict[str, list[dict]] = {
     ],
 }
 
+REGION_CENTROIDS: dict[str, tuple[float, float]] = {
+    "kashmir": (34.0837, 74.7973),       # Srinagar / Kashmir Valley
+    "srinagar": (34.0837, 74.7973),
+    "gulmarg": (34.0484, 74.3805),
+    "pahalgam": (34.0156, 75.3188),
+    "sonamarg": (34.3000, 75.2900),
+    "ladakh": (34.1526, 77.5771),        # Leh / Ladakh
+    "leh": (34.1526, 77.5771),
+    "manali": (32.2396, 77.1887),
+    "himachal": (32.2396, 77.1887),
+    "shimla": (31.1048, 77.1734),
+    "goa": (15.4989, 73.8278),
+    "kerala": (9.9312, 76.2673),
+    "rajasthan": (26.9124, 75.7873),
+    "jaipur": (26.9124, 75.7873),
+    "pune": (18.5204, 73.8567),
+    "mumbai": (18.9220, 72.8340),
+    "delhi": (28.6139, 77.2090),
+    "bengaluru": (12.9716, 77.5946),
+    "bangalore": (12.9716, 77.5946),
+    "lisbon": (38.7223, -9.1393),
+    "kyoto": (35.0116, 135.7681),
+    "tokyo": (35.6762, 139.6503),
+    "bali": (-8.4095, 115.1889),
+    "paris": (48.8566, 2.3522),
+    "rome": (41.9028, 12.4964),
+}
+
 # ── Geocoding helper ──────────────────────────────────────────────────────────
 async def geocode_destination(destination: str) -> tuple[float, float]:
-    """Convert destination name -> (lat, lon) using Nominatim (free)."""
+    """Convert destination name -> (lat, lon) with region centroid priority & Nominatim (free)."""
     clean_dest = destination.split("(")[0].strip()
+    dest_lower = clean_dest.lower()
+
+    # Fast path for known regions to prevent geocoders from selecting obscure duplicate villages
+    for key, coords in REGION_CENTROIDS.items():
+        if key in dest_lower:
+            return coords
+
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": clean_dest, "format": "json", "limit": 1}
     headers = {"User-Agent": "WanderAI/1.0 (portfolio project)"}
@@ -114,16 +165,6 @@ async def geocode_destination(destination: str) -> tuple[float, float]:
     except Exception:
         pass
 
-    # Fallback coordinates for common destinations
-    dest_lower = destination.lower()
-    if "pune" in dest_lower: return 18.5204, 73.8567
-    if "mumbai" in dest_lower or "bombay" in dest_lower: return 18.9220, 72.8340
-    if "delhi" in dest_lower: return 28.6139, 77.2090
-    if "goa" in dest_lower: return 15.4989, 73.8278
-    if "jaipur" in dest_lower or "rajasthan" in dest_lower: return 26.9124, 75.7873
-    if "bengaluru" in dest_lower or "bangalore" in dest_lower: return 12.9716, 77.5946
-    if "lisbon" in dest_lower: return 38.7223, -9.1393
-    if "kyoto" in dest_lower: return 35.0116, 135.7681
     return 38.7223, -9.1393
 
 
@@ -199,25 +240,40 @@ async def fetch_otm_places(lat: float, lon: float, radius_m: int = 15000, limit:
 
 
 
+# Module-level Google Places authorization probe status
+_GPLACES_STATUS: Optional[bool] = None
+
 # ── Google Places enrichment ──────────────────────────────────────────────────
 async def enrich_with_google_places(name: str, lat: float, lon: float) -> dict:
     """
     Returns: {photo_url, rating, review_count, place_id}
-    Falls back gracefully if no API key or no result.
+    Falls back gracefully if no API key, unauthorized, or no result.
+    Probes key once; if unauthorized, sets _GPLACES_STATUS = False and bypasses loop.
     """
-    if not GPLACES_KEY:
+    global _GPLACES_STATUS
+    if not GPLACES_KEY or _GPLACES_STATUS is False:
         return {}
 
     try:
         search_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        async with httpx.AsyncClient(timeout=8) as client:
+        async with httpx.AsyncClient(timeout=4) as client:
             resp = await client.get(search_url, params={
                 "key":      GPLACES_KEY,
                 "location": f"{lat},{lon}",
                 "radius":   300,
                 "keyword":  name,
             })
+            if resp.status_code != 200:
+                _GPLACES_STATUS = False
+                return {}
+
             data = resp.json()
+            status = data.get("status", "")
+            if status in ("REQUEST_DENIED", "OVER_QUERY_LIMIT", "INVALID_REQUEST"):
+                _GPLACES_STATUS = False
+                return {}
+
+            _GPLACES_STATUS = True
 
         if not data.get("results"):
             return {}
@@ -226,7 +282,6 @@ async def enrich_with_google_places(name: str, lat: float, lon: float) -> dict:
         place_id = place.get("place_id", "")
         rating   = place.get("rating")
         n_reviews = place.get("user_ratings_total", 0)
-        photos   = place.get("photos", [])
 
         # Note: legacy Google Places photo endpoint returns 403 unless Places API (New) is enabled.
         # We rely on Wikipedia / Wikimedia Commons and curated photography for reliable zero-auth image delivery.
@@ -240,6 +295,19 @@ async def enrich_with_google_places(name: str, lat: float, lon: float) -> dict:
     except Exception:
         return {}
 
+
+# Keywords that indicate SVG maps, coat of arms, flags, or icons rather than real photographs
+DISALLOWED_IMAGE_KEYWORDS = (
+    ".svg", "map", "locator", "flag", "coat_of_arms", "icon",
+    "symbol", "logo", "portrait", "border", "location", "plan",
+    "diagram", "chart", "schema", "stamp"
+)
+
+def _is_valid_photo_url(url: str) -> bool:
+    if not url:
+        return False
+    lower = url.lower()
+    return not any(kw in lower for kw in DISALLOWED_IMAGE_KEYWORDS)
 
 # ── Free Wikipedia & Wikimedia Commons image scraper (Zero-Key / Free Tier) ──
 async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
@@ -268,7 +336,7 @@ async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
             if resp.status_code == 200:
                 d = resp.json()
                 thumb = d.get("thumbnail", {}).get("source") or d.get("originalimage", {}).get("source")
-                if thumb and not thumb.endswith(".svg"):
+                if thumb and _is_valid_photo_url(thumb):
                     return thumb
         except Exception:
             pass
@@ -295,7 +363,7 @@ async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
                         if s_resp.status_code == 200:
                             sd = s_resp.json()
                             thumb = sd.get("thumbnail", {}).get("source") or sd.get("originalimage", {}).get("source")
-                            if thumb and not thumb.endswith(".svg"):
+                            if thumb and _is_valid_photo_url(thumb):
                                 return thumb
         except Exception:
             pass
@@ -320,7 +388,7 @@ async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
                 pages = resp.json().get("query", {}).get("pages", {})
                 for page in pages.values():
                     thumb = page.get("thumbnail", {}).get("source") or page.get("original", {}).get("source")
-                    if thumb and not thumb.endswith(".svg"):
+                    if thumb and _is_valid_photo_url(thumb):
                         return thumb
         except Exception:
             pass
@@ -346,7 +414,7 @@ async def fetch_wikimedia_image(place_name: str, destination: str = "") -> str:
                 for page in pages.values():
                     for info in page.get("imageinfo", []):
                         thumb = info.get("thumburl") or info.get("url")
-                        if thumb and not thumb.endswith(".svg"):
+                        if thumb and _is_valid_photo_url(thumb):
                             return thumb
         except Exception:
             pass
@@ -358,7 +426,7 @@ def _unsplash_fallback_url(name: str, category: str, destination: str) -> str:
     """
     Generate a reliable high-res curated photography URL for stops without live API images.
     """
-    return get_category_fallback_image(category)
+    return get_category_fallback_image(category, name=name, destination=destination)
 
 
 # ── Main public function ──────────────────────────────────────────────────────
@@ -487,10 +555,12 @@ async def get_places_for_destination(
         enrichment = enrichments[i] if i < len(enrichments) and isinstance(enrichments[i], dict) else {}
         category = _infer_category(p.get("kinds", ""))
 
-        # 2-tier reliable image resolution: Wikipedia / Wikimedia -> Curated Unsplash photography
-        photo_url = wiki_map.get(i) or _unsplash_fallback_url(p["name"], category, clean_dest) or get_category_fallback_image(category)
-        photo_urls = [photo_url] if photo_url else [get_category_fallback_image(category)]
+        # 2-tier reliable image resolution: Wikipedia / Wikimedia -> Curated destination & category photography
+        fallback_img = get_category_fallback_image(category, name=p["name"], destination=clean_dest)
+        photo_url = wiki_map.get(i) or fallback_img
+        photo_urls = [photo_url] if photo_url else [fallback_img]
 
+        source = p.get("source", "opentripmap")
         stop = Stop(
             id=str(uuid.uuid4()),
             name=p["name"],
@@ -504,7 +574,7 @@ async def get_places_for_destination(
             photo_urls=photo_urls,
             rating=enrichment.get("rating", 4.5),
             review_count=enrichment.get("review_count", 2500),
-            source="opentripmap",
+            source=source,
             is_niche=False,
             niche_score=None,
         )
@@ -556,12 +626,12 @@ def _estimate_cost(category: str) -> float:
 def _mock_otm_places(lat: float, lon: float) -> list[dict]:
     """Rich fallback attractions with spatial spread."""
     return [
-        {"xid": "m1", "name": "Historic Old Town Center", "kinds": "historic,architecture", "lat": lat + 0.018, "lon": lon + 0.015, "rate": 3},
-        {"xid": "m2", "name": "National Heritage Museum", "kinds": "museums", "lat": lat + 0.012, "lon": lon - 0.014, "rate": 3},
-        {"xid": "m3", "name": "Panoramic City Viewpoint", "kinds": "natural,interesting_places", "lat": lat - 0.022, "lon": lon + 0.018, "rate": 3},
-        {"xid": "m4", "name": "Artisanal Food & Spice Market", "kinds": "foods,shops", "lat": lat - 0.015, "lon": lon - 0.012, "rate": 3},
-        {"xid": "m5", "name": "Ancient Fortress & Ramparts", "kinds": "historic", "lat": lat + 0.035, "lon": lon + 0.028, "rate": 3},
-        {"xid": "m6", "name": "Historic Promenade & Gardens", "kinds": "natural,cultural", "lat": lat - 0.032, "lon": lon - 0.025, "rate": 3},
-        {"xid": "m7", "name": "Botanical Heritage Garden", "kinds": "gardens,natural", "lat": lat + 0.025, "lon": lon - 0.020, "rate": 3},
-        {"xid": "m8", "name": "Traditional Arts & Craft Bazaar", "kinds": "shops", "lat": lat - 0.018, "lon": lon + 0.030, "rate": 3},
+        {"xid": "m1", "name": "Historic Old Town Center", "kinds": "historic,architecture", "lat": lat + 0.018, "lon": lon + 0.015, "rate": 3, "source": "mock"},
+        {"xid": "m2", "name": "National Heritage Museum", "kinds": "museums", "lat": lat + 0.012, "lon": lon - 0.014, "rate": 3, "source": "mock"},
+        {"xid": "m3", "name": "Panoramic City Viewpoint", "kinds": "natural,interesting_places", "lat": lat - 0.022, "lon": lon + 0.018, "rate": 3, "source": "mock"},
+        {"xid": "m4", "name": "Artisanal Food & Spice Market", "kinds": "foods,shops", "lat": lat - 0.015, "lon": lon - 0.012, "rate": 3, "source": "mock"},
+        {"xid": "m5", "name": "Ancient Fortress & Ramparts", "kinds": "historic", "lat": lat + 0.035, "lon": lon + 0.028, "rate": 3, "source": "mock"},
+        {"xid": "m6", "name": "Historic Promenade & Gardens", "kinds": "natural,cultural", "lat": lat - 0.032, "lon": lon - 0.025, "rate": 3, "source": "mock"},
+        {"xid": "m7", "name": "Botanical Heritage Garden", "kinds": "gardens,natural", "lat": lat + 0.025, "lon": lon - 0.020, "rate": 3, "source": "mock"},
+        {"xid": "m8", "name": "Traditional Arts & Craft Bazaar", "kinds": "shops", "lat": lat - 0.018, "lon": lon + 0.030, "rate": 3, "source": "mock"},
     ]
