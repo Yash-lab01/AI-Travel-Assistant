@@ -1,5 +1,5 @@
 # HANDOFF.md — Active Session Handoff
-> Last updated: 2026-09-02
+> Last updated: 2026-09-16
 
 ## 1. Bugs Diagnosed & Resolved (All Sessions)
 
@@ -45,23 +45,34 @@
 
 ---
 
-## 4. Phase 7 Next Steps
+## 4. Recent Issues Diagnosed & Resolved (Session September 2026)
 
-**7C — UI Polish & Real-World Utilities (COMPLETED ✅):**
-- Concrete time-slot scheduling per stop (`09:00 AM – 10:15 AM`) + View switcher (Cards vs Timeline)
-- Drag-and-drop stop reordering with auto-transit recalculation
-- Skeleton shimmer loading states during SSE generation
-- React error boundaries (`ErrorBoundary.tsx`) + 45s SSE watchdog
-- Illustrated empty history panel state
-- User feedback loop (👍/👎 per stop) saving to SQLite & `backend/data/user_feedback.jsonl`
-- Dietary filter chips (🌱 Vegan, 🕌 Halal, 🥗 Vegetarian, 🌾 Gluten-Free, 🕊️ Jain)
-- Smart weather-aware packing list generator (`POST /trip/packing-list` & modal)
-- `.ics` calendar export (`GET /export/ical/{id}` & `POST /export/ical`)
-- Google Maps navigation deep links on StopCards
+13. **Model Deprecations (404 NOT_FOUND)**:
+    - `gemini-2.5-flash` and `gemini-2.0-flash` were deprecated by Google.
+    - `llama-3.1-8b-instant`, `llama-3.3-70b-versatile`, and `qwen/qwen3.6-27b` were deprecated or unavailable on Groq.
+    - Migrated all agents (`planner_agent.py`, `intake_agent.py`, `editor_agent.py`, `packing_list_generator.py`, `niche_scraper.py`) to **`gemini-3.6-flash`** (with `gemini-3.5-flash` fallback) and Groq **`openai/gpt-oss-20b`** (with `openai/gpt-oss-120b`).
+14. **Missing Groq Fallback in Planner Agent & Generic Narrations**:
+    - `planner_agent.py` previously had no Groq fallback, so any Gemini 404 or 429 quota exhaustion defaulted all stop narrations to `"Iconic attraction in <destination>."`.
+    - Added Groq `openai/gpt-oss-20b` fallback for themes and narrations (< 1s generation) + context-aware, category-specific descriptive narrations for museums, viewpoints, restaurants, markets, and attractions.
+15. **Leaflet Map Blank / Stale Closure / Centered on Pune**:
+    - `MapView.tsx` had a mount race condition where `mapReadyRef.current` was `false` during initial render, and the 120ms timeout closure captured empty `stops = []`, causing the map to stay permanently stuck on default Pune coordinates with no markers.
+    - Container re-renders also triggered `Error: Map container is already initialized`.
+    - Preloaded `leaflet.css` in `layout.tsx` `<head>`, stored `stops` in `stopsRef.current` to eliminate stale closures, added `_leaflet_id` deletion before initialization, and auto-centered on the first valid stop coordinates immediately.
+16. **Destination Images 403 Forbidden & Missing Cities**:
+    - Legacy Google Places photo API URLs returned `403 Forbidden` in browser `<img>` tags, triggering `onError` and turning cards into blank placeholders.
+    - Removed failing Google Places photo URLs; routed directly to Wikipedia/Wikimedia Commons + curated photography; incremented `CACHE_VERSION` to `v8`.
+    - Expanded `DESTINATION_BANNERS` with high-resolution photography for Hyderabad, Chennai, Kolkata, Amritsar, Ahmedabad, Kochi, Shimla, Hampi, Mysore, Pondicherry, Ooty, Srinagar, Jodhpur, Jaisalmer, Seoul, Amsterdam, Prague, Vienna, Istanbul, Cairo, Sydney.
+    - Added two-tier image fallback in `StopCard` (`ItineraryView.tsx`) to fall back to curated category photos on image load errors.
+17. **Anti-AI-Look Polish (`ANTI_AI_LOOK_PLAN.md`)**:
+    - Restored center-aligned hero headline, subtitle, and action buttons (`R1`).
+    - Changed button border radius from boxy 8px to sleek 12px (`var(--radius-md)`) (`R2`).
+    - Updated intro badge copy to `✦ DESCRIBE YOUR TRIP · AI BUILDS THE REST` (`A1`).
+    - Updated header badge to `Live · 6 Agents` (`A2`).
+    - Renamed mobile nav tab 4 from `Architecture` to `How It Works` (`A3`).
 
 ---
 
 ## 5. Completed Project Milestone Summary
 
-All 8 developmental phases (Phase 0 through Phase 7) are 100% completed, verified with 36/36 passing pytest unit tests, and production-compiled with Next.js Turbopack.
+All 9 developmental phases (Phase 0 through Phase 9) are 100% completed, verified with 36/36 passing pytest unit tests, and production-compiled with Next.js Turbopack with zero errors.
 

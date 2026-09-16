@@ -12,15 +12,15 @@
 | **Backend Runtime** | Python 3.12+, FastAPI, Uvicorn (async) |
 | **Agent Orchestration** | LangGraph `StateGraph` (async execution with `ainvoke`/`astream`) |
 | **Checkpointer** | SQLite Checkpointer (`backend/data/checkpoints.db`) |
-| **LLMs (Active — Zero Cost Strategy)** | • **Groq `llama-3.1-8b-instant`**: Fast structured slot-filling (Intake Agent) and dynamic clarification generation<br>• **Gemini 2.0 Flash (`GOOGLE_API_KEY`)**: Day themes, storytelling & narrations, dynamic clarification questions (primary)<br>• **Local LoRA (Ollama `Llama 3.2 3B`)**: Atmospheric stop narration (Phase 5) |
-| **⚠️ Deprecated Models (DO NOT USE)** | `gemini-3.5-flash` (may 404 — use `gemini-2.0-flash`), `gemini-2.5-flash` (returns 404) |
-| **Place & Travel Data** | • **Nominatim (OpenStreetMap)**: Free city geocoding<br>• **OpenTripMap API** (`format=json` → flat dicts, NOT GeoJSON): Attractions & POI categories<br>• **Google Places API**: Photo & rating enrichment<br>• **Tavily API**: Niche travel search & blog extraction |
+| **LLMs (Active — Zero Cost Strategy)** | • **Google Gemini (`GOOGLE_API_KEY`)**: `gemini-3.6-flash` (primary, fast reasoning & structured output), `gemini-3.5-flash` (secondary fallback)<br>• **Groq API (`GROQ_API_KEY`)**: `openai/gpt-oss-20b` (primary high-speed slot extraction, dynamic clarifications, planner narration fallback), `openai/gpt-oss-120b` (secondary fallback)<br>• **Local LoRA (Ollama `Llama 3.2 3B`)**: Atmospheric stop narration (Phase 5) |
+| **⚠️ Deprecated Models (DO NOT USE)** | `gemini-2.5-flash` (returns 404), `gemini-2.0-flash` (returns 404), `llama-3.1-8b-instant` (returns 404 on Groq), `llama-3.3-70b-versatile` (returns 404 on Groq), `qwen/qwen3.6-27b` (returns 404 on Groq) |
+| **Place & Travel Data** | • **Nominatim (OpenStreetMap)**: Free city geocoding<br>• **OpenTripMap API** (`format=json` → flat dicts, NOT GeoJSON): Attractions & POI categories<br>• **Wikipedia REST & Wikimedia Commons APIs**: High-resolution CC landmark lead photography (zero auth)<br>• **Curated Photography & Fallbacks**: 40+ destination landscape banners & category fallbacks<br>• **Tavily API**: Niche travel search & blog extraction |
 | **Vector Store** | ChromaDB (Embedded on-disk at `backend/data/chroma_db/` — `niche_spots` & `itineraries`, no Docker) |
 | **Scoring Engine** | Custom log-normalized hidden gem formula (unit tested with 7/7 tests passing) |
 | **Frontend Framework** | Next.js 16 (App Router), React 19, TypeScript, Vanilla CSS |
-| **Interactive Map** | Leaflet + CartoDB Dark Matter tiles (100% free, zero token / no credit card requirement) + custom glowing markers |
+| **Interactive Map** | Leaflet + CartoDB Dark Matter tiles (100% free, zero token / no credit card requirement), preloaded `leaflet.css`, glowing polylines, container reuse cleanup |
 | **Live Wallpaper** | HTML5 Canvas 2D engine with global & Indian flight paths and aurora atmosphere |
-| **Design System** | "Nocturnal Voyager" (Playfair Display headlines, Outfit body, Sora labels, glassmorphism) |
+| **Design System** | "Nocturnal Voyager" (Playfair Display headlines, Outfit body, Sora labels, JetBrains Mono numbers, glassmorphism, 12px radii) |
 
 ---
 
@@ -36,7 +36,7 @@
    - `planner_node` uses K-means++ for balanced, geographically spread clusters (k = num_days).
 3. **Embedded Chroma (No Docker)**:
    - Persisted locally at `backend/data/chroma_db/`.
-   - Chroma cache uses `CACHE_VERSION` string (`"v4"`) as part of the key — increment this constant in `places_tool.py` whenever the data schema or parser changes to auto-invalidate stale entries.
+   - Chroma cache uses `CACHE_VERSION` string (`"v8"`) as part of the key — increment this constant in `places_tool.py` whenever the data schema or parser changes to auto-invalidate stale entries.
    - Only real OTM stops (`source="opentripmap"`) are cached. Mock stops are never written to Chroma.
 4. **Pydantic Schema as Single Source of Truth**:
    - `backend/app/models/schemas.py` defines `TripRequest`, `Stop`, `DayPlan`, `Itinerary`, `NicheScore`, and `AgentEvent`.
@@ -70,16 +70,22 @@ AI Travel Assistant/
 │   ├── app/
 │   │   ├── main.py                 # FastAPI app entry point (SSE & REST endpoints)
 │   │   ├── agents/
-│   │   │   ├── intake_agent.py     # Gemini 3.5 Flash / Groq slot-filling + clarifications
-│   │   │   ├── planner_agent.py    # K-means++ clustering + Gemini themes & narrations
-│   │   │   └── ranker_agent.py     # Popular + Niche blending (always non-empty output)
+│   │   │   ├── intake_agent.py     # Gemini 3.6 Flash / Groq gpt-oss-20b slot-filling + dynamic clarifications
+│   │   │   ├── planner_agent.py    # K-means++ clustering + Gemini 3.6 themes & narrations (Groq gpt-oss-20b fallback)
+│   │   │   ├── ranker_agent.py     # Popular + Niche blending (always non-empty output)
+│   │   │   └── editor_agent.py     # Multi-turn conversational itinerary editing & state patching
 │   │   ├── tools/
-│   │   │   ├── places_tool.py      # Nominatim + OpenTripMap flat JSON + Google Places + versioned Chroma cache
+│   │   │   ├── places_tool.py      # Nominatim + OpenTripMap + Wikipedia/Wikimedia cascade + v8 Chroma cache
+│   │   │   ├── destination_images.py # Curated 40+ destination banners + category photography
 │   │   │   ├── niche_scraper.py    # Reddit/Tavily scraper + VADER sentiment + hidden gem scoring
 │   │   │   ├── routing_tool.py     # Haversine transit time calculation between stops
 │   │   │   ├── weather_tool.py     # Open-Meteo daily weather forecast per day
 │   │   │   ├── reddit_tool.py      # Reddit public JSON scraper (zero auth)
-│   │   │   └── tavily_tool.py      # Tavily blog search tool
+│   │   │   ├── tavily_tool.py      # Tavily blog search tool
+│   │   │   ├── pdf_generator.py    # Headless Playwright A4 PDF export
+│   │   │   ├── ical_generator.py   # RFC 5545 iCalendar (.ics) export
+│   │   │   ├── packing_list_generator.py # Weather-aware packing checklist
+│   │   │   └── ollama_narrator.py  # Local LoRA Llama 3.2 3B narrator client
 │   │   ├── graph/
 │   │   │   ├── state.py            # TravelGraphState TypedDict
 │   │   │   └── travel_graph.py     # LangGraph compilation & routing
@@ -87,25 +93,39 @@ AI Travel Assistant/
 │   │   │   └── schemas.py          # Pydantic data contracts
 │   │   ├── scoring/
 │   │   │   └── hidden_gem_score.py # Log-normalized scoring formula
+│   │   ├── db/
+│   │   │   ├── history_store.py    # SQLite trip history store
+│   │   │   └── feedback_store.py   # SQLite user thumbs feedback store
 │   │   └── vector_store/
 │   │       └── chroma_client.py    # Embedded Chroma client singleton (path: data/chroma_db/)
 │   ├── data/
 │   │   ├── checkpoints.db          # SQLite LangGraph checkpoints
+│   │   ├── trip_history.db         # SQLite saved itineraries
+│   │   ├── user_feedback.db        # SQLite stop thumbs ratings
 │   │   └── chroma_db/              # ChromaDB on-disk store (collections: niche_spots, itineraries)
-│   └── tests/                      # Unit tests (pytest) — 11/11 passing
+│   └── tests/                      # Unit tests (pytest) — 36/36 passing
 ├── frontend/
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── page.tsx            # Master scrollable landing & studio layout
+│   │   │   ├── trip/[slug]/page.tsx # Public read-only shareable trip route
+│   │   │   ├── layout.tsx          # Root layout with preloaded Leaflet CSS & Google Fonts
 │   │   │   └── globals.css         # Nocturnal Voyager CSS tokens & animations
 │   │   ├── components/
 │   │   │   ├── ChatPanel.tsx       # SSE streaming conversation UI + clarification chips
-│   │   │   ├── ItineraryView.tsx   # Day tabs, stop cards, summary stats (safe activeDay indexing)
-│   │   │   ├── MapView.tsx         # Leaflet + CartoDB dark map (safe lat/lon + bounds validation)
+│   │   │   ├── ItineraryView.tsx   # Day tabs, full-bleed stop cards, 3D tilt, timeline switcher
+│   │   │   ├── MapView.tsx         # Leaflet + CartoDB dark map (safe lat/lon, route lines, bounds validation)
 │   │   │   ├── AgentEventFeed.tsx  # Real-time agent thought stream
-│   │   │   └── TravelLiveWallpaper.tsx  # HTML5 Canvas animated flight paths
+│   │   │   ├── TravelLiveWallpaper.tsx  # HTML5 Canvas animated flight paths + aurora atmosphere
+│   │   │   ├── TripHistoryPanel.tsx # Saved trips slide-over drawer
+│   │   │   ├── ShareModal.tsx      # Public share & export dialog
+│   │   │   ├── PackingListModal.tsx # Weather-aware packing checklist modal
+│   │   │   ├── ErrorBoundary.tsx   # React error boundary
+│   │   │   └── Toast.tsx           # Floating toast notification manager
 │   │   ├── utils/
-│   │   │   └── currency.ts         # Smart ₹ INR / $ USD formatter by destination
+│   │   │   ├── currency.ts         # Smart ₹ INR / $ USD formatter by destination
+│   │   │   ├── timeline.ts         # Sequential 09:00 AM time-slot calculator
+│   │   │   └── destinationTheme.ts # 5-archetype dynamic CSS palette engine
 │   │   └── types/
 │   │       └── index.ts            # TypeScript interfaces matching schemas.py
 ├── stop-servers.ps1                # Script to free ports 3000 & 8000
@@ -118,8 +138,8 @@ AI Travel Assistant/
 
 - **Python**: PEP8, type annotations on all function signatures, `async def` for all LangGraph nodes and FastAPI route handlers.
 - **LLM Response Safety**: Always use `safe_extract_text(response.content)` — never `response.content.strip()` directly.
-- **Chroma Cache**: Increment `CACHE_VERSION` in `places_tool.py` whenever OTM parser or Stop schema changes.
+- **Chroma Cache**: Increment `CACHE_VERSION` in `places_tool.py` whenever OTM parser, image pipeline, or Stop schema changes (currently `v8`).
 - **Frontend**: Client components with `'use client'`, styling in `globals.css` using CSS custom properties (`--amber`, `--teal`, `--glass-bg`), clean TypeScript types.
 - **Git Commits**: Conventional commits format (`feat(scope): ...`, `fix(scope): ...`, `docs: ...`). **Always make separate, atomic commits** for `docs`, `frontend`, and `backend` (never bundle them all into a single monolithic commit) so commit messages are direct and easy to track.
 - **Context Updates**: Whenever making changes, update `.context/TASKS.md`, `.context/HANDOFF.md`, and `docs/TROUBLESHOOTING_AND_MISTAKES.md` if a new bug/pattern was encountered.
-- **Clarification Question Chain**: `intake_node` uses a 3-tier chain: (1) Static `DESTINATION_QUESTIONS` dict for known cities (Goa, Mumbai, Lisbon…) — fastest, no LLM call; (2) `_generate_dynamic_clarification_questions()` for unknown destinations — Gemini 2.0 Flash → Groq fallback generates contextual questions from the *actual* user prompt; (3) `_get_generic_clarification_questions()` as last resort if all LLMs fail.
+- **Clarification Question Chain**: `intake_node` uses a 3-tier chain: (1) Static `DESTINATION_QUESTIONS` dict for known cities (Goa, Mumbai, Lisbon…) — fastest, no LLM call; (2) `_generate_dynamic_clarification_questions()` for unknown destinations — Gemini 3.6 Flash → Groq `openai/gpt-oss-20b` fallback generates contextual questions from the *actual* user prompt; (3) `_get_generic_clarification_questions()` as last resort if all LLMs fail.

@@ -1,5 +1,5 @@
 # TASKS.md — Project Roadmap & Task Checklist
-> Last updated: 2026-08-25
+> Last updated: 2026-09-16
 
 ## Phase 0: Foundations & Architecture (COMPLETED ✅)
 - [x] FastAPI backend setup with `/plan` (REST), `/plan/stream` (SSE), and `/health` endpoints
@@ -211,7 +211,7 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 
 ---
 
-## Phase 7: Bug Fixes, Dynamic Clarifications & Polish (IN PROGRESS 🔄)
+## Phase 7: Bug Fixes, Dynamic Clarifications & Polish (COMPLETED ✅)
 
 ### 7A — Critical Bug Fixes (COMPLETED ✅)
 - [x] **Quick-edit chips no longer treat instruction as a new trip**:
@@ -294,5 +294,54 @@ Images are fully integrated across the app with zero-key fallback compatibility:
   - Loaded Google Fonts (`JetBrains Mono`, `Outfit`, `Playfair Display`, `Sora`)
   - Luminous gradient text (`.gradient-text-hero`) on hero headlines
   - Animated live count-up for trip total cost estimates
+
+---
+
+## Phase 9: Anti-AI-Look Overhaul, Model Upgrades & Map/Image Hardening (COMPLETED ✅)
+
+### 9A — Anti-AI-Look Visual Polish (`docs/ANTI_AI_LOOK_PLAN.md`)
+- [x] **Restored Center-Aligned Hero Layout (`R1`)**:
+  - Centered headline (`.hero-title`), subtitle (`.hero-subtitle`), and action CTA group (`.hero-actions`) in `page.tsx`
+  - Visually anchored by the curated destination photo cards below
+- [x] **Sleek 12px Button Border Radius (`R2`)**:
+  - Replaced boxy 8px borders on `.btn-primary`, `.btn-secondary`, and `.nav-cta` with 12px (`var(--radius-md)`) in `globals.css`
+  - Eliminates the generic pill look without sacrificing tactile elegance
+- [x] **Clearer, Action-Driven Intro Badge (`A1`)**:
+  - Updated intro pill text to `✦ DESCRIBE YOUR TRIP · AI BUILDS THE REST`
+- [x] **Functional Header Badge (`A2`)**:
+  - Replaced generic "Multi-Agent Swarm" with `Live · 6 Agents`
+- [x] **Friendly Mobile Navigation Tab Label (`A3`)**:
+  - Renamed tab 4 from "Architecture" to `How It Works` for intuitive mobile navigation
+
+### 9B — 2026 Model Migrations & Resilience
+- [x] **Sunsetting Deprecated Models**:
+  - Removed sunset models returning 404 (`gemini-2.5-flash`, `gemini-2.0-flash`, Groq `llama-3.1-8b-instant`, `llama-3.3-70b-versatile`, `qwen/qwen3.6-27b`)
+  - Standardized all agents on **`gemini-3.6-flash`** (primary) with fallback to `gemini-3.5-flash`
+  - Upgraded Groq model to **`openai/gpt-oss-20b`** (primary) with fallback to `openai/gpt-oss-120b` across `intake_agent.py`, `planner_agent.py`, `editor_agent.py`, `packing_list_generator.py`, and `niche_scraper.py`
+- [x] **Planner Agent Narration Fallback & Enrichment**:
+  - Implemented Groq `openai/gpt-oss-20b` fallback in `planner_agent.py` for day themes and stop narrations when Gemini quotas exhaust (429/404)
+  - Enhanced category-aware contextual fallbacks for viewpoints, museums, restaurants, markets, and historic sights
+
+### 9C — Leaflet Map Reactivity & Render Fixes
+- [x] **Preloaded Leaflet Stylesheet**:
+  - Injected `leaflet@1.9.4/dist/leaflet.css` directly into `layout.tsx` `<head>` to prevent unstyled tile flash
+- [x] **Eliminated Stale Closure**:
+  - Routed stop marker generation through `stopsRef.current` in `MapView.tsx`, ensuring map re-renders always receive the latest itinerary stops
+- [x] **Clean Container Destruction & Reinitialization**:
+  - Safely cleared `(container as any)._leaflet_id` before instantiating Leaflet map, preventing `Error: Map container is already initialized` crashes
+- [x] **Dynamic Destination Auto-Centering**:
+  - Auto-centers map directly on the first valid stop coordinates instead of remaining frozen on default Pune coordinates
+
+### 9D — Image Pipeline Hardening & Two-Tier Fallbacks
+- [x] **Removed Failing Google Places Legacy Photo URLs**:
+  - Eliminated legacy photo URLs returning `403 Forbidden` in browser `<img>` tags
+  - Routed image discovery through Wikipedia REST, OpenSearch, and Wikimedia Commons cascades
+- [x] **Bumped Cache to `v8`**:
+  - Auto-invalidated stale or broken image URLs in `places_tool.py`
+- [x] **Expanded High-Resolution Destination Banners**:
+  - Added curated photography for Hyderabad, Chennai, Kolkata, Amritsar, Ahmedabad, Kochi, Shimla, Hampi, Mysore, Pondicherry, Ooty, Srinagar, Jodhpur, Jaisalmer, Seoul, Amsterdam, Prague, Vienna, Istanbul, Cairo, and Sydney in `destination_images.py`
+- [x] **Two-Tier StopCard Image Fallback**:
+  - Added automatic fallback to curated category photography when a landmark photo URL fails to load, with emoji fallback as final safeguard
+
 
 
