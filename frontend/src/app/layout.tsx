@@ -18,6 +18,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600;1,700&family=Sora:wght@400;600;700&display=swap"
         />
+        <link
+          id="leaflet-css"
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        />
       </head>
       <body>{children}</body>
     </html>

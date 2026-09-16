@@ -23,6 +23,19 @@ const CATEGORY_ICONS: Record<string, string> = {
   default:    '📍',
 };
 
+const CATEGORY_FALLBACK_IMAGES: Record<string, string> = {
+  attraction: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80',
+  museum:     'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?w=800&auto=format&fit=crop&q=80',
+  restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
+  cafe:       'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80',
+  viewpoint:  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
+  park:       'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80',
+  market:     'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800&auto=format&fit=crop&q=80',
+  bar:        'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop&q=80',
+  beach:      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
+  default:    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80',
+};
+
 function AnimatedCost({ value, destination }: { value?: number; destination?: string }) {
   const [displayVal, setDisplayVal] = useState(0);
   useEffect(() => {
@@ -82,11 +95,14 @@ function StopCard({
   isDragOver?: boolean;
 }) {
   const [imgError, setImgError] = useState(false);
+  const [fallbackError, setFallbackError] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
   if (!stop) return null;
   const icon = CATEGORY_ICONS[stop.category] ?? CATEGORY_ICONS.default;
-  const photoUrl = stop.photo_urls && stop.photo_urls.length > 0 ? stop.photo_urls[0] : null;
+  const categoryFallback = CATEGORY_FALLBACK_IMAGES[stop.category] ?? CATEGORY_FALLBACK_IMAGES.default;
+  const primaryPhoto = stop.photo_urls && stop.photo_urls.length > 0 ? stop.photo_urls[0] : null;
+  const displayPhotoUrl = (!imgError && primaryPhoto) ? primaryPhoto : (!fallbackError ? categoryFallback : null);
   const transitMin = transitBefore !== undefined ? transitBefore : stop.travel_time_from_prev_minutes;
 
   const mapsUrl = stop.lat && stop.lon
@@ -134,13 +150,19 @@ function StopCard({
       >
         {/* Full-Bleed Top Photographic Banner */}
         <div className="stop-card-banner">
-          {photoUrl && !imgError ? (
+          {displayPhotoUrl ? (
             <img
-              src={photoUrl}
+              src={displayPhotoUrl}
               alt={stop.name || 'Attraction'}
               className="stop-card-banner-img"
               loading="lazy"
-              onError={() => setImgError(true)}
+              onError={() => {
+                if (!imgError && primaryPhoto) {
+                  setImgError(true);
+                } else {
+                  setFallbackError(true);
+                }
+              }}
             />
           ) : (
             <div className="stop-card-image-placeholder">

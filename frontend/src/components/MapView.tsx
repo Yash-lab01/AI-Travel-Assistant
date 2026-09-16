@@ -32,37 +32,70 @@ export default function MapView({ stops, activeDay }: Props) {
   const leafletMapRef = useRef<any>(null);
   const leafletMarkersRef = useRef<any[]>([]);
   const leafletPolylinesRef = useRef<any[]>([]);
-  // Guard: only call updateLeafletMarkers from the stops/activeDay effect
-  // AFTER the map has been fully initialised and invalidateSize() has run.
   const mapReadyRef = useRef(false);
+  const stopsRef = useRef(stops);
+  const activeDayRef = useRef(activeDay);
+
+  stopsRef.current = stops;
+  activeDayRef.current = activeDay;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Load Leaflet CSS if not already present
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
+    let isMounted = true;
+
+    const tryInit = () => {
+      if (!isMounted) return;
+      if (window.L) {
+        initLeafletMap();
+      }
+    };
 
     // Load Leaflet JS if not already loaded
     if (!window.L) {
-      const script = document.createElement('script');
-      script.id = 'leaflet-js';
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => initLeafletMap();
-      document.head.appendChild(script);
+      let script = document.getElementById('leaflet-js') as HTMLScriptElement;
+      if (!script) {
+        script = document.createElement('script');
+        script.id = 'leaflet-js';
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', tryInit);
+
+      // Fallback check interval in case onload already fired
+      const interval = setInterval(() => {
+        if (window.L) {
+          clearInterval(interval);
+          tryInit();
+        }
+      }, 100);
+
+      const timeout = setTimeout(() => clearInterval(interval), 5000);
+
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+        clearTimeout(timeout);
+        script.removeEventListener('load', tryInit);
+        mapReadyRef.current = false;
+        if (leafletMapRef.current) {
+          try {
+            leafletMapRef.current.remove();
+          } catch {}
+          leafletMapRef.current = null;
+        }
+      };
     } else {
       initLeafletMap();
     }
 
     return () => {
+      isMounted = false;
       mapReadyRef.current = false;
       if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
+        try {
+          leafletMapRef.current.remove();
+        } catch {}
         leafletMapRef.current = null;
       }
     };
@@ -72,30 +105,47 @@ export default function MapView({ stops, activeDay }: Props) {
     if (!mapContainerRef.current || !window.L || leafletMapRef.current) return;
 
     const L = window.L;
+    const currentStops = stopsRef.current || [];
+    const firstStopWithCoord = currentStops.find(
+      s => s && typeof s.lat === 'number' && typeof s.lon === 'number' && !isNaN(s.lat) && !isNaN(s.lon)
+    );
+    const initialCenter: [number, number] = firstStopWithCoord
+      ? [firstStopWithCoord.lat, firstStopWithCoord.lon]
+      : [18.5204, 73.8567];
 
-    const map = L.map(mapContainerRef.current, {
-      zoomControl: true,
-      attributionControl: false,
-    }).setView([18.5204, 73.8567], 12);
+    // Prevent Leaflet error "Map container is already initialized"
+    if ((mapContainerRef.current as any)._leaflet_id) {
+      try {
+        delete (mapContainerRef.current as any)._leaflet_id;
+      } catch {}
+    }
 
-    // CartoDB Dark Matter tile layer — free, no token required
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      subdomains: 'abcd',
-    }).addTo(map);
+    try {
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        attributionControl: false,
+      }).setView(initialCenter, firstStopWithCoord ? 13 : 12);
 
-    leafletMapRef.current = map;
+      // CartoDB Dark Matter tile layer — free, fast, no token required
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd',
+      }).addTo(map);
 
-    // Key fix: delay first marker/polyline render until after a full browser paint
-    // cycle so the map container has valid pixel dimensions (_clipPoints won't crash).
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        if (!leafletMapRef.current) return;
-        leafletMapRef.current.invalidateSize();
-        mapReadyRef.current = true;
-        updateLeafletMarkers();
-      }, 120);
-    });
+      leafletMapRef.current = map;
+
+      // Ensure dimensions are settled before populating markers
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (!leafletMapRef.current) return;
+          leafletMapRef.current.invalidateSize();
+          mapReadyRef.current = true;
+          updateLeafletMarkers();
+        }, 100);
+      });
+    } catch (e) {
+      console.warn('Failed to initialize Leaflet map:', e);
+    }
   };
 
   const updateLeafletMarkers = () => {
@@ -103,17 +153,19 @@ export default function MapView({ stops, activeDay }: Props) {
     const L = window.L;
     if (!map || !L) return;
 
+    const currentStops = stopsRef.current || [];
+
     // Clear previous markers & polylines
     leafletMarkersRef.current.forEach(m => { try { m.remove(); } catch {} });
     leafletMarkersRef.current = [];
     leafletPolylinesRef.current.forEach(p => { try { p.remove(); } catch {} });
     leafletPolylinesRef.current = [];
 
-    if (!stops || stops.length === 0) return;
+    if (!currentStops || currentStops.length === 0) return;
 
     const latLngs: [number, number][] = [];
 
-    stops.forEach((stop, index) => {
+    currentStops.forEach((stop, index) => {
       if (
         !stop ||
         typeof stop.lat !== 'number' ||
