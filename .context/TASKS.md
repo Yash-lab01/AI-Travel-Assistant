@@ -378,15 +378,15 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **Bi-Directional State Preservation**: Ensure destination, duration, selected styles, and dietary preferences persist when toggling between Freeform Chat and Guided Builder.
 
 ### 11B — Structured / Guided Builder View
-- [ ] **Visual Trip Configuration Panel**: Build interactive configuration controls in `ChatPanel.tsx` replacing/overlaying the chat scroll area when in Guided mode.
-- [ ] **Destination Input & Popular Chips**: Text input for custom destination + quick-select chips (Goa, Mumbai, Rajasthan, Lisbon, Kyoto, Kashmir, Paris).
-- [ ] **Visual Duration Selector**: Interactive day pills (1, 2, 3, 4, 5, 7, 10 days).
-- [ ] **Multi-Select Travel Style / Vibe**: Multi-choice chips with icons (Iconic Landmarks 🏛️, Hidden Gems 💎, Cultural Heritage 🏰, Foodie & Markets 🍲, Scenic Nature 🌿, Adventure 🏄, Relaxed Leisure 🧘).
-- [ ] **Daily Pacing Selector**: Single-select pills (Relaxed 2-3 stops 🧘, Moderate 4-5 stops ⚡, Packed 6+ stops 🏃).
-- [ ] **Budget Tier & Companions**: Segmented chips for budget (Budget 🪙, Mid-Range ⚖️, Luxury ✨) and group (Solo 🎒, Couple 💑, Family 👨‍👩‍👧, Friends 👥).
-- [ ] **Multi-Select Must-Have Activities / Interests**: Multi-choice pills (Photo spots 📸, Cafes ☕, Beaches 🏖️, Bazaars 🛍️, Sunsets 🌄, Art/Museums 🎨, Street Food Trails 🍜).
-- [ ] **Multi-Select Dietary Bias**: Integrated filter chips (Vegan 🌱, Vegetarian 🥗, Halal 🕌, Gluten-Free 🌾, Jain 🕊️).
-- [ ] **Live Summary & Plan CTA**: Real-time summary strip with `🚀 Generate Custom Itinerary` and `↺ Reset` actions.
+- [x] **Visual Trip Configuration Panel**: Build interactive configuration controls in `ChatPanel.tsx` replacing/overlaying the chat scroll area when in Guided mode.
+- [x] **Destination Input & Popular Chips**: Text input for custom destination + quick-select chips (Goa, Mumbai, Rajasthan, Lisbon, Kyoto, Kashmir, Paris).
+- [x] **Visual Duration Selector**: Interactive day pills (1, 2, 3, 4, 5, 7, 10 days).
+- [x] **Multi-Select Travel Style / Vibe**: Multi-choice chips with icons (Iconic Landmarks 🏛️, Hidden Gems 💎, Cultural Heritage 🏰, Foodie & Markets 🍲, Scenic Nature 🌿, Adventure 🏄, Relaxed Leisure 🧘).
+- [x] **Daily Pacing Selector**: Single-select pills (Relaxed 2-3 stops 🧘, Moderate 4-5 stops ⚡, Packed 6+ stops 🏃).
+- [x] **Budget Tier & Companions**: Segmented chips for budget (Budget 🪙, Mid-Range ⚖️, Luxury ✨) and group (Solo 🎒, Couple 💑, Family 👨‍👩‍👧, Friends 👥).
+- [x] **Multi-Select Must-Have Activities / Interests**: Multi-choice pills (Photo spots 📸, Cafes ☕, Beaches 🏖️, Bazaars 🛍️, Sunsets 🌄, Art/Museums 🎨, Street Food Trails 🍜).
+- [x] **Multi-Select Dietary Bias**: Integrated filter chips (Vegan 🌱, Vegetarian 🥗, Halal 🕌, Gluten-Free 🌾, Jain 🕊️).
+- [x] **Live Summary & Plan CTA**: Real-time summary strip with `🚀 Generate Custom Itinerary` and `↺ Reset` actions.
 
 ### 11C — Multi-Select Clarification Engine
 - [ ] **Schema & Type Updates**: Add `is_multi_select: bool = False` to `ClarificationQuestion` in `schemas.py` and `types/index.ts`.
