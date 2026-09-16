@@ -52,6 +52,11 @@
    - Map uses Leaflet + CartoDB Dark Matter tiles to avoid Mapbox billing/credit-card blockers.
 8. **Smart Currency Formatting**:
    - `frontend/src/utils/currency.ts` detects Indian destinations and formats costs in ₹ INR; international trips use $ USD.
+9. **Dual-Mode Intake & Multi-Select Clarification Engine (Phase 11)**:
+   - `ChatPanel.tsx` offers dual intake modalities: conversational **Freeform Chat** and visual **Guided Builder**.
+   - Clarification questions and guided preferences support multi-select (`is_multi_select: bool`) across styles, vibes, activities, and dietary preferences.
+   - The intake agent tracks missing core dimensions (destination, duration, style, pace, budget, group) and asks targeted questions.
+   - A persistent **"⚡ Generate Trip with Given Info"** action allows instant generation using default assumptions at any point.
 
 ---
 

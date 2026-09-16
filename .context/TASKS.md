@@ -369,6 +369,36 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **Prevent Mock Stop Caching**: Mark mock fallback stops as `source="mock"` so they are never written to Chroma as real `opentripmap` stops
 - [x] **Bump Cache to `v9`**: Auto-flush poisoned Barmer-desert Kashmir cache entries and refresh with genuine regional attractions
 
+---
 
+## Phase 11: Dual-Mode Intake & Multi-Select Planning Studio (PLANNED / IN PROGRESS 📋)
 
+### 11A — Mode Switcher & UI Framework
+- [x] **Top Mode Segmented Control**: Implement a sleek segmented toggle (`💬 Freeform Chat` vs `✨ Guided Builder`) at the top of `ChatPanel.tsx` with animated active indicator and Nocturnal Voyager glass styling.
+- [x] **Bi-Directional State Preservation**: Ensure destination, duration, selected styles, and dietary preferences persist when toggling between Freeform Chat and Guided Builder.
 
+### 11B — Structured / Guided Builder View
+- [ ] **Visual Trip Configuration Panel**: Build interactive configuration controls in `ChatPanel.tsx` replacing/overlaying the chat scroll area when in Guided mode.
+- [ ] **Destination Input & Popular Chips**: Text input for custom destination + quick-select chips (Goa, Mumbai, Rajasthan, Lisbon, Kyoto, Kashmir, Paris).
+- [ ] **Visual Duration Selector**: Interactive day pills (1, 2, 3, 4, 5, 7, 10 days).
+- [ ] **Multi-Select Travel Style / Vibe**: Multi-choice chips with icons (Iconic Landmarks 🏛️, Hidden Gems 💎, Cultural Heritage 🏰, Foodie & Markets 🍲, Scenic Nature 🌿, Adventure 🏄, Relaxed Leisure 🧘).
+- [ ] **Daily Pacing Selector**: Single-select pills (Relaxed 2-3 stops 🧘, Moderate 4-5 stops ⚡, Packed 6+ stops 🏃).
+- [ ] **Budget Tier & Companions**: Segmented chips for budget (Budget 🪙, Mid-Range ⚖️, Luxury ✨) and group (Solo 🎒, Couple 💑, Family 👨‍👩‍👧, Friends 👥).
+- [ ] **Multi-Select Must-Have Activities / Interests**: Multi-choice pills (Photo spots 📸, Cafes ☕, Beaches 🏖️, Bazaars 🛍️, Sunsets 🌄, Art/Museums 🎨, Street Food Trails 🍜).
+- [ ] **Multi-Select Dietary Bias**: Integrated filter chips (Vegan 🌱, Vegetarian 🥗, Halal 🕌, Gluten-Free 🌾, Jain 🕊️).
+- [ ] **Live Summary & Plan CTA**: Real-time summary strip with `🚀 Generate Custom Itinerary` and `↺ Reset` actions.
+
+### 11C — Multi-Select Clarification Engine
+- [ ] **Schema & Type Updates**: Add `is_multi_select: bool = False` to `ClarificationQuestion` in `schemas.py` and `types/index.ts`.
+- [ ] **Multi-Select Answer State**: Update `selectedAnswers` state in `ChatPanel.tsx` to `Record<string, string[]>` with toggle click behavior and check indicators (`✓`).
+- [ ] **Backend Multi-Select Parsing**: Update `ChatRequest.answers` to `Optional[dict[str, Any]]` and adapt `intake_agent.py` to parse lists for `travel_style`, `interests`, and `niche_weight`.
+
+### 11D — Strategic Fixed-Info Retrieval in Freeform Chat
+- [ ] **Strategic Dimension Tracking**: Modify `intake_agent.py` to check for presence of fixed key dimensions (destination, duration, travel style/interests, pace, budget, group).
+- [ ] **Contextual Follow-up Questions**: When prompt is partial, generate strategic clarification questions addressing missing dimensions with multi-select enabled.
+- [ ] **Expanded Question Templates**: Enrich `DESTINATION_QUESTIONS` and dynamic LLM generator with 3–4 questions and 4–5 multi-select options each.
+
+### 11E — Instant "⚡ Generate Trip with Given Info" Action
+- [ ] **Clarification Card Instant Button**: Add "⚡ Generate Trip with Given Info (Defaults)" button inside clarification messages.
+- [ ] **Persistent Chat Action Chip**: Render a prominent "⚡ Generate with Current Info" chip above the chat input whenever a destination has been detected or entered.
+- [ ] **One-Click Force Plan**: Trigger `force_plan: true` immediately, bypassing further questions.

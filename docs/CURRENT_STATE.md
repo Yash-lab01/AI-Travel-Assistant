@@ -143,15 +143,23 @@
 74. **Regional Geocoding & Centroids**: Corrected Nominatim false positives (e.g. Kashmir resolving to Barmer, Rajasthan) with explicit centroid overrides and subzones for Srinagar, Gulmarg, Pahalgam, and Sonamarg in `places_tool.py`.
 75. **Chroma Cache Integrity & v9 Bump**: Forbids caching mock stops under `source="opentripmap"` (marked `source="mock"`) and bumped cache to `v9` to wipe poisoned legacy data.
 
+### Phase 11 — Dual-Mode Intake & Multi-Select Planning Studio (Active Development 📋)
+76. **Top Mode Segmented Controller**: Switch between conversational `💬 Freeform Chat` and interactive `✨ Guided Builder` directly at the top of the planning studio.
+77. **Guided Trip Configuration Panel**: Rich visual form allowing travelers to configure destination, duration (day pills), travel styles/vibes (multi-select), pacing, budget tier, companions, and must-have activities with full state synchronization.
+78. **Multi-Select Clarification Engine**: Upgrades clarification questions and option chips to allow multi-selection (e.g. food + culture + hidden gems) with checkmark indicators, supported on backend schemas via list parsing.
+79. **Strategic Fixed-Dimension Intake**: Intake agent systematically identifies missing dimensions (destination, duration, vibe, pace, budget, group) and targets clarifying questions directly to fill gaps.
+80. **Instant "⚡ Generate Trip with Given Info" Button**: Persistent action chip and clarification card escape button enabling instant generation using sensible defaults without questionnaire roadblocks.
+
 ---
 
 ## Status & System Readiness
 
-Phases 0 through 10 are **100% completed, verified with 36/36 unit tests, and production-ready**.
+Phases 0 through 10 are **100% completed, verified with 36/36 unit tests, and production-ready**. Phase 11 is actively designed and ready for implementation.
 
 ---
 
 ## Reference Documents
+- [`docs/PHASE_11_DUAL_MODE_STUDIO_PLAN.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/PHASE_11_DUAL_MODE_STUDIO_PLAN.md) — Comprehensive technical architecture & UX specification for Phase 11.
 - [`docs/ANTI_AI_LOOK_PLAN.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/ANTI_AI_LOOK_PLAN.md) — Anti-AI-look UI improvements and implementation status.
 - [`docs/DESIGN_UPGRADE_ROADMAP.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/DESIGN_UPGRADE_ROADMAP.md) — UI/UX and visual design overhaul specifications.
 - [`docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md) — Comprehensive architectural analysis & roadmap.
@@ -160,4 +168,3 @@ Phases 0 through 10 are **100% completed, verified with 36/36 unit tests, and pr
 - [`.context/PROJECT_CONTEXT.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/PROJECT_CONTEXT.md) — Architecture, active model names, Chroma path, coding conventions.
 - [`.context/TASKS.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/TASKS.md) — Granular phase task checklist.
 - [`.context/HANDOFF.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/HANDOFF.md) — Latest session bug fixes & immediate next steps.
-

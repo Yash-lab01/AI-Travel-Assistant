@@ -79,12 +79,16 @@
     - Adding fast-path overrides for Kashmir Valley (`34.0837, 74.7973`) and regional subzones (Srinagar, Gulmarg, Pahalgam, Sonamarg).
 21. **Single-Image Category Repetition & Cache Poisoning (Phase 10)**:
     - Single static fallback URL per category caused repeated images across cards.
-    - Adding rich category photo pools (8–10 photos per category) with deterministic name hashing + destination-specific photo collections; bumping cache to `v9` and forbidding mock caching under `source="opentripmap"`.
+    - Added rich category photo pools (8–10 photos per category) with deterministic name hashing + destination-specific photo collections; bumped cache to `v9` and forbade mock caching under `source="opentripmap"`.
+22. **Dual-Mode Intake & Multi-Select Planning Studio (Phase 11 — Active)**:
+    - Addressing user feedback regarding limited chat intake depth.
+    - Planning top mode toggle: Freeform Chat vs Structured Option-Based Builder.
+    - Upgrading clarification chips and guided builder to support multi-select across styles, vibes, interests, and dietary biases.
+    - Equipping intake agent with strategic dimension extraction to prompt for missing core dimensions (destination, duration, vibe, pace, budget, group).
+    - Introducing instant "⚡ Generate Trip with Given Info" button to allow users to generate immediately with current information.
 
 ---
 
 ## 5. Active Developmental Milestone
 
-Phase 10 (Performance Overhaul & Multi-Tier Photo Engine) is actively being implemented. All previous phases (0 through 9) are 100% completed and verified with 36/36 passing unit tests.
-
-
+**Phase 11 (Dual-Mode Intake & Multi-Select Planning Studio)** is actively planned and ready for implementation. Phases 0 through 10 are 100% completed and verified with 36/36 passing unit tests.
