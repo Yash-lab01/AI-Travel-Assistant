@@ -245,7 +245,8 @@ export default function Home() {
           </div>
 
           <p className="intro-tagline">
-            Intelligent day-by-day itineraries balancing iconic landmarks & authentic community hidden gems.
+            Type a destination. A swarm of 6 specialized AI agents builds your full day-by-day itinerary —
+            landmarks, hidden gems, geo-clustered stops, weather, costs, and a packing list.
           </p>
 
           <div className="intro-scroll-wrapper">
@@ -263,32 +264,34 @@ export default function Home() {
         {/* Main Overview & Detailed Description Section */}
         <section id="overview" className="hero-section">
           <div className="hero-tag">
-            <span>✨</span>
-            <span>AUTONOMOUS MULTI-AGENT TRAVEL INTELLIGENCE · POWERED BY LANGGRAPH</span>
+            <span>🤖</span>
+            <span>6 AGENTS · LANGGRAPH STATE MACHINE · REAL PLACE DATA</span>
           </div>
 
-          <h2 className="hero-title">
-            <span className="title-regular">Plan Any Journey. </span>
-            <span className="title-highlight gradient-text-hero">Iconic Sights to Hidden Gems.</span>
+          <h2 className="hero-title" style={{ textAlign: 'left', alignItems: 'flex-start' }}>
+            <span className="title-regular">Tell it where you&apos;re going.</span>
+            <span className="title-highlight gradient-text-hero">It handles everything else.</span>
           </h2>
 
-          <p className="hero-subtitle">
-            A versatile multi-agent travel companion that crafts complete, personalized day-by-day itineraries —
-            whether you want must-see world wonders, local cultural secrets, or the perfect curated blend of both.
+          <p className="hero-subtitle" style={{ textAlign: 'left' }}>
+            WanderAI runs a LangGraph pipeline: intake agent extracts your destination and dates,
+            a planner agent fetches live place data from OpenTripMap and Google Places, a niche-scoring
+            agent finds hidden gems using a log-normalized community sentiment formula, a geo-clustering
+            agent groups stops into walk-friendly daily areas, and a narrator agent writes each stop.
           </p>
 
-          <div className="hero-actions">
+          <div className="hero-actions" style={{ justifyContent: 'flex-start' }}>
             <button
               className="btn-hero-primary"
               onClick={() => scrollToSection('planner-studio')}
             >
-              <span>Start Planning Your Journey ↓</span>
+              <span>Try it — type any destination ↓</span>
             </button>
             <button
               className="btn-hero-secondary"
               onClick={() => scrollToSection('how-it-works')}
             >
-              <span>Explore The Architecture</span>
+              <span>See how it works</span>
             </button>
           </div>
 
@@ -330,23 +333,23 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Live Metrics / Stats Strip */}
+          {/* Technical Facts Strip — real numbers only */}
           <div className="stats-strip">
             <div className="stat-item">
-              <span className="stat-value">100%</span>
-              <span className="stat-label">Global & Regional Coverage</span>
+              <span className="stat-value">6</span>
+              <span className="stat-label">Specialized AI Agents</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">&lt; 2s</span>
-              <span className="stat-label">Multi-Agent Parallel Orchestration</span>
+              <span className="stat-value">3</span>
+              <span className="stat-label">Live Data Sources (OTM · Places · Tavily)</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">Versatile</span>
-              <span className="stat-label">Popular Sights, Balanced, or Niche</span>
+              <span className="stat-value">K-Means</span>
+              <span className="stat-label">Geo-Clustering · Walk-Optimized Days</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">Optimized</span>
-              <span className="stat-label">Geo-Clustered Spatial Pacing</span>
+              <span className="stat-value">LangGraph</span>
+              <span className="stat-label">Deterministic State Machine Orchestration</span>
             </div>
           </div>
         </section>
@@ -354,41 +357,50 @@ export default function Home() {
         {/* How It Works & Architecture Section */}
         <section id="how-it-works" className="features-section">
           <div className="section-header">
-            <span className="section-tag">ENGINEERED FOR SEAMLESS EXPLORATION</span>
-            <h2 className="section-title">How Multi-Agent Travel Planning Works</h2>
+            <span className="section-tag">TECHNICAL ARCHITECTURE</span>
+            <h2 className="section-title">What happens after you hit send</h2>
             <p className="section-subtitle">
-              From famous iconic landmarks to authentic community recommendations, WanderAI coordinates
-              specialized AI agents to cross-reference live place data, community sentiment, and spatial geometry.
+              A LangGraph state machine routes your message through six agents in parallel.
+              Each agent has a single job — intake, discovery, niche-scoring, clustering, narration, or editing.
             </p>
           </div>
 
           <div className="features-grid">
-            <div className="feature-card amber-glow">
-              <div className="feature-icon-box icon-box-amber">🤖</div>
-              <h3 className="feature-title">Autonomous Agent Swarm</h3>
-              <p className="feature-desc">
-                A deterministic LangGraph state machine orchestrating Intake slot-filling (Groq Llama 3.1 8B),
-                live OpenTripMap & Google Places discovery, and evocative storytelling (Gemini 2.5 Flash).
-              </p>
-              <div className="feature-pill">⚡ LangGraph Orchestration</div>
+            {/* Wide primary card — spans full grid width, 2-column interior layout */}
+            <div className="feature-card amber-glow feature-card-wide">
+              <div>
+                <div className="feature-icon-box icon-box-amber">🤖</div>
+                <h3 className="feature-title">Intake → Planner → Narrator pipeline</h3>
+                <div className="feature-pill" style={{ marginTop: 16 }}>⚡ LangGraph · FastAPI · Python 3.11</div>
+              </div>
+              <div>
+                <p className="feature-desc">
+                  Your message hits the <strong>Intake Agent</strong> (Qwen 3.6 27B via Groq) which extracts
+                  destination, dates, and style preferences. The <strong>Planner Agent</strong> fetches up to 200
+                  candidates from OpenTripMap and Google Places in parallel. The <strong>Niche Scorer</strong> ranks
+                  them by a log-normalized formula — high community sentiment × low review saturation = hidden gem.
+                  Finally, <strong>Gemini 2.5 Flash</strong> writes atmospheric narrations for each stop.
+                </p>
+              </div>
             </div>
 
             <div className="feature-card teal-glow">
               <div className="feature-icon-box icon-box-teal">💎</div>
-              <h3 className="feature-title">Versatile Intelligence & Gem Formula</h3>
+              <h3 className="feature-title">Hidden Gem Formula</h3>
               <p className="feature-desc">
-                Switch effortlessly between classic landmark sightseeing and under-the-radar spots scored by
-                cross-referencing community sentiment against Google review saturation.
+                Score = log(community_mentions + 1) ÷ (google_review_count + 1).
+                A café with 40 Reddit mentions but only 200 Google reviews ranks above
+                a tourist trap with 12,000 reviews and no local conversation.
               </p>
               <div className="feature-pill">📊 Log-Normalized Ranking</div>
             </div>
 
             <div className="feature-card emerald-glow">
               <div className="feature-icon-box icon-box-emerald">🗺️</div>
-              <h3 className="feature-title">Geo-Clustering & Pacing</h3>
+              <h3 className="feature-title">Walk-Optimized Daily Areas</h3>
               <p className="feature-desc">
-                Pure-Python k-means coordinate clustering groups attractions into seamless, walking-optimized
-                daily clusters, eliminating exhausting zig-zagging across foreign destinations.
+                Pure-Python k-means groups stops by GPS coordinates so each day
+                stays within one neighbourhood — no zig-zagging across the city.
               </p>
               <div className="feature-pill">🧭 Spatial K-Means</div>
             </div>
@@ -398,10 +410,10 @@ export default function Home() {
         {/* Interactive Planning Studio Section */}
         <section id="planner-studio" className="studio-section">
           <div className="section-header" style={{ marginBottom: 36 }}>
-            <span className="section-tag">LIVE INTERACTIVE WORKSPACE</span>
-            <h2 className="section-title">Design Your Personalized Itinerary</h2>
+            <span className="section-tag">INTERACTIVE STUDIO</span>
+            <h2 className="section-title">Type a destination to begin</h2>
             <p className="section-subtitle">
-              Chat with our multi-agent assistant below — ask for any destination, specify your vibe, or choose quick preferences.
+              &quot;4 days in Kyoto, temples and ramen&quot; is enough. The agents fill in the rest.
             </p>
           </div>
 
@@ -457,7 +469,7 @@ export default function Home() {
             <div className="footer-tags">
               <span className="footer-tag">LangGraph</span>
               <span className="footer-tag">FastAPI</span>
-              <span className="footer-tag">Groq Llama 3.1</span>
+              <span className="footer-tag">Groq Qwen3.6-27b</span>
               <span className="footer-tag">Gemini 2.5 Flash</span>
               <span className="footer-tag">Leaflet Dark Matter</span>
               <span className="footer-tag">Open-Meteo</span>

@@ -197,7 +197,7 @@ html, body {
   font-size: 12px;
   font-weight: 600;
   padding: 8px 18px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background: var(--amber-gradient);
   color: var(--text-inverse);
   border: none;
@@ -424,7 +424,7 @@ html, body {
   font-size: 15px;
   font-weight: 700;
   padding: 14px 32px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background: var(--amber-gradient);
   color: var(--text-inverse);
   border: none;
@@ -447,7 +447,7 @@ html, body {
   font-size: 15px;
   font-weight: 600;
   padding: 14px 30px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background: var(--glass-bg);
   color: var(--text-primary);
   border: 1px solid var(--glass-border);
@@ -649,8 +649,23 @@ html, body {
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Asymmetric: wide primary card + two smaller secondary cards */
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: auto auto;
   gap: 28px;
+}
+
+/* First card spans full width on its row */
+.feature-card-wide {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.feature-card-wide .feature-icon-box {
+  margin-bottom: 0;
 }
 
 .feature-card {
