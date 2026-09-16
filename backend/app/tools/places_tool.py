@@ -26,7 +26,7 @@ OTM_KEY   = os.getenv("OPENTRIPMAP_API_KEY", "")
 GPLACES_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
 
 # Increment this when the parser or data schema changes to auto-invalidate Chroma cache
-CACHE_VERSION = "v7"
+CACHE_VERSION = "v8"
 
 # OTM category groups by travel style preference
 CATEGORY_MAP = {
@@ -228,19 +228,13 @@ async def enrich_with_google_places(name: str, lat: float, lon: float) -> dict:
         n_reviews = place.get("user_ratings_total", 0)
         photos   = place.get("photos", [])
 
-        photo_url = ""
-        if photos and GPLACES_KEY:
-            ref = photos[0]["photo_reference"]
-            photo_url = (
-                f"https://maps.googleapis.com/maps/api/place/photo"
-                f"?maxwidth=800&photo_reference={ref}&key={GPLACES_KEY}"
-            )
-
+        # Note: legacy Google Places photo endpoint returns 403 unless Places API (New) is enabled.
+        # We rely on Wikipedia / Wikimedia Commons and curated photography for reliable zero-auth image delivery.
         return {
             "place_id":     place_id,
             "rating":       rating,
             "review_count": n_reviews,
-            "photo_url":    photo_url,
+            "photo_url":    "",
         }
 
     except Exception:
@@ -493,9 +487,9 @@ async def get_places_for_destination(
         enrichment = enrichments[i] if i < len(enrichments) and isinstance(enrichments[i], dict) else {}
         category = _infer_category(p.get("kinds", ""))
 
-        # 3-tier image resolution
-        photo_url = enrichment.get("photo_url") or wiki_map.get(i) or _unsplash_fallback_url(p["name"], category, clean_dest)
-        photo_urls = [photo_url] if photo_url else []
+        # 2-tier reliable image resolution: Wikipedia / Wikimedia -> Curated Unsplash photography
+        photo_url = wiki_map.get(i) or _unsplash_fallback_url(p["name"], category, clean_dest) or get_category_fallback_image(category)
+        photo_urls = [photo_url] if photo_url else [get_category_fallback_image(category)]
 
         stop = Stop(
             id=str(uuid.uuid4()),

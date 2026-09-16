@@ -215,7 +215,7 @@ async def _generate_dynamic_clarification_questions(
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 google_api_key=GOOGLE_KEY,
                 temperature=0.4,
             )
@@ -246,7 +246,7 @@ async def _generate_dynamic_clarification_questions(
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="qwen/qwen3.6-27b", groq_api_key=GROQ_KEY, temperature=0.4)
+            llm = ChatGroq(model="openai/gpt-oss-20b", groq_api_key=GROQ_KEY, temperature=0.4)
             messages = [
                 {"role": "system", "content": CLARIFICATION_SYSTEM_PROMPT},
                 {"role": "user", "content": user_context},
@@ -313,7 +313,7 @@ async def _extract_with_llm(text: str) -> Optional[dict]:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 google_api_key=GOOGLE_KEY,
                 temperature=0.0,
             )

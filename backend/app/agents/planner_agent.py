@@ -29,6 +29,7 @@ from app.tools.weather_tool import get_daily_weather_forecast
 from app.tools.destination_images import get_destination_banner
 
 GEMINI_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
+GROQ_KEY   = os.getenv("GROQ_API_KEY", "")
 
 
 def safe_extract_text(content: Any) -> str:
@@ -168,13 +169,13 @@ def _kmeans_cluster(stops: list[Stop], k: int, iterations: int = 40) -> list[lis
     return result[:k]
 
 
-# ── Theme generation with Gemini ──────────────────────────────────────────────
-async def _assign_day_themes(
+# ── Theme generation (Gemini 3.6 Flash -> Groq gpt-oss-20b -> Fallback) ──────
+async def _generate_themes(
     clusters: list[list[Stop]],
     destination: str,
     region_pref: Optional[str] = None,
 ) -> list[str]:
-    """Use Gemini 3.5 Flash to generate an evocative theme for each day cluster."""
+    """Generate evocative, distinct themes for each day's cluster of stops."""
     if not clusters:
         return []
 
@@ -184,18 +185,7 @@ async def _assign_day_themes(
         categories = list(set(s.category for s in cluster))
         cluster_summaries.append(f"Day {i+1}: stops=[{', '.join(names)}], types=[{', '.join(categories)}]")
 
-    if GEMINI_KEY:
-        try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
-                google_api_key=GEMINI_KEY,
-                temperature=0.5,
-            )
-
-            prompt = f"""You are an evocative travel writer. Give each day of this {destination} itinerary a unique, short, evocative theme (3-6 words). Each theme must be DIFFERENT and specific to the stops listed.
+    prompt = f"""You are an evocative travel writer. Give each day of this {destination} itinerary a unique, short, evocative theme (3-6 words). Each theme must be DIFFERENT and specific to the stops listed.
 {f"Traveler preference: {region_pref}" if region_pref else ""}
 
 Clusters:
@@ -204,19 +194,48 @@ Clusters:
 Return ONLY a valid JSON array of strings, one per day. No markdown, no explanation.
 Example for 3 days: ["Heritage Lanes & Sacred Temples", "Coastal Promenades & Colonial Grandeur", "Hill Views & Artisan Bazaars"]"""
 
+    # 1. Try Gemini (gemini-3.6-flash -> gemini-3.5-flash)
+    if GEMINI_KEY:
+        for gemini_model in ["gemini-3.6-flash", "gemini-3.5-flash"]:
+            try:
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                from langchain_core.messages import HumanMessage
+
+                llm = ChatGoogleGenerativeAI(
+                    model=gemini_model,
+                    google_api_key=GEMINI_KEY,
+                )
+                response = await llm.ainvoke([HumanMessage(content=prompt)])
+                raw = safe_extract_text(response.content)
+                raw = re.sub(r'```(?:json)?', '', raw).strip('`').strip()
+                match = re.search(r'\[.*\]', raw, re.DOTALL)
+                if match:
+                    themes = json.loads(match.group())
+                    if isinstance(themes, list) and len(themes) == len(clusters):
+                        return [t if isinstance(t, str) and t.strip() else f"Day {i+1} Discovery" for i, t in enumerate(themes)]
+            except Exception as e:
+                print(f"[planner_agent] Gemini theme generation ({gemini_model}) failed: {e}")
+
+    # 2. Try Groq fallback (openai/gpt-oss-20b)
+    if GROQ_KEY:
+        try:
+            from langchain_groq import ChatGroq
+            from langchain_core.messages import HumanMessage
+            llm = ChatGroq(
+                model="openai/gpt-oss-20b",
+                groq_api_key=GROQ_KEY,
+                temperature=0.4,
+            )
             response = await llm.ainvoke([HumanMessage(content=prompt)])
             raw = safe_extract_text(response.content)
-            # Strip markdown code fences if present
             raw = re.sub(r'```(?:json)?', '', raw).strip('`').strip()
             match = re.search(r'\[.*\]', raw, re.DOTALL)
             if match:
                 themes = json.loads(match.group())
                 if isinstance(themes, list) and len(themes) == len(clusters):
-                    # Ensure all are non-empty strings
-                    themes = [t if isinstance(t, str) and t.strip() else f"Day {i+1} Discovery" for i, t in enumerate(themes)]
-                    return themes
-        except Exception as e:
-            print(f"[planner_agent] Theme generation failed: {e}")
+                    return [t if isinstance(t, str) and t.strip() else f"Day {i+1} Discovery" for i, t in enumerate(themes)]
+        except Exception as ge:
+            print(f"[planner_agent] Groq theme generation failed: {ge}")
 
     # Context-aware fallback themes based on destination
     dest_lower = destination.lower()
@@ -228,6 +247,8 @@ Example for 3 days: ["Heritage Lanes & Sacred Temples", "Coastal Promenades & Co
         fallbacks = ["Colonial Panjim & Latin Quarter", "North Beach Shacks & Anjuna Flea", "South Goa Coves & Spice Estates"]
     elif "delhi" in dest_lower:
         fallbacks = ["Mughal Monuments & Old Delhi Bazaars", "Lutyens' Delhi & Cultural Hubs", "South Delhi Ruins & Modern Art Spaces"]
+    elif "hyderabad" in dest_lower:
+        fallbacks = ["Nizami Grandeur & Historic Charminar", "Golconda Ramparts & Royal Tombs", "Lake Promenades & High-Tech Boulevard"]
     elif "jaipur" in dest_lower or "rajasthan" in dest_lower:
         fallbacks = ["Pink City Palaces & Stepwells", "Amer Fort Heights & Hill Temples", "Sunset Nahargarh & Blue Pottery Markets"]
     elif "kerala" in dest_lower:
@@ -247,8 +268,10 @@ Example for 3 days: ["Heritage Lanes & Sacred Temples", "Coastal Promenades & Co
 
     return [fallbacks[i % len(fallbacks)] for i in range(len(clusters))]
 
+_assign_day_themes = _generate_themes
 
-# ── Narration generation (Local Ollama fine-tuned -> Gemini 3.5 Flash -> Fallback) ──
+
+# ── Narration generation (Local Ollama fine-tuned -> Gemini 3.6 Flash -> Groq gpt-oss-20b -> Fallback) ──
 async def _generate_narrations(stops: list[Stop], destination: str) -> list[str]:
     """Generate 1-2 sentence atmospheric narration for each stop."""
     if not stops:
@@ -265,42 +288,67 @@ async def _generate_narrations(stops: list[Stop], destination: str) -> list[str]
     except Exception as oe:
         print(f"[planner_agent] Local Ollama narration notice: {oe}")
 
-    # 2. Try Gemini 2.5 Flash
-    if GEMINI_KEY:
-        try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            from langchain_core.messages import HumanMessage
+    stops_desc = "\n".join(
+        f"- {s.name} ({s.category}): {s.description}" for s in stops
+    )
 
-            llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
-                google_api_key=GEMINI_KEY,
-                temperature=0.35,
-            )
-
-            stops_desc = "\n".join(
-                f"- {s.name} ({s.category}): {s.description}" for s in stops
-            )
-
-            prompt = f"""Write a 1-2 sentence atmospheric, vivid narration for each of these stops in {destination}.
+    prompt = f"""Write a 1-2 sentence atmospheric, vivid narration for each of these stops in {destination}.
 Make them evocative and specific — no generic phrases like "a must-see landmark". Use present tense. Reference the stop's actual character.
 Return ONLY a valid JSON array of strings, one per stop. No markdown.
 
 Stops:
 {stops_desc}"""
 
+    # 2. Try Gemini (gemini-3.6-flash -> gemini-3.5-flash)
+    if GEMINI_KEY:
+        for gemini_model in ["gemini-3.6-flash", "gemini-3.5-flash"]:
+            try:
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                from langchain_core.messages import HumanMessage
+
+                llm = ChatGoogleGenerativeAI(
+                    model=gemini_model,
+                    google_api_key=GEMINI_KEY,
+                )
+
+                response = await llm.ainvoke([HumanMessage(content=prompt)])
+                raw = safe_extract_text(response.content)
+                raw = re.sub(r'```(?:json)?', '', raw).strip('`').strip()
+                match = re.search(r'\[.*\]', raw, re.DOTALL)
+                if match:
+                    narrations = json.loads(match.group())
+                    if isinstance(narrations, list) and len(narrations) >= len(stops):
+                        print(f"[planner_agent] Generated {len(stops)} narrations via Gemini ({gemini_model})")
+                        return [str(n).strip() for n in narrations[:len(stops)]]
+
+            except Exception as e:
+                print(f"[planner_agent] Gemini narration ({gemini_model}) failed: {e}")
+
+    # 3. Try Groq (openai/gpt-oss-20b)
+    if GROQ_KEY:
+        try:
+            from langchain_groq import ChatGroq
+            from langchain_core.messages import HumanMessage
+
+            llm = ChatGroq(
+                model="openai/gpt-oss-20b",
+                groq_api_key=GROQ_KEY,
+                temperature=0.35,
+            )
             response = await llm.ainvoke([HumanMessage(content=prompt)])
             raw = safe_extract_text(response.content)
             raw = re.sub(r'```(?:json)?', '', raw).strip('`').strip()
             match = re.search(r'\[.*\]', raw, re.DOTALL)
             if match:
                 narrations = json.loads(match.group())
-                if len(narrations) >= len(stops):
-                    return narrations[:len(stops)]
+                if isinstance(narrations, list) and len(narrations) >= len(stops):
+                    print(f"[planner_agent] Successfully generated {len(stops)} narrations using Groq gpt-oss-20b")
+                    return [str(n).strip() for n in narrations[:len(stops)]]
+        except Exception as ge:
+            print(f"[planner_agent] Groq narration failed: {ge}")
 
-        except Exception as e:
-            print(f"[planner_agent] Gemini narration failed: {e}")
-
-    return [s.description for s in stops]
+    # 4. Context-aware evocative category fallback (never raw generic placeholder)
+    return [_build_contextual_narration(s, destination) for s in stops]
 
 
 PACE_LIMITS = {"slow": 3, "relaxed": 3, "moderate": 5, "fast": 7, "intense": 7}

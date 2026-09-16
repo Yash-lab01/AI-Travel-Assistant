@@ -151,7 +151,7 @@ async def generate_smart_packing_list(itinerary: Itinerary) -> PackingListRespon
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 google_api_key=GOOGLE_KEY,
                 temperature=0.3,
             )
@@ -191,7 +191,7 @@ async def generate_smart_packing_list(itinerary: Itinerary) -> PackingListRespon
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="qwen/qwen3.6-27b", groq_api_key=GROQ_KEY, temperature=0.3)
+            llm = ChatGroq(model="openai/gpt-oss-20b", groq_api_key=GROQ_KEY, temperature=0.3)
             messages = [
                 {"role": "system", "content": PACKING_SYSTEM_PROMPT},
                 {"role": "user", "content": user_context},

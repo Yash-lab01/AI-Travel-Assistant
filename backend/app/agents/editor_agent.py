@@ -62,7 +62,7 @@ Make it atmospheric and evocative. Avoid generic phrases."""
     if GOOGLE_KEY:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
-            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GOOGLE_KEY, temperature=0.6)
+            llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=GOOGLE_KEY, temperature=0.6)
             resp = await llm.ainvoke(prompt)
             text = safe_extract_text(resp.content).strip(' "')
             if text and len(text) > 10:
@@ -73,7 +73,7 @@ Make it atmospheric and evocative. Avoid generic phrases."""
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="qwen/qwen3.6-27b", groq_api_key=GROQ_KEY, temperature=0.6)
+            llm = ChatGroq(model="openai/gpt-oss-20b", groq_api_key=GROQ_KEY, temperature=0.6)
             resp = await llm.ainvoke(prompt)
             text = safe_extract_text(resp.content).strip(' "')
             if text and len(text) > 10:
@@ -99,7 +99,7 @@ Keep it punchy, practical, and formatted in clean markdown bullet points."""
     if GOOGLE_KEY:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
-            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GOOGLE_KEY, temperature=0.5)
+            llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=GOOGLE_KEY, temperature=0.5)
             resp = await llm.ainvoke(prompt)
             text = safe_extract_text(resp.content).strip()
             if text and len(text) > 30:
@@ -110,7 +110,7 @@ Keep it punchy, practical, and formatted in clean markdown bullet points."""
     if GROQ_KEY:
         try:
             from langchain_groq import ChatGroq
-            llm = ChatGroq(model="qwen/qwen3.6-27b", groq_api_key=GROQ_KEY, temperature=0.5)
+            llm = ChatGroq(model="openai/gpt-oss-20b", groq_api_key=GROQ_KEY, temperature=0.5)
             resp = await llm.ainvoke(prompt)
             text = safe_extract_text(resp.content).strip()
             if text and len(text) > 30:
