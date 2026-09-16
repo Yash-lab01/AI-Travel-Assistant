@@ -9,17 +9,17 @@
 
 WanderAI's "Nocturnal Voyager" theme is a strong foundation — deep navy (`#040e1f`), amber (`#FFBF00`), and teal (`#00DBE7`) is a sophisticated palette. But when benchmarked against production-grade travel apps, there are several gaps:
 
-| Dimension           | Current State | Industry Benchmark |
-|---------------------|---------------|-------------------|
-| Background          | Static solid navy | Dynamic aurora / parallax / gradient mesh |
-| Typography scale    | 2-font (Playfair + Outfit) | 3-level type hierarchy, variable fonts |
-| Card depth          | Basic glassmorphism | Layered depth with shadow choreography |
-| Micro-animations    | Minimal hover transforms | Purposeful spring physics on every interaction |
-| Empty states        | Basic (just improved) | Illustrated, delightful, branded |
-| Color accents       | Amber + Teal only | Destination-reactive colors |
-| Mobile layout       | Desktop-first, not responsive | Mobile-first, thumb-zone optimized |
-| Feedback states     | Generic colors | Toast/snackbar with haptic-feel animations |
-| Loading states      | Skeleton cards (Phase 7C) | Content-aware skeletons + animated radar |
+| Dimension           | Current State (Phase 8 & 9) | Industry Benchmark |
+|---------------------|-----------------------------|-------------------|
+| Background          | Dynamic aurora gradient mesh (`@keyframes auroraFloat`) | Dynamic aurora / parallax / gradient mesh |
+| Typography scale    | 4-font hierarchy (Playfair + Outfit + Sora + JetBrains Mono) | 3-level type hierarchy, variable fonts |
+| Card depth          | Layered glassmorphism + gradient borders + 12px radii | Layered depth with shadow choreography |
+| Micro-animations    | 3D spring tilt on cards + staggered entrances | Purposeful spring physics on every interaction |
+| Empty states        | Illustrated, themed, action-driven empty states | Illustrated, delightful, branded |
+| Color accents       | 5 destination-reactive dynamic archetypes | Destination-reactive colors |
+| Mobile layout       | Responsive sticky bottom nav + swipeable day carousel | Mobile-first, thumb-zone optimized |
+| Feedback states     | Animated floating Toast notification system | Toast/snackbar with haptic-feel animations |
+| Loading states      | 3-card pulsing shimmer skeleton + map radar preview | Content-aware skeletons + animated radar |
 
 ---
 
@@ -225,27 +225,28 @@ Auto-playing silent WebM of a trip being planned live. #1 portfolio conversion d
 
 ---
 
-## 🏆 8. Priority Matrix
+## 🏆 8. Priority Matrix & Implementation Status
+ 
+### Tier 1 — Maximum Impact, Low-Medium Effort (100% COMPLETED ✅)
+1. [x] Aurora animated background (`globals.css` & `TravelLiveWallpaper.tsx`)
+2. [x] Staggered card entrance animations (`@keyframes slideUpFade`)
+3. [x] Gradient text hero headline (`.gradient-text-hero`)
+4. [x] Toast notification system (`Toast.tsx`)
+5. [x] JetBrains Mono for numeric data & timeline slots
 
-### Tier 1 — Maximum Impact, Low-Medium Effort
-1. Aurora animated background (CSS only)
-2. Staggered card entrance animations (CSS only)
-3. Gradient text hero headline (1-line CSS)
-4. Toast notification system
-5. JetBrains Mono for numeric data
+### Tier 2 — Portfolio Polish & Anti-AI Feel (100% COMPLETED ✅)
+1. [x] Destination-reactive accent colors (`destinationTheme.ts` - 5 archetypes)
+2. [x] Stop card full-bleed image layout (175px photo header + 2-tier fallback)
+3. [x] Spring physics card hover tilt (`onMouseMove` 3D perspective)
+4. [x] Mobile responsive layout (sticky bottom nav + touch tap targets)
+5. [x] Animated route drawing (dual glowing sequential polylines)
+6. [x] Anti-AI 12px button border radius & centered hero headline (`ANTI_AI_LOOK_PLAN.md`)
 
-### Tier 2 — Portfolio Polish
-1. Destination-reactive accent colors
-2. Stop card full-bleed image layout (major component change)
-3. Spring physics card hover tilt
-4. Mobile responsive layout
-5. Animated route drawing
-
-### Tier 3 — Stretch Goals
-1. Ken Burns hero carousel
-2. Full-screen map mode
-3. Voice input 🎤 (Web Speech API)
-4. Mini map per day tab
+### Tier 3 — Stretch Goals (Future Roadmap)
+1. [ ] Ken Burns hero carousel
+2. [ ] Full-screen map mode
+3. [ ] Voice input 🎤 (Web Speech API)
+4. [ ] Mini map per day tab
 
 ---
 

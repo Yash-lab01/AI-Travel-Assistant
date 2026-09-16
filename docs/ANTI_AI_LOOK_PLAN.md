@@ -24,7 +24,7 @@ These changes have already been applied and pushed to `main`:
 | Architecture section subtitle | Vague "coordinates specialized AI agents to cross-reference..." | Specific: each agent has one job, listed | `page.tsx` |
 | Feature cards layout | `repeat(3, 1fr)` — 3 identical equal-width cards | Asymmetric: 1 wide full-span card + 2 smaller cards | `globals.css` + `page.tsx` |
 | Feature card 1 title | "Autonomous Agent Swarm" | "Intake → Planner → Narrator pipeline" | `page.tsx` |
-| Feature card 1 content | Stale model name "Groq Llama 3.1 8B", vague description | Correct models (Qwen3.6, Gemini 2.5), actual log formula, agent names | `page.tsx` |
+| Feature card 1 content | Stale model name "Groq Llama 3.1 8B", vague description | Active models (Groq gpt-oss-20b, Gemini 3.6 Flash), actual log formula, agent names | `page.tsx` |
 | Feature card 2 title | "Versatile Intelligence & Gem Formula" | "Hidden Gem Formula" | `page.tsx` |
 | Feature card 2 content | "Switch effortlessly between classic landmark..." | Actual formula: `log(mentions+1) / (reviews+1)`, concrete example | `page.tsx` |
 | Feature card 3 title | "Geo-Clustering & Pacing" | "Walk-Optimized Daily Areas" | `page.tsx` |
@@ -32,7 +32,7 @@ These changes have already been applied and pushed to `main`:
 | Studio section tag | "LIVE INTERACTIVE WORKSPACE" | "INTERACTIVE STUDIO" | `page.tsx` |
 | Studio section title | "Design Your Personalized Itinerary" | "Type a destination to begin" | `page.tsx` |
 | Studio subtitle | "Chat with our multi-agent assistant below..." | `"4 days in Kyoto, temples and ramen" is enough. The agents fill in the rest.` | `page.tsx` |
-| Footer model tag | "Groq Llama 3.1" (wrong model) | "Groq Qwen3.6-27b" | `page.tsx` |
+| Footer model tag | "Groq Llama 3.1" (wrong model) | "Groq gpt-oss-20b & Gemini 3.6" | `page.tsx` |
 | Primary buttons radius | `border-radius: 9999px` (pill) | `border-radius: 8px` | `globals.css` |
 | Secondary button radius | `border-radius: 9999px` (pill) | `border-radius: 8px` | `globals.css` |
 | Nav CTA radius | `border-radius: 9999px` (pill) | `border-radius: 8px` | `globals.css` |
@@ -139,35 +139,35 @@ The change from pill buttons to 8px is valid per guide.txt §4 but `8px` on a la
 
 ---
 
-## Summary: All Pending Changes
+## Summary: Implemented Changes (Phase 9)
 
-### 🔁 Reverts
+### 🔁 Reverts & Core Adjustments (COMPLETED ✅)
 
-| # | Change | File | Why |
-|---|---|---|---|
-| R1 | Revert hero headline + hero-actions back to **center-aligned** | `page.tsx` | User preference; center works here because photo cards anchor the layout |
-| R2 | Button radius: `8px` → **`12px` (`var(--radius-md)`)** | `globals.css` | 8px feels boxy; 12px breaks the pill look without going flat |
-
----
-
-### ✏️ Additional Copy & UX Changes
-
-| # | Area | Current | Change To | File | Guide Signal |
-|---|---|---|---|---|---|
-| A1 | Intro badge pill text | `AUTONOMOUS MULTI-AGENT TRAVEL STUDIO` | `✦ DESCRIBE YOUR TRIP · AI BUILDS THE REST` | `page.tsx` | §6, §7 — generic AI buzzwords |
-| A2 | Header nav badge | `Multi-Agent Swarm` | `Live · 6 Agents` | `page.tsx` | §7 — "swarm" is a buzzword; this is more specific and functional |
-| A3 | Mobile nav tab label | `Architecture` | `How It Works` | `page.tsx` | §21 — inconsistent UX; non-technical users won't parse "Architecture" as a nav tab |
+| # | Change | Status | File | Note |
+|---|---|---|---|---|
+| R1 | Revert hero headline + hero-actions back to **center-aligned** | ✅ Completed | `page.tsx` | Center alignment restored; visually anchored by photo cards |
+| R2 | Button radius: `8px` → **`12px` (`var(--radius-md)`)** | ✅ Completed | `globals.css` | Applied across `.btn-primary`, `.btn-secondary`, and `.nav-cta` |
 
 ---
 
-### 🎨 Optional Polish (lower priority)
+### ✏️ Copy & UX Enhancements (COMPLETED ✅)
 
-| # | Area | Current | Change To | File | Guide Signal |
+| # | Area | Before | Implemented Value | Status | File |
 |---|---|---|---|---|---|
-| O1 | Logo mark | `🧭` emoji in amber box | SVG compass icon | `globals.css` + `page.tsx` | §11 — generic imagery |
+| A1 | Intro badge pill text | `AUTONOMOUS MULTI-AGENT TRAVEL STUDIO` | `✦ DESCRIBE YOUR TRIP · AI BUILDS THE REST` | ✅ Completed | `page.tsx` |
+| A2 | Header nav badge | `Multi-Agent Swarm` | `Live · 6 Agents` | ✅ Completed | `page.tsx` |
+| A3 | Mobile nav tab label | `Architecture` | `How It Works` | ✅ Completed | `page.tsx` |
+
+---
+
+### 🎨 Optional Polish (Future Considerations)
+
+| # | Area | Current | Proposal | File | Guide Signal |
+|---|---|---|---|---|---|
+| O1 | Logo mark | `🧭` emoji in amber box | Custom SVG stylized compass mark | `globals.css` + `page.tsx` | §11 — generic imagery |
 | O2 | Studio section tag | `INTERACTIVE STUDIO` | Remove tag entirely or use `LANGGRAPH PIPELINE` | `page.tsx` | §6 — vague SaaS label |
-| O3 | Destination cards section heading | `Or launch a curated journey instantly` | More descriptive sub-label per card (e.g. what you'll get in the trip) | `page.tsx` | §11 — make specific content more prominent |
+| O3 | Destination cards section heading | `Or launch a curated journey instantly` | Add sub-label per card describing sample itinerary highlights | `page.tsx` | §11 — make specific content more prominent |
 
 ---
 
-*Generated from: guide.txt audit + WanderAI codebase review · September 2026*
+*Generated from: guide.txt audit + WanderAI codebase review · September 2026 (Updated & Verified)*

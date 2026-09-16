@@ -1,5 +1,5 @@
 # Image Integration — Implementation Design
-> Added: 2026-08-19 | Updated: 2026-08-25 | Status: **FULLY IMPLEMENTED**
+> Added: 2026-08-19 | Updated: 2026-09-16 | Status: **FULLY IMPLEMENTED (v8)**
 
 ---
 
@@ -110,49 +110,64 @@ For stops that still miss after Tiers 1+2, search Wikimedia Commons directly for
 
 ---
 
-### Tier 4 — Google Places Photos (BEST quality, requires key)
+### Tier 4 — Google Places Photos (Removed in v8 due to 403 Forbidden)
 
-Already implemented in `enrich_with_google_places()`. When `GOOGLE_PLACES_API_KEY` is set, this is tried **first** before the Wikipedia cascade for each stop:
+> [!WARNING]
+> Legacy Google Places photo URLs (`maps.googleapis.com/maps/api/place/photo`) return `403 Forbidden` when embedded in browser `<img>` tags due to API key referrer restrictions. As of **v8**, Google Places photo URLs have been removed from the pipeline, routing directly to the Wikipedia & Wikimedia Commons zero-auth cascade for all landmarks.
 
 ```python
-# Priority chain per stop:
-# 1. Google Places photo (if GOOGLE_PLACES_API_KEY present)
-# 2. Wikipedia REST Summary API  ← Tier 1
-# 3. Wikipedia Generator Search  ← Tier 2
-# 4. Wikimedia Commons Search    ← Tier 3
-# 5. Category curated fallback   ← Tier 4 (static map in destination_images.py)
-```
-
-**Enrich ALL stops** (no cap — Google Places free tier is generous):
-```python
-enrich_tasks = [
-    enrich_with_google_places(p["name"], p["lat"], p["lon"])
-    for p in unique_places  # enrich all, not just top N
-]
+# Priority chain per stop (v8):
+# 1. Wikipedia REST Summary API  ← Tier 1 (fastest exact lead image)
+# 2. Wikipedia Generator Search  ← Tier 2 (fuzzy title match)
+# 3. Wikimedia Commons Search    ← Tier 3 (CC-licensed photography)
+# 4. Category curated fallback   ← Tier 4 (high-res Unsplash category photo)
+# 5. Emoji placeholder           ← Tier 5 (final visual fallback)
 ```
 
 ---
 
-### Tier 5 — Static Curated Category Fallback (Guaranteed Always Available)
+### Tier 5 — Static Curated Destination Banners & Category Fallbacks
 
-For the landing page and day-level banner photos, don't hit APIs at all — use a small curated dict of known-good Unsplash photo URLs per destination:
+For the landing page, itinerary covers, and day-level banner photos, WanderAI uses a curated dictionary of high-resolution Unsplash photo URLs across 40+ destinations:
 
 ```python
 # backend/app/tools/destination_images.py
 DESTINATION_BANNERS: dict[str, str] = {
-    "mumbai":   "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1200",
-    "goa":      "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=1200",
-    "delhi":    "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1200",
-    "jaipur":   "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200",
-    "kerala":   "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1200",
-    "pune":     "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=1200",
-    "bali":     "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1200",
-    "lisbon":   "https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?w=1200",
-    "tokyo":    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200",
-    "paris":    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200",
-    "rome":     "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1200",
-    "barcelona":"https://images.unsplash.com/photo-1464790719320-516ecd75af6c?w=1200",
-    # fallback for unknown destinations:
+    # India Major Cities & Heritage
+    "mumbai": "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1200",
+    "goa": "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=1200",
+    "delhi": "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1200",
+    "jaipur": "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200",
+    "kerala": "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1200",
+    "pune": "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=1200",
+    "hyderabad": "https://images.unsplash.com/photo-1605007493699-ce65834f8a00?w=1200",
+    "chennai": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1200",
+    "kolkata": "https://images.unsplash.com/photo-1558431382-27e303142255?w=1200",
+    "amritsar": "https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=1200",
+    "ahmedabad": "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=1200",
+    "kochi": "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?w=1200",
+    "shimla": "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=1200",
+    "hampi": "https://images.unsplash.com/photo-1600100397608-f010e42f9b1a?w=1200",
+    "mysore": "https://images.unsplash.com/photo-1600100397608-f010e42f9b1a?w=1200",
+    "pondicherry": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1200",
+    "ooty": "https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200",
+    "srinagar": "https://images.unsplash.com/photo-1598091383021-15ddea10925d?w=1200",
+    "jodhpur": "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200",
+    "jaisalmer": "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200",
+    # Global Destinations
+    "bali": "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1200",
+    "lisbon": "https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?w=1200",
+    "tokyo": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200",
+    "paris": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200",
+    "rome": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1200",
+    "barcelona": "https://images.unsplash.com/photo-1464790719320-516ecd75af6c?w=1200",
+    "seoul": "https://images.unsplash.com/photo-1538485399081-7191377e8241?w=1200",
+    "amsterdam": "https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?w=1200",
+    "prague": "https://images.unsplash.com/photo-1541849546-216549ae216d?w=1200",
+    "vienna": "https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=1200",
+    "istanbul": "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=1200",
+    "cairo": "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=1200",
+    "sydney": "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1200",
     "_default": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1200",
 }
 
@@ -189,17 +204,26 @@ def get_destination_banner(destination: str) -> str:
 ```
 
 ```tsx
-// ItineraryView.tsx — updated StopCard image block
+// ItineraryView.tsx — updated StopCard two-tier image fallback block
 const [imgError, setImgError] = useState(false);
-const imgSrc = stop.photo_urls?.[0];
+const [fallbackError, setFallbackError] = useState(false);
+const rawImg = stop.photo_urls?.[0];
+const categoryFallback = getCategoryFallbackPhoto(stop.category);
 
-{imgSrc && !imgError ? (
+const effectiveSrc = !imgError && rawImg 
+  ? rawImg 
+  : (!fallbackError && categoryFallback ? categoryFallback : null);
+
+{effectiveSrc ? (
   <img
-    src={imgSrc}
+    src={effectiveSrc}
     alt={stop.name}
     className="stop-card-image"
     loading="lazy"
-    onError={() => setImgError(true)}
+    onError={() => {
+      if (!imgError && rawImg) setImgError(true);
+      else setFallbackError(true);
+    }}
   />
 ) : (
   <div className="stop-card-image stop-card-image--placeholder">
@@ -324,9 +348,10 @@ export interface Itinerary {
 ## What NOT to Do
 
 ❌ Do NOT call `source.unsplash.com` (deprecated) dynamically — use Wikipedia REST API cascade for per-stop images.
+❌ Do NOT use legacy Google Places photo API URLs — they return 403 Forbidden in browser contexts.
 ❌ Do NOT use only exact `titles=` Wikipedia query — must cascade to `generator=search` as fallback (many OTM place names don't match exact Wikipedia article titles).
 ❌ Do NOT skip `loading="lazy"` on stop card images — 15+ images loading eagerly on a trip plan will freeze the browser.
 ❌ Do NOT use `object-fit: contain` for destination photos — use `object-fit: cover` with a fixed `aspect-ratio`.
-❌ Do NOT show broken image icon (browser default) — always `onError` to the emoji placeholder.
-❌ Do NOT require Google Places API key for images — must work in zero-key fallback mode.
+❌ Do NOT show broken image icon (browser default) — always provide a multi-tier fallback (landmark URL → category fallback photo → emoji placeholder).
+❌ Do NOT require Google Places API key for images — must work reliably in zero-key fallback mode.
 ❌ Do NOT call `element.scrollIntoView()` from child components for internal message lists — it jumps the outer browser viewport. Use `container.scrollTop = container.scrollHeight` instead.

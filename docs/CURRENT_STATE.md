@@ -1,5 +1,5 @@
 # Current Project State
-> Last updated: 2026-08-25
+> Last updated: 2026-09-16
 
 ---
 
@@ -126,19 +126,30 @@
 61. **36/36 Unit Tests Passing**: Full backend test suite passing in pytest.
 62. **Clean Next.js Production Build**: 0 TypeScript / Turbopack errors.
 
+### Phase 9 — Anti-AI-Look Overhaul, Model Upgrades & Map/Image Hardening (100% ✅)
+63. **2026 Model Migrations (`gemini-3.6-flash` & Groq `openai/gpt-oss-20b`)**: Standardized all agents (`planner_agent.py`, `intake_agent.py`, `editor_agent.py`, `packing_list_generator.py`, `niche_scraper.py`) on active, high-throughput models, eliminating 404 deprecation crashes from sunset models.
+64. **Planner Agent Groq Fallback & Contextual Narrations**: Added high-speed Groq `openai/gpt-oss-20b` fallback for day themes and stop narrations when Gemini quotas exhaust (429/404), along with rich category-specific contextual narrations for viewpoints, museums, restaurants, markets, and attractions.
+65. **Anti-AI-Look UI Polish (`ANTI_AI_LOOK_PLAN.md`)**: Restored centered hero headline and action CTA layout (`R1`), transitioned buttons to sleek 12px border radius (`R2`), updated intro badge to `✦ DESCRIBE YOUR TRIP · AI BUILDS THE REST` (`A1`), refined header badge to `Live · 6 Agents` (`A2`), and simplified mobile navigation to `How It Works` (`A3`).
+66. **Leaflet Map Stale Closure & Container Reuse Resolution**: Preloaded `leaflet.css` globally in `layout.tsx` `<head>`, bound marker rendering to `stopsRef.current` in `MapView.tsx` to eliminate stale closure bugs, cleaned up `_leaflet_id` before map initialization, and enabled automatic centering on trip stops.
+67. **Removal of 403 Google Places URLs & Direct Wikimedia Routing**: Replaced failing Google Places photo URLs with high-quality Wikipedia REST Summary, OpenSearch, and Wikimedia Commons lead photography.
+68. **Expanded Curated Destination Banners**: Added 20+ additional cities to `destination_images.py` (Hyderabad, Chennai, Kolkata, Amritsar, Ahmedabad, Kochi, Shimla, Hampi, Mysore, Pondicherry, Ooty, Srinagar, Jodhpur, Jaisalmer, Seoul, Amsterdam, Prague, Vienna, Istanbul, Cairo, Sydney).
+69. **Two-Tier StopCard Image Fallback**: Enriched `StopCard` with automatic fallback to curated category photography when a specific landmark photo URL fails to load, followed by emoji fallback.
+70. **ChromaDB Cache Bumped to `v8`**: Invalidated legacy cached entries to guarantee fresh photography and updated stop metadata.
+
 ---
 
 ## Status & System Readiness
 
-All core WanderAI developmental phases (Phases 0 through 8) are **100% completed, verified with 36/36 unit tests, and production-ready**!
+All 9 WanderAI developmental phases (Phases 0 through 9) are **100% completed, verified with 36/36 unit tests, and production-ready**!
 
 ---
 
 ## Reference Documents
+- [`docs/ANTI_AI_LOOK_PLAN.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/ANTI_AI_LOOK_PLAN.md) — Anti-AI-look UI improvements and implementation status.
 - [`docs/DESIGN_UPGRADE_ROADMAP.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/DESIGN_UPGRADE_ROADMAP.md) — UI/UX and visual design overhaul specifications.
 - [`docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md) — Comprehensive architectural analysis & roadmap.
-- [`docs/IMAGE_INTEGRATION.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/IMAGE_INTEGRATION.md) — Full image implementation spec (4-tier Wikipedia cascade, frontend changes, schema updates).
-- [`docs/TROUBLESHOOTING_AND_MISTAKES.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/TROUBLESHOOTING_AND_MISTAKES.md) — Persistent log of 12 known pitfalls, model quirks, and rules for what NOT to do.
+- [`docs/IMAGE_INTEGRATION.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/IMAGE_INTEGRATION.md) — Full image implementation spec (Wikimedia cascade, curated banners, v8 cache).
+- [`docs/TROUBLESHOOTING_AND_MISTAKES.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/TROUBLESHOOTING_AND_MISTAKES.md) — Persistent log of 17 known pitfalls, model quirks, and rules for what NOT to do.
 - [`.context/PROJECT_CONTEXT.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/PROJECT_CONTEXT.md) — Architecture, active model names, Chroma path, coding conventions.
 - [`.context/TASKS.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/TASKS.md) — Granular phase task checklist.
 - [`.context/HANDOFF.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/.context/HANDOFF.md) — Latest session bug fixes & immediate next steps.

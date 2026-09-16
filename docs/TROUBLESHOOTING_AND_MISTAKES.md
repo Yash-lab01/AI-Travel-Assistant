@@ -57,14 +57,16 @@ This document serves as a persistent record of bugs encountered, root causes dia
 ## 3. Provider Model Deprecations & 404s
 - **Symptom**:
   - `Error calling model 'gemini-2.5-flash' (NOT_FOUND): 404 NOT_FOUND`
+  - `Error calling model 'gemini-2.0-flash' (NOT_FOUND): 404 NOT_FOUND`
   - `The model llama-3.1-8b-instant does not exist or you do not have access to it`
+  - `The model qwen/qwen3.6-27b does not exist or you do not have access to it`
 - **Root Cause**:
-  `gemini-2.5-flash` and `llama-3.1-8b-instant` were sunset or deprecated on Google AI Studio / Groq API endpoints.
-- **Rule / Active Working Models**:
-  - **Google AI Studio (Gemini)**: Use `gemini-3.5-flash` or `gemini-3.6-flash`.
-  - **Groq**: Use `openai/gpt-oss-20b`, `openai/gpt-oss-120b`, or `qwen/qwen3.6-27b`.
+  `gemini-2.5-flash`, `gemini-2.0-flash`, `llama-3.1-8b-instant`, `llama-3.3-70b-versatile`, and `qwen/qwen3.6-27b` were sunset or deprecated on Google AI Studio / Groq API endpoints.
+- **Rule / Active Working Models (2026)**:
+  - **Google AI Studio (Gemini)**: Use `gemini-3.6-flash` (primary) with `gemini-3.5-flash` (fallback).
+  - **Groq**: Use `openai/gpt-oss-20b` (primary) with `openai/gpt-oss-120b` (fallback).
 - **What NOT to do**:
-  ❌ Do not reference legacy `gemini-2.5-flash` or `llama-3.1-8b-instant`.
+  ❌ Do not reference sunset models `gemini-2.5-flash`, `gemini-2.0-flash`, `llama-3.1-8b-instant`, or `qwen/qwen3.6-27b`.
 
 ---
 
@@ -194,5 +196,74 @@ This document serves as a persistent record of bugs encountered, root causes dia
   2. In `page.tsx`, added `window.history.scrollRestoration = 'manual'` and `window.scrollTo(0, 0)` on mount to ensure the site always starts at the top hero section on load and refresh.
 - **What NOT to do**:
   ❌ Never use `element.scrollIntoView()` inside child components for internal message lists — it affects the top-level viewport. Use `container.scrollTop = container.scrollHeight` on the scrollable container ref instead.
+
+---
+
+## 13. Quick-Edit Chips Bypassing Existing Itinerary Context (Phase 7A)
+- **Symptom**:
+  Clicking quick-edit chips (e.g. "🧘 Relaxed Pacing", "🍲 Foodie & Cafes") triggered a brand new itinerary generation from scratch instead of modifying the currently active trip.
+- **Root Cause**:
+  `onQuickEdit` routed through `externalPrompt` in `page.tsx`, which invoked `handleSend(prompt)` with no action context. The backend treated this as a fresh trip request and generated an entirely unrelated itinerary.
+- **Fix Applied**:
+  Added `externalEditInstruction` prop to `ChatPanel`, dispatching `handleSend(instruction, { action: 'edit_whole' })`, which guarantees `existing_itinerary_id` is passed to the backend `editor_node`.
+- **What NOT to do**:
+  ❌ Never route contextual edits through generic `externalPrompt` without specifying the target `existing_itinerary_id`.
+
+---
+
+## 14. Leaflet Polyline Race Condition (`TypeError: Cannot read properties of undefined (reading 'x')`)
+- **Symptom**:
+  Switching days in `MapView.tsx` or loading an itinerary occasionally threw `TypeError: Cannot read properties of undefined (reading 'x')` in `leaflet.js`.
+- **Root Cause**:
+  Sequential route polylines were constructed synchronously before Leaflet's container projection settled (via `invalidateSize()`). When `latLngToLayerPoint` was called on unprojected coordinates, `point.x` was undefined.
+- **Fix Applied**:
+  Moved polyline creation inside the 50ms deferred `setTimeout` block alongside `invalidateSize()`.
+- **What NOT to do**:
+  ❌ Never add `L.polyline` or query map layer projections synchronously during render before `invalidateSize()` executes.
+
+---
+
+## 15. Missing Groq Fallback in Planner Agent & Generic Narrations on Quota Exhaustion (429/404)
+- **Symptom**:
+  Every stop narration showed `"Iconic attraction in <destination>."` and day themes defaulted to `"Exploring <destination>"`.
+- **Root Cause**:
+  Unlike `intake_agent.py`, `planner_agent.py` had no secondary LLM fallback chain. When Google Gemini hit 429 quota exhaustion or returned 404 on deprecated models, the planner silently fell back to generic static string templates.
+- **Fix Applied**:
+  1. Integrated Groq `openai/gpt-oss-20b` fallback directly into `planner_agent.py` for day themes and stop narrations.
+  2. Enhanced the fallback narrator with category-specific descriptions (viewpoints, museums, restaurants, markets, historic sites) based on stop metadata.
+- **What NOT to do**:
+  ❌ Never leave LLM nodes without a cross-provider fallback (e.g., Gemini → Groq) or contextual fallback templates.
+
+---
+
+## 16. Leaflet Map Stale Closure & `_leaflet_id` Container Reuse Crashes
+- **Symptom**:
+  Map remained permanently blank or frozen on default Pune coordinates (`[18.5204, 73.8567]`) with zero markers, or logged `Error: Map container is already initialized`.
+- **Root Cause**:
+  1. During mount, `mapReadyRef.current` was false. The initial 120ms timeout closure captured `stops = []` from the initial render, meaning subsequent stop updates were never plotted if `mapReadyRef` became true after `stops` settled.
+  2. React unmount/remount cycles left the `_leaflet_id` property on the DOM element, causing Leaflet to throw an already-initialized exception.
+- **Fix Applied**:
+  1. Preloaded `leaflet.css` in `layout.tsx` `<head>` for instant tile styling.
+  2. Stored `stops` in `stopsRef.current` to always access the latest stops across timeout closures.
+  3. Explicitly cleared `(container as any)._leaflet_id = null` before calling `L.map(container)`.
+  4. Centered map immediately on `stops[0]` coordinates when initializing if stops are already available.
+- **What NOT to do**:
+  ❌ Never capture reactive state variables (`stops`) inside delayed `setTimeout` closures without a mutable ref (`stopsRef.current`).
+
+---
+
+## 17. Google Places Legacy Photo URLs 403 Forbidden & StopCard Fallback
+- **Symptom**:
+  Place photos on `StopCard` broke and fell back to empty grey placeholders across all stops; console logged `403 Forbidden` on Google Places photo URLs.
+- **Root Cause**:
+  Legacy Google Places photo API endpoints (`maps.googleapis.com/maps/api/place/photo`) returned `403 Forbidden` when embedded in browser `<img>` tags due to API key referrer restrictions / billing enforcement.
+- **Fix Applied**:
+  1. Removed legacy Google Places photo URLs from `places_tool.py` and routed directly to the Wikipedia REST Summary API, Wikipedia OpenSearch API, and Wikimedia Commons lead images.
+  2. Incremented `CACHE_VERSION = "v8"` in `places_tool.py` to flush broken URLs from Chroma cache.
+  3. Added a two-tier fallback in `StopCard` (`ItineraryView.tsx`): if a photo URL fails, fall back to curated high-resolution category photography (`getCategoryFallbackPhoto()`), and only show the emoji icon if category fallback fails.
+  4. Expanded `DESTINATION_BANNERS` in `destination_images.py` with 20+ additional cities.
+- **What NOT to do**:
+  ❌ Never embed key-restricted Google Places photo URLs directly in client-side `<img>` tags without verifying referrer and billing policies.
+
 
 

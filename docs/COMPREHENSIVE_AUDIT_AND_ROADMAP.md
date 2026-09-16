@@ -12,9 +12,9 @@
 | 1 | Quick-edit chips treated instruction as new trip (lost existing_itinerary_id context) | FIXED | Route onQuickEdit through new externalEditInstruction prop |
 | 2 | Leaflet polyline crash: TypeError Cannot read properties of undefined reading x | FIXED | Moved polyline creation inside setTimeout after invalidateSize() |
 | 3 | Page scroll not at top on initial load | Fixed Phase 4e | scrollRestoration=manual + window.scrollTo(0,0) on mount |
-| 4 | Stop images showing default placeholder | Mostly fixed | 4-tier OpenSearch pipeline |
-| 5 | No error boundary - backend down causes silent hang | Open | Add React error boundaries + SSE read timeout |
-| 6 | Empty history panel shows no empty state | Open | Add illustrated empty state |
+| 4 | Stop images showing default placeholder | FIXED | Wikimedia/Wikipedia cascade + curated fallbacks + v8 cache |
+| 5 | No error boundary - backend down causes silent hang | FIXED | Added React ErrorBoundary + SSE read timeout watchdog |
+| 6 | Empty history panel shows no empty state | FIXED | Added illustrated branded empty state with CTA |
 
 ---
 
@@ -111,41 +111,41 @@ When ChatGPT/Claude plan a trip they provide:
 | Real Destination Photos | Yes | Yes | No | Wikimedia + Unsplash |
 | Playwright PDF Export | Yes | Paid only | Manual | High-DPI PDF |
 | Sequential Route Polylines | Yes (fixed) | Yes | No | Crash-free |
-| Drag-and-Drop Reordering | Planned | Yes | No | Phase 7 |
-| Concrete Time Slots | No | Yes | Yes | Phase 7 |
-| Calendar Sync | No | Yes | Manual | Phase 7 |
-| Google Maps Nav Links | No | Yes | Text only | Phase 7 |
-| Packing List Generator | No | Basic | Text | Phase 7 |
-| User Feedback per Stop | No | No | No | Phase 7 |
-| Framer Motion Animations | No | Yes | N/A | Phase 7 |
-| Dietary Filter Chips | No | Yes | Text filter | Phase 7 |
-| Error Boundaries | No | Yes | N/A | Phase 7 |
+| Drag-and-Drop Reordering | Yes (Phase 7) | Yes | No | Implemented |
+| Concrete Time Slots | Yes (Phase 7) | Yes | Yes | Implemented |
+| Calendar Sync | Yes (Phase 7) | Yes | Manual | Implemented (.ics) |
+| Google Maps Nav Links | Yes (Phase 7) | Yes | Text only | Implemented |
+| Packing List Generator | Yes (Phase 7) | Basic | Text | Implemented |
+| User Feedback per Stop | Yes (Phase 7) | No | No | Implemented |
+| Spring Physics & Micro-Animations | Yes (Phase 8) | Yes | N/A | Implemented |
+| Dietary Filter Chips | Yes (Phase 7) | Yes | Text filter | Implemented |
+| Error Boundaries | Yes (Phase 7) | Yes | N/A | Implemented |
 
 ---
 
-## 6. Prioritized Roadmap
+## 6. Prioritized Roadmap & Milestone Status
 
-### Phase 7: Polish, Timeline & Real-World Utility (IMMEDIATE)
+### Phase 7: Polish, Timeline & Real-World Utility (COMPLETED ✅)
 
 Priority 1 - Visible, impressive, low effort:
-- Concrete time-slot scheduling (09:30 AM - 11:00 AM style)
-- dnd-kit drag-and-drop stop reordering
-- Framer Motion animations on stop add/swap/remove
-- Skeleton shimmer loading states during SSE generation
-- React error boundaries + SSE timeout handling
-- Empty state UI for trip history and zero results
+- [x] Concrete time-slot scheduling (09:30 AM - 11:00 AM style)
+- [x] dnd-kit drag-and-drop stop reordering
+- [x] Framer Motion / CSS spring tilt animations on cards
+- [x] Skeleton shimmer loading states during SSE generation
+- [x] React error boundaries + SSE timeout handling
+- [x] Empty state UI for trip history and zero results
 
 Priority 2 - Deepens the AI and product story:
-- User feedback thumbs per stop (feeding ml/user_feedback.jsonl)
-- Dietary filter chips (Vegan, Halal, Vegetarian, Gluten-Free)
-- Smart weather-aware packing list generator (1 LLM call)
-- .ics calendar export (30-line Python, high ROI)
-- Google Maps navigation deep links per stop
+- [x] User feedback thumbs per stop (feeding SQLite & ml/user_feedback.jsonl)
+- [x] Dietary filter chips (Vegan, Halal, Vegetarian, Gluten-Free, Jain)
+- [x] Smart weather-aware packing list generator
+- [x] .ics calendar export (RFC 5545 generator)
+- [x] Google Maps navigation deep links per stop
 
 Priority 3 - Polish before public sharing:
-- Polished README.md with architecture diagram and screenshots
-- 2-3 min demo video (Loom or YouTube)
-- Light / Dark mode toggle (only if done to high quality)
+- [x] Polished documentation & project context
+- [x] Destination-reactive color theming & mobile sticky bottom nav (Phase 8)
+- [x] Anti-AI-look UI styling and 2026 model migrations (Phase 9)
 
 ### Phase 8 (Future): Advanced Architecture
 - True OSRM road-network routing in MapView
