@@ -343,5 +343,32 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **Two-Tier StopCard Image Fallback**:
   - Added automatic fallback to curated category photography when a landmark photo URL fails to load, with emoji fallback as final safeguard
 
+---
+
+## Phase 10: Performance Overhaul & Multi-Tier Photo Engine (IN PROGRESS 🔄)
+
+### 10A — Watchdog Timeout & Google Places Bypass
+- [ ] **Extend Frontend Watchdog**: Increase `ChatPanel.tsx` abort timer from 45s to 90s to eliminate false timeout errors during cold multi-agent runs
+- [ ] **Google Places Probe Bypass**: Probe Google Places API key once; if unauthorized or empty, short-circuit and skip the 40-request `nearbysearch` loop, cutting backend generation latency by 15–20 seconds
+
+### 10B — Niche Scraper Bug Fix & Kashmir Support
+- [ ] **Fix `NameError: scored_candidates`**: Declare `scored_candidates: list[dict] = []` in `niche_scraper.py`
+- [ ] **Curate Kashmir Hidden Gems**: Add authentic spots (Dal Lake Shikara sunrise, Pari Mahal, Ahdoos Wazwan, Betaab Valley, Zaina Kadal artisan bazaar, Apharwat Peak)
+
+### 10C — Diverse Category Photo Pools & Destination Libraries
+- [ ] **Multi-Photo Category Pools**: Replace single static category URLs with pools of 8–10 distinct high-resolution Unsplash photos per category in `destination_images.py`
+- [ ] **Deterministic Photo Hashing**: Use `pool[abs(hash(name)) % len(pool)]` so cards with the same category receive completely unique, diverse photos
+- [ ] **Destination-Specific Photo Libraries**: Add tailored photo collections for Kashmir, Goa, Mumbai, Delhi, Jaipur, Kerala, Manali, Ladakh, Bali, Lisbon, Tokyo, Paris, Rome
+- [ ] **Frontend Fallback Mirror**: Update `ItineraryView.tsx` `CATEGORY_FALLBACK_IMAGES` with matching multi-photo hash selection on image error
+
+### 10D — Regional Geocoding & Subzones for Mountain/Regional Trips
+- [ ] **Fix Kashmir Barmer-Desert Misgeocoding**: Add fast-path geocoding overrides for Kashmir, Srinagar, Ladakh, Manali, Himachal in `places_tool.py`
+- [ ] **Add Kashmir to `REGIONAL_SUBZONES`**: Subzones for Srinagar, Gulmarg, Pahalgam, and Sonamarg for day-by-day valley dispersion
+
+### 10E — Cache Integrity & Cache Bump to `v9`
+- [ ] **Prevent Mock Stop Caching**: Mark mock fallback stops as `source="mock"` so they are never written to Chroma as real `opentripmap` stops
+- [ ] **Bump Cache to `v9`**: Auto-flush poisoned Barmer-desert Kashmir cache entries and refresh with genuine regional attractions
+
+
 
 

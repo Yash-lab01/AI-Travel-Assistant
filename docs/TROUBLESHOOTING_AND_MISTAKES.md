@@ -265,5 +265,61 @@ This document serves as a persistent record of bugs encountered, root causes dia
 - **What NOT to do**:
   ❌ Never embed key-restricted Google Places photo URLs directly in client-side `<img>` tags without verifying referrer and billing policies.
 
+---
+
+## 18. Niche Scraper Variable Uninitialized (`NameError: name 'scored_candidates' is not defined`)
+- **Symptom**:
+  Terminal log showed `[ranker_agent] Niche discovery failed for '<destination>': name 'scored_candidates' is not defined`. No community hidden gems were blended; only mainstream or mock stops appeared.
+- **Root Cause**:
+  In `niche_scraper.py`, `scored_candidates` was appended to inside the candidate scoring loop without prior declaration `scored_candidates: list[dict] = []` at the top of the function.
+- **Fix Applied**:
+  Declared `scored_candidates: list[dict] = []` adjacent to `stops: list[Stop] = []` prior to scoring loop execution.
+- **What NOT to do**:
+  ❌ Never append to a local accumulator list inside a loop without explicit initial declaration.
+
+---
+
+## 19. Geocoding False Positives (e.g. Kashmir Resolving to Barmer Desert, Rajasthan)
+- **Symptom**:
+  Planning a trip for "Kashmir" resulted in 0 OpenTripMap attractions and fell back to 8 generic mock places in the middle of nowhere.
+- **Root Cause**:
+  Nominatim returned a tiny village in Barmer, Rajasthan (`26.2644, 71.6027`) as the top result for "Kashmir" instead of the Jammu & Kashmir region or Srinagar Valley.
+- **Fix Applied**:
+  1. Added explicit fast-path centroid overrides in `geocode_destination` for regional destinations (`kashmir` → `34.0837, 74.7973`, `ladakh` → `34.1526, 77.5771`, `himachal/manali` → `32.2396, 77.1887`).
+  2. Added Kashmir to `REGIONAL_SUBZONES` with Srinagar, Gulmarg, Pahalgam, and Sonamarg centroids.
+- **What NOT to do**:
+  ❌ Never blindly trust top-1 free text geocoder results for wide geographical regions or territories without checking against known region overrides.
+
+---
+
+## 20. Google Places NearbySearch Latency Sink & 45s Frontend Watchdog Abort
+- **Symptom**:
+  Frontend aborted with `⚠️ Connection to planner timed out after 45 seconds.` On retry, generation succeeded in ~15s.
+- **Root Cause**:
+  1. `ChatPanel.tsx` had an aggressive 45s abort watchdog.
+  2. `places_tool.py` executed `enrich_with_google_places` for 30–50 items concurrently. Since Google Places NearbySearch was unauthorized or returned `{}` for each item, this wasted ~15–20s of HTTP timeout time on cold destinations before Wikipedia even started.
+- **Fix Applied**:
+  1. Extended `ChatPanel.tsx` watchdog to 90 seconds for multi-day cold queries.
+  2. Probed Google Places key once; if unauthorized or empty, short-circuit and skip the 40-request `nearbysearch` loop entirely.
+- **What NOT to do**:
+  ❌ Never execute dozens of external API calls in a loop without probing whether the provider/credential is actually responsive and authorized.
+
+---
+
+## 21. Single-Image Category Repetition & Mock Cache Poisoning
+- **Symptom**:
+  All stop cards in the same category (e.g. 5 attractions) displayed the exact same fallback photo. Additionally, mock stops were permanently cached in Chroma as real OTM data.
+- **Root Cause**:
+  1. `CATEGORY_FALLBACK_IMAGES` had only 1 static URL per category.
+  2. `places_tool.py` labelled mock fallback stops as `source="opentripmap"`, permanently writing them into Chroma cache under `v8`.
+- **Fix Applied**:
+  1. Created multi-image pools (8–10 distinct high-resolution Unsplash photos per category) with deterministic name hashing (`hash(stop.name) % pool.length`).
+  2. Added dedicated destination photo libraries (e.g. Kashmir, Goa, Mumbai, Jaipur, Kerala) so fallbacks use authentic regional photos.
+  3. Ensured mock stops are labelled `source="mock"` and never written to Chroma.
+  4. Bumped cache to `CACHE_VERSION = "v9"` to purge poisoned legacy entries.
+- **What NOT to do**:
+  ❌ Never use a single static image fallback for an entire category. Always use diverse photo pools or hash-based selection to avoid duplicate card imagery.
+
+
 
 

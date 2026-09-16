@@ -1,5 +1,5 @@
 # Image Integration — Implementation Design
-> Added: 2026-08-19 | Updated: 2026-09-16 | Status: **FULLY IMPLEMENTED (v8)**
+> Added: 2026-08-19 | Updated: 2026-09-16 | Status: **UPGRADING TO v9 (Multi-Tier Photo Pools & Fast Probing)**
 
 ---
 
@@ -9,6 +9,7 @@ Images are the single most impactful addition to a travel planning app. Users un
 - Stop cards feel like a spreadsheet, not a travel guide
 - The landing page looks like a developer prototype, not a product
 - Users can't tell if a "hidden gem" is a beautiful rooftop bar or a random street
+- When fallback images repeat identically across 5 stops, the interface looks broken or artificial
 
 ---
 
@@ -342,6 +343,35 @@ export interface Itinerary {
 8. **[Frontend]** Update landing page `HERO_PROMPT_CARDS` with destination thumbnail images
 9. **[Frontend]** Update `.stop-card-image` CSS with correct aspect ratio and skeleton shimmer
 10. **[Frontend]** Add photo thumbnails to Leaflet map popups
+
+---
+
+## Phase 10: Multi-Tier Image Engine Overhaul (v9)
+
+### The Problem in v8
+1. **Single Category Photo Repetition**:
+   - `CATEGORY_FALLBACK_IMAGES` had only 1 static image per category. When 5 consecutive stops in an itinerary shared the category `"sight"`, all 5 cards showed the exact same duplicate image.
+2. **Google Places 40-Request Latency Sink**:
+   - `enrich_with_google_places` fired up to 40 unthrottled requests to `nearbysearch` with an unauthorized key, each waiting up to 8s before timing out, triggering the 45s client abort.
+3. **Poisoned Mock Cache**:
+   - When external lookups failed or geocoding shifted to an empty desert coordinate, mock places like "Historic Old Town Center" were tagged as `source="opentripmap"` and stored in Chroma cache under `v8`, permanently serving fake places on subsequent queries.
+4. **Non-Photo Wikimedia Results**:
+   - Wikipedia generator searches sometimes returned administrative SVG map locator files, coats of arms, or small iconography instead of real landscape photography.
+
+### The v9 Architecture
+1. **Google Places Fast-Fail Probe**:
+   - Probe the Places API key once on startup or initial call. If the API returns `REQUEST_DENIED` or HTTP 403, immediately mark Google Places as disabled in memory and bypass the 40-call loop.
+2. **Wikimedia Non-Photo Filter**:
+   - Reject any Wikimedia URL containing `map`, `locator`, `flag`, `coat_of_arms`, `icon`, `symbol`, `logo`, `portrait`, `border`, `location`, or `.svg`.
+3. **Multi-Photo Category Pools (`CATEGORY_IMAGE_POOLS`)**:
+   - Provide 8–10 distinct high-resolution Unsplash photos per category (`sight`, `nature`, `food`, `culture`, `adventure`, `relaxation`, `shopping`, `entertainment`, `general`).
+4. **Deterministic Hash Selection**:
+   - Select photos using `pool[abs(hash(place_name or "spot")) % len(pool)]`. Every stop card gets a visually distinct, stable photo.
+5. **Destination-Specific Photo Libraries (`DESTINATION_PHOTO_LIBRARIES`)**:
+   - Provide curated category pools for popular regions: Kashmir, Goa, Mumbai, Delhi, Jaipur, Kerala, Manali, Ladakh, Bali, Lisbon, Tokyo, Paris, Rome.
+   - When a stop belongs to a known destination, check destination category photos first before falling back to generic category pools.
+6. **Cache Invalidation (`CACHE_VERSION = "v9"`)**:
+   - Purges poisoned mock caches from previous versions. Only genuine OpenTripMap attractions (`source="opentripmap"`) are written to ChromaDB.
 
 ---
 

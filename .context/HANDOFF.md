@@ -69,10 +69,22 @@
     - Updated intro badge copy to `✦ DESCRIBE YOUR TRIP · AI BUILDS THE REST` (`A1`).
     - Updated header badge to `Live · 6 Agents` (`A2`).
     - Renamed mobile nav tab 4 from `Architecture` to `How It Works` (`A3`).
+18. **Generation Timeout & Latency Waste (Phase 10)**:
+    - Frontend watchdog aborted after 45s due to 40 unthrottled NearbySearch calls and 40 serial Wikipedia searches on cold destinations.
+    - Increasing watchdog to 90s, probing/bypassing inactive Google Places calls, and bounding Wikipedia searches.
+19. **Niche Scraper `NameError: scored_candidates` (Phase 10)**:
+    - `niche_scraper.py` line 115 failed on uninitialized `scored_candidates` list, breaking community gem discovery.
+20. **Geocoding False Positive for Kashmir (Phase 10)**:
+    - Nominatim geocoded `"Kashmir"` to a tiny village in the Barmer desert of Rajasthan (`26.2644, 71.6027`), resulting in 0 OTM places and generic mock fallbacks.
+    - Adding fast-path overrides for Kashmir Valley (`34.0837, 74.7973`) and regional subzones (Srinagar, Gulmarg, Pahalgam, Sonamarg).
+21. **Single-Image Category Repetition & Cache Poisoning (Phase 10)**:
+    - Single static fallback URL per category caused repeated images across cards.
+    - Adding rich category photo pools (8–10 photos per category) with deterministic name hashing + destination-specific photo collections; bumping cache to `v9` and forbidding mock caching under `source="opentripmap"`.
 
 ---
 
-## 5. Completed Project Milestone Summary
+## 5. Active Developmental Milestone
 
-All 9 developmental phases (Phase 0 through Phase 9) are 100% completed, verified with 36/36 passing pytest unit tests, and production-compiled with Next.js Turbopack with zero errors.
+Phase 10 (Performance Overhaul & Multi-Tier Photo Engine) is actively being implemented. All previous phases (0 through 9) are 100% completed and verified with 36/36 passing unit tests.
+
 
