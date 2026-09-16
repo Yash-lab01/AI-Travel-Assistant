@@ -847,21 +847,36 @@ html, body {
   font-family: var(--font-body);
 }
 
-/* ── Guided Builder Framework (Phase 11A) ─────────────────────── */
+/* ── Guided Builder Framework (Phase 11A & 11B) ─────────────────── */
 .guided-builder-container {
   padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  min-height: 440px;
+  gap: 20px;
+  max-height: 520px;
+  overflow-y: auto;
   background: rgba(4, 14, 31, 0.4);
   animation: fadeIn 200ms ease-out both;
+  scrollbar-width: thin;
+  scrollbar-color: var(--navy-surface-raised) transparent;
 }
 
 .guided-field-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
+}
+
+.guided-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .guided-two-col {
+    grid-template-columns: 1fr;
+  }
 }
 
 .guided-field-label {
@@ -936,9 +951,17 @@ html, body {
   box-shadow: 0 0 12px rgba(0, 219, 231, 0.3);
 }
 
+.guided-pill-btn .check-mark {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--teal);
+  margin-left: 3px;
+  animation: scaleIn 150ms ease-out both;
+}
+
 .guided-builder-actions {
-  margin-top: auto;
-  padding-top: 18px;
+  margin-top: 10px;
+  padding-top: 16px;
   border-top: 1px solid var(--glass-border);
   display: flex;
   align-items: center;
@@ -954,6 +977,24 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
+}
+
+.guided-reset-btn {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  font-family: var(--font-label);
+  font-size: 11.5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.guided-reset-btn:hover {
+  color: var(--amber);
+  border-color: rgba(255, 191, 0, 0.4);
 }
 
 

@@ -23,6 +23,46 @@ const POPULAR_DESTINATIONS = [
 
 const DURATION_OPTIONS = [1, 2, 3, 4, 5, 7, 10];
 
+const STYLE_OPTIONS = [
+  { label: 'Iconic Landmarks', value: 'popular', icon: '🏛️' },
+  { label: 'Hidden Gems', value: 'niche', icon: '💎' },
+  { label: 'Cultural Heritage', value: 'cultural', icon: '🏰' },
+  { label: 'Food & Night Markets', value: 'foodie', icon: '🍲' },
+  { label: 'Scenic Nature', value: 'nature', icon: '🌿' },
+  { label: 'Adventure & Outdoors', value: 'adventure', icon: '🏄' },
+  { label: 'Relaxed Leisure', value: 'relaxed', icon: '🧘' },
+];
+
+const PACE_OPTIONS = [
+  { label: 'Relaxed (2-3 stops/day)', value: 'slow', icon: '🧘' },
+  { label: 'Moderate (4-5 stops/day)', value: 'moderate', icon: '⚡' },
+  { label: 'Packed (6+ stops/day)', value: 'fast', icon: '🏃' },
+];
+
+const BUDGET_OPTIONS = [
+  { label: 'Budget / Backpacker', value: 'budget', icon: '🪙' },
+  { label: 'Mid-Range / Balanced', value: 'moderate', icon: '⚖️' },
+  { label: 'Luxury / Premium', value: 'luxury', icon: '✨' },
+];
+
+const GROUP_OPTIONS = [
+  { label: 'Solo Explorer', value: 'solo', icon: '🎒' },
+  { label: 'Couple Getaway', value: 'couple', icon: '💑' },
+  { label: 'Family with Kids', value: 'family', icon: '👨‍👩‍👧' },
+  { label: 'Friends Crew', value: 'friends', icon: '👥' },
+];
+
+const INTEREST_OPTIONS = [
+  { label: 'Photo Spots', value: 'photography', icon: '📸' },
+  { label: 'Artisanal Cafes', value: 'cafes', icon: '☕' },
+  { label: 'Beaches & Coast', value: 'beaches', icon: '🏖️' },
+  { label: 'Local Bazaars', value: 'shopping', icon: '🛍️' },
+  { label: 'Sunset Viewpoints', value: 'viewpoints', icon: '🌄' },
+  { label: 'Museums & Art', value: 'museums', icon: '🎨' },
+  { label: 'Street Food Trails', value: 'street_food', icon: '🍜' },
+  { label: 'Heritage Walks', value: 'heritage_walks', icon: '🥾' },
+];
+
 interface Props {
   onItinerary: (itinerary: Itinerary) => void;
   agentEvents: AgentEvent[];
@@ -109,26 +149,91 @@ export default function ChatPanel({
     }));
   };
 
+  const toggleGuidedStyle = (styleVal: string) => {
+    setGuidedStyles(prev => {
+      if (prev.includes(styleVal)) {
+        if (prev.length === 1) return prev; // Keep at least one selected style
+        return prev.filter(s => s !== styleVal);
+      }
+      return [...prev, styleVal];
+    });
+  };
+
+  const toggleGuidedInterest = (interestVal: string) => {
+    setGuidedInterests(prev => {
+      if (prev.includes(interestVal)) {
+        return prev.filter(i => i !== interestVal);
+      }
+      return [...prev, interestVal];
+    });
+  };
+
+  const handleResetGuided = () => {
+    setGuidedDestination('');
+    setGuidedDays(3);
+    setGuidedStyles(['popular', 'niche']);
+    setGuidedPace('moderate');
+    setGuidedBudget('moderate');
+    setGuidedGroup('solo');
+    setGuidedInterests([]);
+    setDietaryPreference(null);
+  };
+
   const handleGuidedSubmit = () => {
     const dest = (guidedDestination || pendingTrip?.destination || 'Goa').trim();
     const days = guidedDays || pendingTrip?.num_days || 3;
 
-    const styleLabels = guidedStyles.join(', ');
-    const interestLabels = guidedInterests.length > 0 ? `interests: ${guidedInterests.join(', ')}` : '';
-    const details = [styleLabels, interestLabels, `${guidedPace} pace`, `${guidedGroup} travel`]
-      .filter(Boolean)
-      .join('; ');
+    const styleNames = STYLE_OPTIONS
+      .filter(s => guidedStyles.includes(s.value))
+      .map(s => s.label)
+      .join(' & ');
 
-    const outgoingMessage = `${days} days in ${dest}${details ? ` (${details})` : ''}`;
+    const interestNames = INTEREST_OPTIONS
+      .filter(i => guidedInterests.includes(i.value))
+      .map(i => i.label)
+      .join(', ');
+
+    const paceLabel = PACE_OPTIONS.find(p => p.value === guidedPace)?.label || `${guidedPace} pace`;
+    const groupLabel = GROUP_OPTIONS.find(g => g.value === guidedGroup)?.label || `${guidedGroup} travel`;
+    const budgetLabel = BUDGET_OPTIONS.find(b => b.value === guidedBudget)?.label || `${guidedBudget} budget`;
+
+    const details = [
+      styleNames ? `style: ${styleNames}` : '',
+      interestNames ? `interests: ${interestNames}` : '',
+      paceLabel,
+      groupLabel,
+      budgetLabel,
+      dietaryPreference ? `${dietaryPreference} food` : '',
+    ].filter(Boolean).join('; ');
+
+    const outgoingMessage = `${days} days in ${dest} (${details})`;
+
+    let primaryStyle = 'balanced';
+    if (guidedStyles.includes('niche') && !guidedStyles.includes('popular')) {
+      primaryStyle = 'niche';
+    } else if (guidedStyles.includes('popular') && !guidedStyles.includes('niche')) {
+      primaryStyle = 'popular';
+    } else if (guidedStyles.includes('foodie')) {
+      primaryStyle = 'foodie';
+    } else if (guidedStyles.includes('cultural')) {
+      primaryStyle = 'cultural';
+    } else if (guidedStyles.includes('adventure')) {
+      primaryStyle = 'adventure';
+    } else if (guidedStyles.includes('relaxed')) {
+      primaryStyle = 'relaxed';
+    }
 
     const customAnswers: Record<string, string> = {
-      travel_style: guidedStyles[0] || 'balanced',
+      travel_style: primaryStyle,
       pace: guidedPace,
       budget: guidedBudget,
       group_type: guidedGroup,
     };
     if (guidedInterests.length > 0) {
       customAnswers['interests'] = guidedInterests.join(', ');
+    }
+    if (guidedStyles.length > 0) {
+      customAnswers['styles'] = guidedStyles.join(', ');
     }
 
     handleSend(outgoingMessage, {
@@ -690,6 +795,140 @@ export default function ChatPanel({
             </div>
           </div>
 
+          {/* Travel Style & Vibe (Multi-select) */}
+          <div className="guided-field-group">
+            <div className="guided-field-label">
+              <span>✨ Travel Style & Vibe</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'none', fontWeight: 400 }}>
+                (Multi-select · pick all that match your mood)
+              </span>
+            </div>
+            <div className="guided-chips-row">
+              {STYLE_OPTIONS.map((style) => {
+                const isSelected = guidedStyles.includes(style.value);
+                return (
+                  <button
+                    key={style.value}
+                    type="button"
+                    className={`guided-pill-btn ${isSelected ? 'active' : ''}`}
+                    onClick={() => toggleGuidedStyle(style.value)}
+                    disabled={isStreaming}
+                  >
+                    <span>{style.icon}</span>
+                    <span>{style.label}</span>
+                    {isSelected && <span className="check-mark">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Daily Sightseeing Pace */}
+          <div className="guided-field-group">
+            <div className="guided-field-label">
+              <span>⚡ Daily Sightseeing Pace</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'none', fontWeight: 400 }}>
+                (Controls stop count and breathing room)
+              </span>
+            </div>
+            <div className="guided-chips-row">
+              {PACE_OPTIONS.map((p) => {
+                const isSelected = guidedPace === p.value;
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    className={`guided-pill-btn ${isSelected ? 'active' : ''}`}
+                    onClick={() => setGuidedPace(p.value as any)}
+                    disabled={isStreaming}
+                  >
+                    <span>{p.icon}</span>
+                    <span>{p.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Two-Column: Budget & Companions */}
+          <div className="guided-two-col">
+            {/* Budget Tier */}
+            <div className="guided-field-group">
+              <div className="guided-field-label">
+                <span>🪙 Budget Tier</span>
+              </div>
+              <div className="guided-chips-row">
+                {BUDGET_OPTIONS.map((b) => {
+                  const isSelected = guidedBudget === b.value;
+                  return (
+                    <button
+                      key={b.value}
+                      type="button"
+                      className={`guided-pill-btn ${isSelected ? 'active' : ''}`}
+                      onClick={() => setGuidedBudget(b.value as any)}
+                      disabled={isStreaming}
+                    >
+                      <span>{b.icon}</span>
+                      <span>{b.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Travel Companions */}
+            <div className="guided-field-group">
+              <div className="guided-field-label">
+                <span>👥 Who's Traveling</span>
+              </div>
+              <div className="guided-chips-row">
+                {GROUP_OPTIONS.map((g) => {
+                  const isSelected = guidedGroup === g.value;
+                  return (
+                    <button
+                      key={g.value}
+                      type="button"
+                      className={`guided-pill-btn ${isSelected ? 'active' : ''}`}
+                      onClick={() => setGuidedGroup(g.value as any)}
+                      disabled={isStreaming}
+                    >
+                      <span>{g.icon}</span>
+                      <span>{g.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Must-Have Experiences & Interests (Multi-select) */}
+          <div className="guided-field-group">
+            <div className="guided-field-label">
+              <span>🎯 Must-Have Activities & Interests</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'none', fontWeight: 400 }}>
+                (Multi-select · priorities for the route)
+              </span>
+            </div>
+            <div className="guided-chips-row">
+              {INTEREST_OPTIONS.map((item) => {
+                const isSelected = guidedInterests.includes(item.value);
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    className={`guided-pill-btn ${isSelected ? 'active' : ''}`}
+                    onClick={() => toggleGuidedInterest(item.value)}
+                    disabled={isStreaming}
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                    {isSelected && <span className="check-mark">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Stream Error Banner */}
           {streamError && (
             <div
@@ -718,6 +957,26 @@ export default function ChatPanel({
               </strong>
               <span>·</span>
               <span style={{ color: 'var(--teal)' }}>{guidedDays} Days</span>
+              <span>·</span>
+              <span style={{ color: '#93c5fd' }}>
+                {guidedStyles.length} {guidedStyles.length === 1 ? 'Style' : 'Styles'}
+              </span>
+              <span>·</span>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                {PACE_OPTIONS.find(p => p.value === guidedPace)?.label.split(' ')[0]} Pace
+              </span>
+              <span>·</span>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                {GROUP_OPTIONS.find(g => g.value === guidedGroup)?.label.split(' ')[0]}
+              </span>
+              {guidedInterests.length > 0 && (
+                <>
+                  <span>·</span>
+                  <span style={{ color: '#c084fc' }}>
+                    {guidedInterests.length} {guidedInterests.length === 1 ? 'Activity' : 'Activities'}
+                  </span>
+                </>
+              )}
               {dietaryPreference && (
                 <>
                   <span>·</span>
@@ -727,6 +986,16 @@ export default function ChatPanel({
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <button
+                type="button"
+                className="guided-reset-btn"
+                onClick={handleResetGuided}
+                disabled={isStreaming}
+                title="Reset preferences to default"
+              >
+                ↺ Reset
+              </button>
+
               <button
                 type="button"
                 className="prompt-chip"
