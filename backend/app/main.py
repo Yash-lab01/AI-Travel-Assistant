@@ -153,7 +153,13 @@ async def plan_stream(request: ChatRequest):
             await asyncio.sleep(0.04)
 
         if assistant_reply:
-            yield f"event: assistant_message\ndata: {json.dumps({'message': assistant_reply})}\n\n"
+            words = assistant_reply.split(" ")
+            for i, word in enumerate(words):
+                chunk = word + (" " if i < len(words) - 1 else "")
+                yield f"event: text_token\ndata: {json.dumps({'chunk': chunk, 'event_type': 'text_token'})}\n\n"
+                await asyncio.sleep(0.018)
+
+            yield f"event: assistant_message\ndata: {json.dumps({'message': assistant_reply, 'event_type': 'assistant_message'})}\n\n"
 
         if itinerary:
             # Auto-save to trip history database
@@ -164,7 +170,7 @@ async def plan_stream(request: ChatRequest):
 
             yield f"event: itinerary\ndata: {itinerary.model_dump_json()}\n\n"
 
-        yield "event: done\ndata: {}\n\n"
+        yield f"event: done\ndata: {json.dumps({'event_type': 'done'})}\n\n"
 
     return StreamingResponse(
         event_generator(),
