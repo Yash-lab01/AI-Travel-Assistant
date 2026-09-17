@@ -108,7 +108,7 @@ AI Travel Assistant/
 │   │   ├── trip_history.db         # SQLite saved itineraries
 │   │   ├── user_feedback.db        # SQLite stop thumbs ratings
 │   │   └── chroma_db/              # ChromaDB on-disk store (collections: niche_spots, itineraries)
-│   └── tests/                      # Unit tests (pytest) — 36/36 passing
+│   └── tests/                      # Unit tests (pytest) — 43/43 passing
 ├── frontend/
 │   ├── src/
 │   │   ├── app/

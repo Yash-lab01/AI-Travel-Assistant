@@ -1,5 +1,5 @@
 # TASKS.md — Project Roadmap & Task Checklist
-> Last updated: 2026-09-16
+> Last updated: 2026-09-17
 
 ## Phase 0: Foundations & Architecture (COMPLETED ✅)
 - [x] FastAPI backend setup with `/plan` (REST), `/plan/stream` (SSE), and `/health` endpoints
@@ -402,3 +402,42 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **Clarification Card Instant Button**: Added "⚡ Generate Trip with Given Info (Defaults)" button inside clarification messages.
 - [x] **Persistent Chat Action Bar**: Rendered a prominent "⚡ Generate Trip with Given Info for [Destination] [N Days]" bar above the chat input whenever a destination has been detected or entered.
 - [x] **One-Click Force Plan**: Triggers immediate itinerary generation with `forcePlan: true`, passing any selected clarification answers, destination, and duration without requiring further clarification rounds.
+---
+
+## Phase 12: UX Refinement, Streaming Polish & Performance (PLANNED 📋)
+
+> Full design spec: [`docs/PHASE_12_STREAMING_POLISH_PLAN.md`](../docs/PHASE_12_STREAMING_POLISH_PLAN.md)
+
+### 12A — LLM Chat Streaming (Token-by-Token)
+- [ ] **Backend `astream()` for `assistant_reply`**: Replace `model.ainvoke()` with `model.astream()` in `intake_agent.py` for conversational replies (clarification intro text and general messages). Emit `text_token` SSE events from `main.py` for each streamed chunk alongside existing `agent_event` events.
+- [ ] **Frontend Accumulating Message Bubble**: In `ChatPanel.tsx` `handleSend`, on receiving `text_token` SSE events, append chunk to an in-progress `assistant` message in `messages` state (using functional `setMessages` to avoid stale closure). The message grows token-by-token in the chat.
+- [ ] **Pre-Stream Typing Indicator**: Show an animated `...` three-dot bubble from the moment a request is sent (`isStreaming = true`) until the first `text_token` or `assistant_message` SSE event arrives. Hide once any content arrives.
+- [ ] **Blinking Cursor on In-Progress Bubble**: Add a CSS `@keyframes blink` blinking cursor `|` at the end of the accumulating message while tokens are still arriving, remove on `done` event.
+
+### 12B — Chat UX Improvements
+- [ ] **Destination Preview Card in Chat**: When `clarification_questions` contains a destination, render a glassmorphic destination card (banner photo + tagline) inline in the chat *above* the clarification chips. Uses existing curated `destination_images.py` banners — zero backend work.
+- [ ] **Freeform ↔ Guided Active Preferences Strip**: Collapsible banner at top of Freeform Chat view showing current Guided Builder state (destination, styles, pace, budget) when non-default. Clicking any chip takes the user back to Guided Builder for quick edits.
+- [ ] **Clarification Progress Counter**: Render `Question 1 of N` counter or a thin teal progress bar below each clarification card so users know how many steps remain before generation starts.
+- [ ] **Multi-Select Soft Cap Hint**: When user selects ≥ 4 styles or interests, show a soft guidance note: `“Tip: 2–3 styles give the most focused results”` as a subtle inline toast below the chips.
+
+### 12C — Landing Page Polish
+- [ ] **Destination Card Sub-Labels**: Add one short editorial line under each destination card name in `page.tsx` (e.g. `"Sun, sea, spice & Portuguese forts"` under Goa). Zero backend work, highest anti-AI-look ROI.
+- [ ] **Ken Burns Hero Photo Carousel**: CSS-only `@keyframes kenBurns` (scale 1 → 1.08 over 7s, then crossfade) cycling through 5 destination hero photos in the landing page intro section. No JS framework dependency.
+
+### 12D — Token Usage Reduction
+- [ ] **Trim `CLARIFICATION_SYSTEM_PROMPT`**: Remove redundant instruction repetition in `intake_agent.py` — target ~40% fewer tokens in the clarification LLM call with no quality change.
+- [ ] **Scope Niche Scraper Context**: Currently the full Tavily/Reddit snippet list (often 2,000+ tokens) is passed to the LLM scorer. Cap to top-8 highest-scored snippets (~400 tokens) before LLM scoring call.
+- [ ] **Compress Agent Event Payloads**: `AgentEvent` objects sent as SSE include full `description` strings. Truncate `description` to 120 chars for event stream (frontend only shows a feed anyway). Full text stays in `state.events`.
+- [ ] **`ChatRequest` State Scoping**: Do not pass `existing_itinerary` full JSON back through the state on every LangGraph node invocation. Only pass `itinerary_id` + minimal patch fields to the editor agent node.
+- [ ] **Deduplicate `DESTINATION_QUESTIONS` Dispatch**: Currently the full `DESTINATION_QUESTIONS` dict is evaluated even when a dynamic LLM fallback is used. Early-exit after static match to skip unused evaluation.
+
+### 12E — Frontend Performance
+- [ ] **`React.memo` on `StopCard`**: Wrap `StopCard` in `React.memo` with a custom comparator to prevent re-renders when unrelated chat state updates.
+- [ ] **`useMemo` / `useCallback` in `ChatPanel`**: Memoize `PROMPT_CHIPS`, `POPULAR_DESTINATIONS`, and all static option arrays (currently recreated on every render). Memoize `handleSend` with `useCallback`.
+- [ ] **Debounce Guided Builder Updates**: Guided Builder state changes (destination text input) currently trigger immediate `pendingTrip` sync. Debounce by 300ms to avoid per-keystroke re-renders.
+- [ ] **`will-change: transform` on Animated Elements**: Add to `.stop-card`, `.aurora-blob`, and `.chat-hub-instant-bar` to hint browser compositor layer promotion, reducing paint cost.
+- [ ] **Eager-Load First Stop Image Per Day**: Set `loading="eager"` on the hero image of the first stop card per day to eliminate the initial shimmer on the most prominent card.
+
+### 12F — Backend Resilience
+- [ ] **"Did You Mean?" Destination Fuzzy Match**: In `places_tool.py`, if Nominatim returns 0 coordinates, fuzzy-match `destination` string against a curated 60-entry `KNOWN_DESTINATIONS` dict (edit distance or startswith check). Surface top match to frontend as a `destination_suggestion` SSE event for the user to confirm.
+- [ ] **Wikimedia URL Normalisation**: Strip size prefix from Wikimedia thumbnail URLs (e.g. `/320px-…` → use `originalimage.source` when available) to prevent broken images when source files are updated.

@@ -143,23 +143,38 @@
 74. **Regional Geocoding & Centroids**: Corrected Nominatim false positives (e.g. Kashmir resolving to Barmer, Rajasthan) with explicit centroid overrides and subzones for Srinagar, Gulmarg, Pahalgam, and Sonamarg in `places_tool.py`.
 75. **Chroma Cache Integrity & v9 Bump**: Forbids caching mock stops under `source="opentripmap"` (marked `source="mock"`) and bumped cache to `v9` to wipe poisoned legacy data.
 
-### Phase 11 — Dual-Mode Intake & Multi-Select Planning Studio (Active Development 📋)
-76. **Top Mode Segmented Controller**: Switch between conversational `💬 Freeform Chat` and interactive `✨ Guided Builder` directly at the top of the planning studio.
-77. **Guided Trip Configuration Panel**: Rich visual form allowing travelers to configure destination, duration (day pills), travel styles/vibes (multi-select), pacing, budget tier, companions, and must-have activities with full state synchronization.
-78. **Multi-Select Clarification Engine**: Upgrades clarification questions and option chips to allow multi-selection (e.g. food + culture + hidden gems) with checkmark indicators, supported on backend schemas via list parsing.
-79. **Strategic Fixed-Dimension Intake**: Intake agent systematically identifies missing dimensions (destination, duration, vibe, pace, budget, group) and targets clarifying questions directly to fill gaps.
-80. **Instant "⚡ Generate Trip with Given Info" Button**: Persistent action chip and clarification card escape button enabling instant generation using sensible defaults without questionnaire roadblocks.
+### Phase 11 — Dual-Mode Intake & Multi-Select Planning Studio (COMPLETED ✅)
+76. **Top Mode Segmented Controller**: Switch between conversational `💬 Freeform Chat` and interactive `✨ Guided Builder` directly at the top of the planning studio — with animated slider, full bi-directional state sync, and Nocturnal Voyager glass styling.
+77. **Guided Trip Configuration Panel**: Rich visual matrix: destination text input + popular chips, day pills (1–10), multi-select travel style/vibe pills, daily pace selector, budget tier, companions, must-have activities, multi-select dietary preferences, and sticky live summary bar (`🚀 Generate Custom Itinerary`).
+78. **Multi-Select Clarification Engine**: `is_multi_select: bool` on `ClarificationQuestion` schema mirrored to TypeScript. Chat chips toggle multi-select (`Record<string, string[]>`) with `✓` badge and luminous teal border. Backend `intake_agent.py` parses list answers for `travel_style`, `interests`, `activity`, and `dietary` fields.
+79. **Strategic Fixed-Dimension Intake**: Tracks 6 key dimensions (destination, duration, travel style, pace, budget, group); prompts with < 3 dimensions trigger targeted multi-select clarification; rich prompts bypass. Missing-destination prompts trigger interactive destination selection chips.
+80. **Instant "⚡ Generate Trip with Given Info" Action**: In-card escape button (`⚡ Generate Trip with Given Info (Defaults)`) in clarification bubbles + persistent `.chat-hub-instant-bar` above input whenever destination is known — immediately triggers planning with any selected answers and standard defaults.
+
+---
+
+### Phase 12 — UX Refinement, Streaming Polish & Performance (PLANNED 📋)
+81. **LLM Response Token Streaming**: Stream `assistant_reply` tokens word-by-word via SSE `text_token` events in `main.py` using `model.astream()`, with `ChatPanel.tsx` accumulating tokens into a growing in-progress message bubble — eliminates the "all at once" text pop-in.
+82. **Typing Indicator (Pre-Stream)**: Show an animated three-dot `...` typing indicator bubble in chat from the moment a request is sent until the first SSE token arrives.
+83. **Destination Preview Card in Chat**: When the intake agent detects a destination, render a destination banner photo + one-line tagline inline in the chat *before* clarification chips appear — makes the experience feel visual and travel-focused rather than text-heavy.
+84. **Freeform ↔ Guided Active Preferences Strip**: Show a collapsible strip at the top of Freeform Chat when Guided Builder preferences are set, so users can see what styles/pace/budget are already selected without switching tabs.
+85. **Clarification Progress Indicator**: Add a `Question 1 of 3` counter or thin progress bar below each clarification card so users know how many steps remain before generation begins.
+86. **Destination Card Sub-Labels on Landing Page**: Add short editorial sub-labels under each destination card (e.g. `"Beaches, spice markets & Portuguese tiles"` under Lisbon) — highest-value anti-AI-look polish, pure `page.tsx` text change.
+87. **Token Usage Reduction**: Trim system prompts, compress niche scraper context, limit agent event payloads, and scope `ChatRequest` state passed to each LangGraph node — targeting ~30% prompt token reduction with zero quality regression.
+88. **Frontend Performance**: Debounce Guided Builder state updates, memoize stop cards with `React.memo`, add `will-change: transform` to animated elements, and preload first stop image per day with `loading="eager"`.
+89. **"Did You Mean?" Destination Fuzzy Match**: If Nominatim geocoding returns 0 results, fuzzy-match against a 50-destination curated list and show a `Did you mean Kolkata?` chip before proceeding — prevents silent coordinate failures.
+90. **Ken Burns Hero Carousel**: CSS-only `@keyframes` scale carousel cycling through 5 destination photos in the landing page hero — no dependencies, high visual impact.
 
 ---
 
 ## Status & System Readiness
 
-Phases 0 through 10 are **100% completed, verified with 36/36 unit tests, and production-ready**. Phase 11 is actively designed and ready for implementation.
+Phases 0 through 11 are **100% completed, verified with 43/43 unit tests, and production-ready**. Phase 12 is planned.
 
 ---
 
 ## Reference Documents
-- [`docs/PHASE_11_DUAL_MODE_STUDIO_PLAN.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/PHASE_11_DUAL_MODE_STUDIO_PLAN.md) — Comprehensive technical architecture & UX specification for Phase 11.
+- [`docs/PHASE_11_DUAL_MODE_STUDIO_PLAN.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/PHASE_11_DUAL_MODE_STUDIO_PLAN.md) — Dual-Mode Studio technical specification (COMPLETED).
+- [`docs/PHASE_12_STREAMING_POLISH_PLAN.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/PHASE_12_STREAMING_POLISH_PLAN.md) — Phase 12 UX, streaming, and performance plan.
 - [`docs/ANTI_AI_LOOK_PLAN.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/ANTI_AI_LOOK_PLAN.md) — Anti-AI-look UI improvements and implementation status.
 - [`docs/DESIGN_UPGRADE_ROADMAP.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/DESIGN_UPGRADE_ROADMAP.md) — UI/UX and visual design overhaul specifications.
 - [`docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md`](file:///c:/Users/yashp/Desktop/AI%20Travel%20Assistant/docs/COMPREHENSIVE_AUDIT_AND_ROADMAP.md) — Comprehensive architectural analysis & roadmap.
