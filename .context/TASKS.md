@@ -388,10 +388,10 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **Multi-Select Dietary Bias**: Integrated filter chips (Vegan 🌱, Vegetarian 🥗, Halal 🕌, Gluten-Free 🌾, Jain 🕊️).
 - [x] **Live Summary & Plan CTA**: Real-time summary strip with `🚀 Generate Custom Itinerary` and `↺ Reset` actions.
 
-### 11C — Multi-Select Clarification Engine
-- [ ] **Schema & Type Updates**: Add `is_multi_select: bool = False` to `ClarificationQuestion` in `schemas.py` and `types/index.ts`.
-- [ ] **Multi-Select Answer State**: Update `selectedAnswers` state in `ChatPanel.tsx` to `Record<string, string[]>` with toggle click behavior and check indicators (`✓`).
-- [ ] **Backend Multi-Select Parsing**: Update `ChatRequest.answers` to `Optional[dict[str, Any]]` and adapt `intake_agent.py` to parse lists for `travel_style`, `interests`, and `niche_weight`.
+### 11C — Multi-Select Clarification Engine (COMPLETED ✅)
+- [x] **Schema & Type Updates**: Added `is_multi_select: bool = False` to `ClarificationQuestion` in `schemas.py` and `types/index.ts`.
+- [x] **Multi-Select Answer State**: Updated `selectedAnswers` state in `ChatPanel.tsx` to `Record<string, string[]>` with toggle click behavior, active check indicators (`✓`), and `(Multi-select)` label badge.
+- [x] **Backend Multi-Select Parsing**: Updated `ChatRequest.answers` to `Optional[dict[str, Any]]` and updated `intake_agent.py` to parse lists for `travel_style` (blending `niche` + `popular` to 50/50 balanced), `region_vibe`, `interests`, `activity`, and `dietary`. Verified with 3 new automated tests.
 
 ### 11D — Strategic Fixed-Info Retrieval in Freeform Chat
 - [ ] **Strategic Dimension Tracking**: Modify `intake_agent.py` to check for presence of fixed key dimensions (destination, duration, travel style/interests, pace, budget, group).
