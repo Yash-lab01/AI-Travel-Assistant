@@ -393,10 +393,10 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **Multi-Select Answer State**: Updated `selectedAnswers` state in `ChatPanel.tsx` to `Record<string, string[]>` with toggle click behavior, active check indicators (`✓`), and `(Multi-select)` label badge.
 - [x] **Backend Multi-Select Parsing**: Updated `ChatRequest.answers` to `Optional[dict[str, Any]]` and updated `intake_agent.py` to parse lists for `travel_style` (blending `niche` + `popular` to 50/50 balanced), `region_vibe`, `interests`, `activity`, and `dietary`. Verified with 3 new automated tests.
 
-### 11D — Strategic Fixed-Info Retrieval in Freeform Chat
-- [ ] **Strategic Dimension Tracking**: Modify `intake_agent.py` to check for presence of fixed key dimensions (destination, duration, travel style/interests, pace, budget, group).
-- [ ] **Contextual Follow-up Questions**: When prompt is partial, generate strategic clarification questions addressing missing dimensions with multi-select enabled.
-- [ ] **Expanded Question Templates**: Enrich `DESTINATION_QUESTIONS` and dynamic LLM generator with 3–4 questions and 4–5 multi-select options each.
+### 11D — Strategic Fixed-Info Retrieval in Freeform Chat (COMPLETED ✅)
+- [x] **Strategic Dimension Tracking**: Modified `intake_agent.py` to track 6 key dimensions (destination, duration, travel style/interests, pace, budget, group). Partially specified prompts trigger contextual questions, while rich prompts bypass clarification.
+- [x] **Contextual Follow-up Questions**: When prompt is partial or destination is missing, generates strategic clarification questions addressing missing dimensions with multi-select enabled.
+- [x] **Expanded Question Templates**: Enriched `DESTINATION_QUESTIONS` for Goa, Mumbai, Pune, Rajasthan, Kashmir, and Lisbon with 3–4 questions and 4–5 multi-select options each. Upgraded dynamic LLM generator and generic fallback questions. Verified with 7 automated tests.
 
 ### 11E — Instant "⚡ Generate Trip with Given Info" Action
 - [ ] **Clarification Card Instant Button**: Add "⚡ Generate Trip with Given Info (Defaults)" button inside clarification messages.
