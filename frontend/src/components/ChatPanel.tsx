@@ -394,8 +394,17 @@ export default function ChatPanel({
     if (options?.forcePlan) {
       const dest = explicitDest || 'Goa';
       const days = explicitDays || 3;
-      outgoingMessage = `${days} days in ${dest}${dietaryPreference ? `, ${dietaryPreference} food` : ''}`;
-      setMessages(prev => [...prev, { role: 'user', content: `⚡ Plan ${days} days in ${dest} with standard defaults` }]);
+      const allSelectedValues: string[] = [];
+      Object.values(finalAnswers).forEach(val => {
+        if (Array.isArray(val)) {
+          allSelectedValues.push(...val);
+        } else if (typeof val === 'string' && val.trim() && val !== dest) {
+          allSelectedValues.push(val);
+        }
+      });
+      const summarySuffix = allSelectedValues.length > 0 ? ` (${allSelectedValues.join(', ')})` : '';
+      outgoingMessage = `${days} days in ${dest}${allSelectedValues.length > 0 ? `, ${allSelectedValues.join(', ')}` : ''}${dietaryPreference ? `, ${dietaryPreference} food` : ''}`;
+      setMessages(prev => [...prev, { role: 'user', content: `⚡ Generate ${days} days in ${dest} with given info${summarySuffix}` }]);
     } else if (options?.customAnswers) {
       const dest = explicitDest || 'Goa';
       const days = explicitDays || 3;
@@ -685,8 +694,9 @@ export default function ChatPanel({
                           className="btn-plan-defaults"
                           onClick={() => handleSend('', { forcePlan: true })}
                           disabled={isStreaming}
+                          title="Generate immediately using standard defaults for any missing info"
                         >
-                          <span>⚡ Plan with defaults now</span>
+                          <span>⚡ Generate Trip with Given Info (Defaults)</span>
                         </button>
                       </div>
                     </div>
@@ -741,6 +751,22 @@ export default function ChatPanel({
 
           {/* Live Agent Thought Feed */}
           <AgentEventFeed events={agentEvents} isStreaming={isStreaming} />
+
+          {/* Persistent Quick Action: Generate with Given Info (Phase 11E) */}
+          {(pendingTrip?.destination || activeClarification?.destination || (guidedDestination && guidedDestination !== 'Unknown')) && !isStreaming && (
+            <div className="chat-hub-instant-bar">
+              <button
+                type="button"
+                className="btn-instant-generate"
+                onClick={() => handleSend('', { forcePlan: true })}
+                disabled={isStreaming}
+              >
+                <span className="instant-bolt">⚡</span>
+                <span>Generate Trip with Given Info for <strong>{pendingTrip?.destination || activeClarification?.destination || guidedDestination}</strong></span>
+                <span className="instant-badge">{pendingTrip?.num_days || activeClarification?.num_days || guidedDays} Days</span>
+              </button>
+            </div>
+          )}
 
           {/* Input Form Area */}
           <div className="chat-hub-input-bar">

@@ -1171,6 +1171,61 @@ html, body {
   border-color: var(--glass-border-amber);
 }
 
+/* ── Instant Generate Quick Action Bar (Phase 11E) ──────────────── */
+.chat-hub-instant-bar {
+  padding: 8px 24px 0 24px;
+  background: rgba(4, 14, 31, 0.95);
+  display: flex;
+  justify-content: center;
+}
+
+.btn-instant-generate {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(0, 219, 231, 0.12) 0%, rgba(255, 191, 0, 0.1) 100%);
+  border: 1px solid rgba(0, 219, 231, 0.35);
+  color: var(--teal);
+  font-family: var(--font-label);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease-out);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn-instant-generate:hover {
+  background: linear-gradient(135deg, rgba(0, 219, 231, 0.22) 0%, rgba(255, 191, 0, 0.18) 100%);
+  border-color: var(--teal);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(0, 219, 231, 0.25);
+}
+
+.btn-instant-generate strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.instant-bolt {
+  font-size: 14px;
+  filter: drop-shadow(0 0 6px rgba(255, 191, 0, 0.6));
+}
+
+.instant-badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 191, 0, 0.18);
+  border: 1px solid rgba(255, 191, 0, 0.4);
+  color: var(--amber);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 /* ── Chat Input Area ─────────────────────────────────────────────── */
 .chat-hub-input-bar {
   padding: 18px 24px;
