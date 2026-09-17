@@ -316,6 +316,13 @@ export default function ChatPanel({
   };
 
   const handleSelectChip = (questionCategory: string, value: string, isMultiSelect?: boolean) => {
+    if (questionCategory === 'destination' && value) {
+      setPendingTrip(prev => ({
+        destination: value,
+        num_days: prev?.num_days || 3,
+      }));
+      setGuidedDestination(value);
+    }
     setSelectedAnswers(prev => {
       const existing = prev[questionCategory] || [];
       if (isMultiSelect) {
@@ -375,13 +382,14 @@ export default function ChatPanel({
     lastPromptRef.current = { text: textToSend !== undefined ? textToSend : input, options };
     setStreamError(null);
 
-    const explicitDest = pendingTrip?.destination || activeClarification?.destination;
-    const explicitDays = pendingTrip?.num_days || activeClarification?.num_days;
-
     let finalAnswers: Record<string, string | string[]> = { ...(options?.customAnswers || selectedAnswers) };
     if (dietaryPreference) {
       finalAnswers['dietary'] = dietaryPreference;
     }
+
+    const answerDest = Array.isArray(finalAnswers['destination']) ? finalAnswers['destination'][0] : finalAnswers['destination'];
+    const explicitDest = answerDest || pendingTrip?.destination || activeClarification?.destination;
+    const explicitDays = pendingTrip?.num_days || activeClarification?.num_days;
 
     if (options?.forcePlan) {
       const dest = explicitDest || 'Goa';
