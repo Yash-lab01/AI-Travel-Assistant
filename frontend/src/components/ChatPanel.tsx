@@ -493,14 +493,35 @@ export default function ChatPanel({
                       : `🎉 Your complete itinerary for **${parsed.trip_request.destination}** is ready below! Explore each day's curated route, interactive map pins, transit times, and weather forecast.`,
                   },
                 ]);
+              } else if (parsed.event_type === 'text_token' || ('chunk' in parsed && typeof parsed.chunk === 'string')) {
+                const chunk = parsed.chunk;
+                setMessages(prev => {
+                  const last = prev[prev.length - 1];
+                  if (last?.role === 'assistant' && last.isStreaming) {
+                    return [...prev.slice(0, -1), { ...last, content: last.content + chunk }];
+                  }
+                  return [...prev, { role: 'assistant', content: chunk, isStreaming: true }];
+                });
               } else if (parsed.event_type === 'assistant_message' || ('message' in parsed && !parsed.event_type && !parsed.days)) {
-                setMessages(prev => [
-                  ...prev,
-                  {
-                    role: 'assistant',
-                    content: parsed.message,
-                  },
-                ]);
+                setMessages(prev => {
+                  const last = prev[prev.length - 1];
+                  if (last?.role === 'assistant' && last.isStreaming) {
+                    return [...prev.slice(0, -1), { ...last, content: parsed.message, isStreaming: false }];
+                  }
+                  return [
+                    ...prev,
+                    {
+                      role: 'assistant',
+                      content: parsed.message,
+                    },
+                  ];
+                });
+              } else if (parsed.event_type === 'done') {
+                setMessages(prev => {
+                  const hasStreaming = prev.some(m => m.isStreaming);
+                  if (!hasStreaming) return prev;
+                  return prev.map(m => (m.isStreaming ? { ...m, isStreaming: false } : m));
+                });
               } else if (parsed.event_type === 'clarification_needed') {
                 const questions = parsed.data?.questions as ClarificationQuestion[];
                 const dest = (parsed.data?.destination as string) || '';
@@ -531,6 +552,13 @@ export default function ChatPanel({
           }
         }
       }
+
+      // Ensure all streaming flags are cleared once stream reader finishes
+      setMessages(prev => {
+        const hasStreaming = prev.some(m => m.isStreaming);
+        if (!hasStreaming) return prev;
+        return prev.map(m => (m.isStreaming ? { ...m, isStreaming: false } : m));
+      });
     } catch (err: any) {
       clearTimeout(timeoutId);
       const isAbort = err?.name === 'AbortError';
@@ -544,6 +572,11 @@ export default function ChatPanel({
       ]);
     } finally {
       setIsStreaming(false);
+      setMessages(prev => {
+        const hasStreaming = prev.some(m => m.isStreaming);
+        if (!hasStreaming) return prev;
+        return prev.map(m => (m.isStreaming ? { ...m, isStreaming: false } : m));
+      });
     }
   };
 
@@ -641,7 +674,7 @@ export default function ChatPanel({
           <div className="chat-messages-hub" ref={messagesContainerRef}>
             {messages.map((msg, i) => (
               <div key={i} className="message-wrapper">
-                <div className={`chat-bubble ${msg.role}`}>
+                <div className={`chat-bubble ${msg.role} ${msg.isStreaming ? 'chat-bubble-streaming' : ''}`}>
                   {msg.content.split('**').map((part, j) =>
                     j % 2 === 1 ? <strong key={j}>{part}</strong> : part
                   )}
@@ -705,10 +738,16 @@ export default function ChatPanel({
               </div>
             ))}
 
-            {isStreaming && (
-              <div className="chat-bubble assistant" style={{ opacity: 0.9, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--teal)', animation: 'pulseDot 1.2s infinite' }} />
-                <span>Multi-Agent reasoning in progress (scoring, routing & weather)...</span>
+            {/* Pre-stream typing indicator (Phase 12A) */}
+            {isStreaming && !messages.some((m) => m.isStreaming) && (
+              <div className="message-wrapper">
+                <div className="chat-bubble assistant" style={{ display: 'inline-flex', alignItems: 'center', padding: '12px 18px' }}>
+                  <div className="typing-indicator" aria-label="Assistant is typing">
+                    <span className="dot" />
+                    <span className="dot" />
+                    <span className="dot" />
+                  </div>
+                </div>
               </div>
             )}
 

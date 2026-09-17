@@ -152,6 +152,7 @@ export interface AgentEvent {
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  isStreaming?: boolean;
   questions?: ClarificationQuestion[];
   isClarification?: boolean;
   destination?: string;
