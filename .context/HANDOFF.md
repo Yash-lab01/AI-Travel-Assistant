@@ -80,15 +80,16 @@
 21. **Single-Image Category Repetition & Cache Poisoning (Phase 10)**:
     - Single static fallback URL per category caused repeated images across cards.
     - Added rich category photo pools (8–10 photos per category) with deterministic name hashing + destination-specific photo collections; bumped cache to `v9` and forbade mock caching under `source="opentripmap"`.
-22. **Dual-Mode Intake & Multi-Select Planning Studio (Phase 11 — Active)**:
-    - Addressing user feedback regarding limited chat intake depth.
-    - Planning top mode toggle: Freeform Chat vs Structured Option-Based Builder.
-    - Upgrading clarification chips and guided builder to support multi-select across styles, vibes, interests, and dietary biases.
-    - Equipping intake agent with strategic dimension extraction to prompt for missing core dimensions (destination, duration, vibe, pace, budget, group).
-    - Introducing instant "⚡ Generate Trip with Given Info" button to allow users to generate immediately with current information.
+22. **Dual-Mode Intake & Multi-Select Planning Studio (Phase 11 — COMPLETED ✅)**:
+    - **11A**: Top mode segmented control (`💬 Freeform Chat` vs `✨ Guided Builder`) with animated slider and state persistence.
+    - **11B**: Full visual option matrix in Guided Builder (destination chips, duration pills, multi-select style vibes, pacing, budget, companions, must-have activities, dietary bias, live summary bar).
+    - **11C**: Multi-select clarification engine (`is_multi_select: bool` in schemas/types), multi-select chip toggle state (`Record<string, string[]>`) with `✓` indicators, and backend multi-select parsing in `intake_agent.py`.
+    - **11D**: Strategic 6-dimension retrieval (destination, duration, travel style/interests, pace, budget, group) prompting missing dimensions while bypassing rich prompts; expanded multi-select templates for Goa, Mumbai, Pune, Rajasthan, Kashmir, and Lisbon.
+    - **11E**: Instant "⚡ Generate Trip with Given Info (Defaults)" action in clarification bubbles and persistent `.chat-hub-instant-bar` above chat input whenever destination is detected.
 
 ---
 
 ## 5. Active Developmental Milestone
 
-**Phase 11 (Dual-Mode Intake & Multi-Select Planning Studio)** is actively planned and ready for implementation. Phases 0 through 10 are 100% completed and verified with 36/36 passing unit tests.
+**Phases 0 through 11 are 100% completed, verified, and passing all 43/43 pytest unit tests with zero TypeScript/Turbopack errors in Next.js 16.**
+

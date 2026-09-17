@@ -371,7 +371,7 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 
 ---
 
-## Phase 11: Dual-Mode Intake & Multi-Select Planning Studio (PLANNED / IN PROGRESS 📋)
+## Phase 11: Dual-Mode Intake & Multi-Select Planning Studio (COMPLETED ✅)
 
 ### 11A — Mode Switcher & UI Framework
 - [x] **Top Mode Segmented Control**: Implement a sleek segmented toggle (`💬 Freeform Chat` vs `✨ Guided Builder`) at the top of `ChatPanel.tsx` with animated active indicator and Nocturnal Voyager glass styling.
@@ -398,7 +398,7 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 - [x] **Contextual Follow-up Questions**: When prompt is partial or destination is missing, generates strategic clarification questions addressing missing dimensions with multi-select enabled.
 - [x] **Expanded Question Templates**: Enriched `DESTINATION_QUESTIONS` for Goa, Mumbai, Pune, Rajasthan, Kashmir, and Lisbon with 3–4 questions and 4–5 multi-select options each. Upgraded dynamic LLM generator and generic fallback questions. Verified with 7 automated tests.
 
-### 11E — Instant "⚡ Generate Trip with Given Info" Action
-- [ ] **Clarification Card Instant Button**: Add "⚡ Generate Trip with Given Info (Defaults)" button inside clarification messages.
-- [ ] **Persistent Chat Action Chip**: Render a prominent "⚡ Generate with Current Info" chip above the chat input whenever a destination has been detected or entered.
-- [ ] **One-Click Force Plan**: Trigger `force_plan: true` immediately, bypassing further questions.
+### 11E — Instant "⚡ Generate Trip with Given Info" Action (COMPLETED ✅)
+- [x] **Clarification Card Instant Button**: Added "⚡ Generate Trip with Given Info (Defaults)" button inside clarification messages.
+- [x] **Persistent Chat Action Bar**: Rendered a prominent "⚡ Generate Trip with Given Info for [Destination] [N Days]" bar above the chat input whenever a destination has been detected or entered.
+- [x] **One-Click Force Plan**: Triggers immediate itinerary generation with `forcePlan: true`, passing any selected clarification answers, destination, and duration without requiring further clarification rounds.
