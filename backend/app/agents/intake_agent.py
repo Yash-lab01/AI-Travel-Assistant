@@ -26,57 +26,101 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
     "goa": [
         {
             "id": "goa_vibe",
-            "question": "Which coastal vibe are you looking for in Goa?",
+            "question": "Which coastal atmospheres and regions would you like to experience?",
             "category": "region_vibe",
             "is_multi_select": True,
             "options": [
-                {"label": "North Goa — Beaches & Nightlife", "value": "North Goa (beaches/nightlife)", "icon": "🌴"},
-                {"label": "South Goa — Serenity & Heritage", "value": "South Goa (heritage/relaxation)", "icon": "🏰"},
-                {"label": "Balanced North & South Mix", "value": "Balanced mix across Goa", "icon": "⚖️"},
-            ]
-        },
-        {
-            "id": "travel_pace",
-            "question": "What travel pace feels best for this trip?",
-            "category": "pace",
-            "is_multi_select": False,
-            "options": [
-                {"label": "Relaxed & Leisurely (2-3 spots/day)", "value": "slow", "icon": "🧘"},
-                {"label": "Active & Exploring (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "North Goa: Vibrant Beaches & Sunset Shacks", "value": "North Goa (beaches/nightlife)", "icon": "🌴"},
+                {"label": "South Goa: Serene Coves & Heritage Villas", "value": "South Goa (heritage/relaxation)", "icon": "🏰"},
+                {"label": "Panaji & Fontainhas: Portuguese Latin Quarter", "value": "Panaji Fontainhas Latin Quarter", "icon": "🏛️"},
+                {"label": "Old Goa: Historic Cathedrals & Spice Plantations", "value": "Old Goa Cathedrals & Spice Plantations", "icon": "🌿"},
+                {"label": "Mandovi & Chapora: River Cruises & Night Bazaars", "value": "Mandovi River Cruises & Bazaars", "icon": "⛵"},
             ]
         },
         {
             "id": "gem_focus",
-            "question": "How would you like to balance attractions and hidden gems?",
+            "question": "What travel style and activities appeal to you most?",
             "category": "travel_style",
             "is_multi_select": True,
             "options": [
                 {"label": "Authentic Local Hidden Gems", "value": "niche", "icon": "💎"},
-                {"label": "Curated 50/50 Balance", "value": "balanced", "icon": "✨"},
-                {"label": "Iconic Must-See Sights", "value": "popular", "icon": "🏛️"},
+                {"label": "Iconic Forts & Coastal Viewpoints", "value": "popular", "icon": "🏛️"},
+                {"label": "Seafood Shacks & Beachside Dining", "value": "foodie", "icon": "🍲"},
+                {"label": "Water Sports, Kayaking & Surfing", "value": "adventure", "icon": "🏄"},
+                {"label": "Sunset Lounges & Night Markets", "value": "relaxed", "icon": "🌅"},
+            ]
+        },
+        {
+            "id": "travel_pace",
+            "question": "What daily sightseeing pace suits you best?",
+            "category": "pace",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Relaxed & Leisurely (2-3 spots/day)", "value": "slow", "icon": "🧘"},
+                {"label": "Balanced Exploration (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Packed Sightseeing (6+ spots/day)", "value": "fast", "icon": "🏃"},
+            ]
+        },
+        {
+            "id": "group_type",
+            "question": "Who is traveling on this Goa trip?",
+            "category": "group",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Solo Explorer", "value": "solo", "icon": "🎒"},
+                {"label": "Couple / Romantic Getaway", "value": "couple", "icon": "💑"},
+                {"label": "Family with Kids", "value": "family", "icon": "👨‍👩‍👧"},
+                {"label": "Friends Group", "value": "friends", "icon": "👥"},
             ]
         }
     ],
     "mumbai": [
         {
             "id": "mumbai_vibe",
-            "question": "What experience are you looking for in Mumbai?",
+            "question": "What facets of Mumbai are you excited to explore?",
             "category": "travel_style",
             "is_multi_select": True,
             "options": [
-                {"label": "Colonial Heritage & South Bombay", "value": "cultural", "icon": "🏛️"},
-                {"label": "Street Food, Cafes & Coastal Walks", "value": "foodie", "icon": "🍲"},
-                {"label": "Hidden Art Enclaves & Bazaars", "value": "niche", "icon": "💎"},
+                {"label": "Colonial Heritage & South Bombay Landmarks", "value": "cultural", "icon": "🏛️"},
+                {"label": "Khau Galli Street Food & Heritage Cafes", "value": "foodie", "icon": "🍲"},
+                {"label": "Kala Ghoda Art Enclaves & Hidden Bazaars", "value": "niche", "icon": "🎨"},
+                {"label": "Marine Drive Promenades & Coastal Sunsets", "value": "relaxed", "icon": "🌅"},
+                {"label": "Bollywood Heritage & Iconic Film Studios", "value": "popular", "icon": "🎬"},
             ]
         },
         {
             "id": "travel_pace",
-            "question": "What travel pace suits your trip?",
+            "question": "What daily sightseeing pace suits your trip?",
             "category": "pace",
             "is_multi_select": False,
             "options": [
                 {"label": "Relaxed (2-3 spots/day)", "value": "slow", "icon": "🧘"},
-                {"label": "Moderate (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Moderate Exploration (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Packed City Discovery (6+ stops/day)", "value": "fast", "icon": "🏃"},
+            ]
+        },
+        {
+            "id": "mumbai_highlights",
+            "question": "Any signature experiences to prioritize?",
+            "category": "interests",
+            "is_multi_select": True,
+            "options": [
+                {"label": "Irani Chai, Bun Maska & Parsi Bakeries", "value": "irani_cafes", "icon": "☕"},
+                {"label": "Elephanta Caves & Harbor Ferry", "value": "elephanta_caves", "icon": "🗿"},
+                {"label": "Colaba Causeway & Crawford Market", "value": "bazaars", "icon": "🛍️"},
+                {"label": "Seaside Marine Drive Golden Hour", "value": "coastal_walks", "icon": "🌊"},
+            ]
+        },
+        {
+            "id": "group_type",
+            "question": "Who is traveling on this journey?",
+            "category": "group",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Solo Explorer", "value": "solo", "icon": "🎒"},
+                {"label": "Couple / Romantic", "value": "couple", "icon": "💑"},
+                {"label": "Family", "value": "family", "icon": "👨‍👩‍👧"},
+                {"label": "Friends Group", "value": "friends", "icon": "👥"},
             ]
         }
     ],
@@ -87,9 +131,11 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "category": "travel_style",
             "is_multi_select": True,
             "options": [
-                {"label": "Maratha Forts & Historic Wadas", "value": "cultural", "icon": "🏰"},
-                {"label": "Irani Cafes & Street Food", "value": "foodie", "icon": "☕"},
-                {"label": "Scenic Hills & Hidden Green Spots", "value": "niche", "icon": "🌿"},
+                {"label": "Maratha Forts & Historic Peshwa Wadas", "value": "cultural", "icon": "🏰"},
+                {"label": "Irani Cafes, Bakeries & Misal Trails", "value": "foodie", "icon": "☕"},
+                {"label": "Sahyadri Hills, ARAI Vistas & Green Spots", "value": "niche", "icon": "🌿"},
+                {"label": "Koregaon Park Cafes & Osho Gardens", "value": "relaxed", "icon": "🧘"},
+                {"label": "Vibrant Peth Bazaars & Traditional Crafts", "value": "bazaars", "icon": "🛍️"},
             ]
         },
         {
@@ -99,7 +145,32 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "is_multi_select": False,
             "options": [
                 {"label": "Relaxed (2-3 spots/day)", "value": "slow", "icon": "🧘"},
-                {"label": "Active (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Moderate (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Active & Fast (6+ stops/day)", "value": "fast", "icon": "🏃"},
+            ]
+        },
+        {
+            "id": "pune_excursions",
+            "question": "Any must-have Pune excursions?",
+            "category": "interests",
+            "is_multi_select": True,
+            "options": [
+                {"label": "Sinhagad Fort & Rural Pithla Bhakri", "value": "sinhagad_fort", "icon": "⛰️"},
+                {"label": "Aga Khan Palace & Gandhi Memorial", "value": "aga_khan_palace", "icon": "🏛️"},
+                {"label": "Pataleshwar Rock-Cut Cave Temple", "value": "pataleshwar_temple", "icon": "🗿"},
+                {"label": "FC Road Student Cafes & Street Bites", "value": "street_food", "icon": "🍲"},
+            ]
+        },
+        {
+            "id": "group_type",
+            "question": "Who are you traveling with?",
+            "category": "group",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Solo Explorer", "value": "solo", "icon": "🎒"},
+                {"label": "Couple", "value": "couple", "icon": "💑"},
+                {"label": "Family", "value": "family", "icon": "👨‍👩‍👧"},
+                {"label": "Friends", "value": "friends", "icon": "👥"},
             ]
         }
     ],
@@ -110,19 +181,96 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "category": "travel_style",
             "is_multi_select": True,
             "options": [
-                {"label": "Royal Forts & Palaces", "value": "cultural", "icon": "👑"},
-                {"label": "Stepwells & Desert Secrets", "value": "niche", "icon": "🏜️"},
-                {"label": "Bazaars & Heritage Food", "value": "foodie", "icon": "🛍️"},
+                {"label": "Majestic Royal Forts & Palaces", "value": "cultural", "icon": "👑"},
+                {"label": "Ancient Stepwells & Desert Haveli Secrets", "value": "niche", "icon": "🏜️"},
+                {"label": "Bazaars, Block Prints & Gem Markets", "value": "bazaars", "icon": "🛍️"},
+                {"label": "Dal Baati Churma & Royal Rajasthani Feasts", "value": "foodie", "icon": "🍲"},
+                {"label": "Desert Dunes & Sunset Folk Evenings", "value": "scenic", "icon": "🌅"},
             ]
         },
         {
             "id": "travel_pace",
-            "question": "What sightseeing pace would you prefer?",
+            "question": "What sightseeing pace suits your royal tour?",
             "category": "pace",
             "is_multi_select": False,
             "options": [
-                {"label": "Relaxed (2-3 stops/day)", "value": "slow", "icon": "🧘"},
-                {"label": "Moderate (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Relaxed & Unhurried (2-3 stops/day)", "value": "slow", "icon": "🧘"},
+                {"label": "Comprehensive Exploration (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "High-Energy Tour (6+ stops/day)", "value": "fast", "icon": "🏃"},
+            ]
+        },
+        {
+            "id": "rajasthan_activities",
+            "question": "Which signature experiences appeal to you?",
+            "category": "interests",
+            "is_multi_select": True,
+            "options": [
+                {"label": "Photography at Sunset Fort Miradors", "value": "photo_spots", "icon": "📸"},
+                {"label": "Lake Pichola or Jal Mahal Water Vistas", "value": "water_vistas", "icon": "⛵"},
+                {"label": "Local Textile & Blue Pottery Workshops", "value": "artisan_crafts", "icon": "🎨"},
+                {"label": "Heritage Walking Trails in Walled Old Cities", "value": "heritage_walks", "icon": "🚶"},
+            ]
+        },
+        {
+            "id": "group_type",
+            "question": "Travel party style?",
+            "category": "group",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Solo Explorer", "value": "solo", "icon": "🎒"},
+                {"label": "Couple / Romantic", "value": "couple", "icon": "💑"},
+                {"label": "Family", "value": "family", "icon": "👨‍👩‍👧"},
+                {"label": "Friends", "value": "friends", "icon": "👥"},
+            ]
+        }
+    ],
+    "kashmir": [
+        {
+            "id": "kashmir_style",
+            "question": "What experiences are you dreaming of in Kashmir?",
+            "category": "travel_style",
+            "is_multi_select": True,
+            "options": [
+                {"label": "Dal Lake Shikara Rides & Serene Houseboats", "value": "scenic", "icon": "⛵"},
+                {"label": "Mughal Terraced Gardens & Pari Mahal", "value": "cultural", "icon": "🌺"},
+                {"label": "Snow Peaks & High-Altitude Gondola in Gulmarg", "value": "adventure", "icon": "❄️"},
+                {"label": "Pine Forests, Valleys & Rivers of Pahalgam", "value": "niche", "icon": "🌲"},
+                {"label": "Authentic Wazwan Feasts & Artisan Bazaars", "value": "foodie", "icon": "🍲"},
+            ]
+        },
+        {
+            "id": "travel_pace",
+            "question": "What pace feels best amidst the valleys?",
+            "category": "pace",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Relaxed & Peaceful (2-3 spots/day)", "value": "slow", "icon": "🧘"},
+                {"label": "Moderate Valley Exploration (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Active Valley Trekking (5-6 spots/day)", "value": "fast", "icon": "🏃"},
+            ]
+        },
+        {
+            "id": "kashmir_highlights",
+            "question": "Must-have valley highlights?",
+            "category": "interests",
+            "is_multi_select": True,
+            "options": [
+                {"label": "Sunrise Floating Vegetable Market on Dal Lake", "value": "floating_market", "icon": "🌅"},
+                {"label": "Saffron Fields & Pampore Walnut Orchards", "value": "saffron_fields", "icon": "🌿"},
+                {"label": "Old Srinagar Wooden Bridges & Historic Mosques", "value": "old_srinagar", "icon": "🏛️"},
+                {"label": "Traditional Kashmiri Kahwa & Bakery Trail", "value": "kahwa_trail", "icon": "☕"},
+            ]
+        },
+        {
+            "id": "group_type",
+            "question": "Who is joining this journey?",
+            "category": "group",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Solo Explorer", "value": "solo", "icon": "🎒"},
+                {"label": "Couple / Romantic Getaway", "value": "couple", "icon": "💑"},
+                {"label": "Family", "value": "family", "icon": "👨‍👩‍👧"},
+                {"label": "Friends Group", "value": "friends", "icon": "👥"},
             ]
         }
     ],
@@ -133,9 +281,11 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "category": "travel_style",
             "is_multi_select": True,
             "options": [
-                {"label": "Historic Castles & Miradouros", "value": "cultural", "icon": "🏰"},
-                {"label": "Food, Pastéis & Fado Culture", "value": "foodie", "icon": "🍷"},
-                {"label": "Secret Neighborhoods & Flea Markets", "value": "niche", "icon": "💎"},
+                {"label": "Historic Castles, Miradouros & Vintage Tram 28", "value": "cultural", "icon": "🏰"},
+                {"label": "Pastéis de Nata, Port Wine & Intimate Fado Nights", "value": "foodie", "icon": "🍷"},
+                {"label": "Secret Alleys & Flea Markets of Alfama", "value": "niche", "icon": "💎"},
+                {"label": "Waterfront Belém & Monumental Architecture", "value": "popular", "icon": "⛵"},
+                {"label": "Tile Museums, Contemporary Art & Mirador Lounges", "value": "relaxed", "icon": "🎨"},
             ]
         },
         {
@@ -144,8 +294,33 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "category": "pace",
             "is_multi_select": False,
             "options": [
-                {"label": "Relaxed Morning & Afternoon", "value": "slow", "icon": "☕"},
-                {"label": "Comprehensive Day Exploration", "value": "moderate", "icon": "🚶"},
+                {"label": "Relaxed Morning & Afternoon (2-3 stops/day)", "value": "slow", "icon": "☕"},
+                {"label": "Comprehensive Day Exploration (4-5 stops/day)", "value": "moderate", "icon": "🚶"},
+                {"label": "Packed City Discovery (6+ stops/day)", "value": "fast", "icon": "🏃"},
+            ]
+        },
+        {
+            "id": "lisbon_interests",
+            "question": "Any special Lisbon highlights?",
+            "category": "interests",
+            "is_multi_select": True,
+            "options": [
+                {"label": "Sunset Drinks at Scenic Miradouro Vistas", "value": "sunset_miradouros", "icon": "🌅"},
+                {"label": "Sintra Day Trip / Fairy-Tale Castles", "value": "sintra_trip", "icon": "🏰"},
+                {"label": "Feira da Ladra Flea Market & Azulejo Tiles", "value": "flea_market", "icon": "🛍️"},
+                {"label": "Fresh Atlantic Seafood & Petiscos Taverns", "value": "seafood_taverns", "icon": "🍤"},
+            ]
+        },
+        {
+            "id": "group_type",
+            "question": "Who is traveling?",
+            "category": "group",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Solo Traveler", "value": "solo", "icon": "🎒"},
+                {"label": "Couple", "value": "couple", "icon": "💑"},
+                {"label": "Family", "value": "family", "icon": "👨‍👩‍👧"},
+                {"label": "Friends Group", "value": "friends", "icon": "👥"},
             ]
         }
     ]
@@ -153,7 +328,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
 
 
 def _get_generic_clarification_questions(destination: str) -> list[ClarificationQuestion]:
-    """Basic static fallback clarifying questions — used only when LLM generation fails."""
+    """Fallback static clarifying questions — covers all 4 strategic dimensions with 4-5 options."""
     raw_qs = [
         {
             "id": "travel_style",
@@ -161,21 +336,47 @@ def _get_generic_clarification_questions(destination: str) -> list[Clarification
             "category": "travel_style",
             "is_multi_select": True,
             "options": [
-                {"label": "Curated Iconic Sights + Hidden Gems", "value": "balanced", "icon": "✨"},
-                {"label": "Off-The-Beaten-Path Secrets", "value": "niche", "icon": "💎"},
-                {"label": "Major World Landmarks", "value": "popular", "icon": "🏛️"},
-                {"label": "Food, Cafes & Local Gastronomy", "value": "foodie", "icon": "🍲"},
+                {"label": "Curated Iconic Landmarks & Must-See Sights", "value": "popular", "icon": "🏛️"},
+                {"label": "Off-The-Beaten-Path Secrets & Hidden Gems", "value": "niche", "icon": "💎"},
+                {"label": "Food, Local Cafes & Culinary Trails", "value": "foodie", "icon": "🍲"},
+                {"label": "Scenic Nature, Parks & Viewpoints", "value": "adventure", "icon": "🌿"},
+                {"label": "Art, Architecture & Cultural Heritage", "value": "cultural", "icon": "🎨"},
             ]
         },
         {
             "id": "travel_pace",
-            "question": "What is your preferred daily pace?",
+            "question": "What daily sightseeing pace suits your rhythm?",
             "category": "pace",
             "is_multi_select": False,
             "options": [
-                {"label": "Relaxed (2-3 stops/day)", "value": "slow", "icon": "🧘"},
-                {"label": "Moderate (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
-                {"label": "Packed (6+ stops/day)", "value": "fast", "icon": "🏃"},
+                {"label": "Relaxed & Leisurely (2-3 stops/day)", "value": "slow", "icon": "🧘"},
+                {"label": "Balanced & Steady (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Packed & Energetic (6+ stops/day)", "value": "fast", "icon": "🏃"},
+            ]
+        },
+        {
+            "id": "interests",
+            "question": "Which specific highlights are on your wishlist?",
+            "category": "interests",
+            "is_multi_select": True,
+            "options": [
+                {"label": "Golden Hour & Scenic Photo Spots", "value": "photo_spots", "icon": "📸"},
+                {"label": "Boutique Cafes & Street Food Markets", "value": "cafes_markets", "icon": "☕"},
+                {"label": "Historic Neighborhood Walking Tours", "value": "heritage_walks", "icon": "🚶"},
+                {"label": "Sunset Viewpoints & Waterfront Panoramas", "value": "sunset_vistas", "icon": "🌅"},
+                {"label": "Evening Dining, Music & Nightlife", "value": "nightlife", "icon": "🍷"},
+            ]
+        },
+        {
+            "id": "group_type",
+            "question": "Who is traveling on this journey?",
+            "category": "group",
+            "is_multi_select": False,
+            "options": [
+                {"label": "Solo Explorer", "value": "solo", "icon": "🎒"},
+                {"label": "Couple / Romantic", "value": "couple", "icon": "💑"},
+                {"label": "Family with Kids", "value": "family", "icon": "👨‍👩‍👧"},
+                {"label": "Friends Group", "value": "friends", "icon": "👥"},
             ]
         }
     ]
@@ -192,14 +393,22 @@ def _get_generic_clarification_questions(destination: str) -> list[Clarification
 
 
 # ── LLM-powered contextual clarification question generator ─────────────────
-CLARIFICATION_SYSTEM_PROMPT = """You are a travel preference assistant. Based on the user's travel request, generate 2-3 contextual clarification questions with chip options that are SPECIFIC to what they mentioned.
+CLARIFICATION_SYSTEM_PROMPT = """You are an expert travel intake assistant. Based on the user's travel request and missing key dimensions, generate 3-4 strategic clarification questions with 4-5 rich, specific chip options each.
+
+Dimensions to strategically retrieve if missing:
+1. Travel Style & Vibe (set "is_multi_select": true) — Tailor options specifically to what is unique about {destination} (e.g. food, history, nightlife, nature, hidden gems).
+2. Pacing (set "is_multi_select": false) — Daily stop volume (slow 2-3 stops, moderate 4-5 stops, packed 6+ stops).
+3. Must-Have Activities / Interests (set "is_multi_select": true) — Specific local activities (e.g. photo spots, markets, culinary tastings, scenic walks, boat rides).
+4. Group Type or Budget Tier (set "is_multi_select": false) — Solo, couple, family, friends or budget, mid-range, luxury.
 
 Rules:
-- Question 1: Always about travel style / experience TYPE (set "is_multi_select": true) — options must reflect what they actually mentioned (e.g. if they said "beaches and nightlife", offer variants of that, not generic options)
-- Question 2: Daily pace (set "is_multi_select": false) (slow / moderate / packed)
-- Question 3 (optional): A third question specific to the destination or interest (e.g. cuisine type for foodie trips, region for wide destinations, activities/vibe) (set "is_multi_select": true)
-- Each question must have 2-4 options. Each option needs a label (max 5 words), a value (one of: slow/moderate/fast/balanced/niche/popular/cultural/foodie/adventure/relaxed or a freeform preference string), and an emoji icon.
-- Make labels feel fresh, specific, and destination-aware. Avoid generic labels like "Cultural" or "Historical".
+- Generate 3 to 4 questions.
+- For multi-select questions (style, activities, vibes), provide 4 to 5 enticing, destination-tailored options.
+- Each option needs:
+  - "label": 2 to 5 words, evocative, specific to {destination} (avoid generic labels like "Culture").
+  - "value": short identifier string.
+  - "icon": single relevant emoji.
+- Never repeat options.
 
 Respond ONLY with valid JSON matching this exact schema:
 {
@@ -207,7 +416,7 @@ Respond ONLY with valid JSON matching this exact schema:
     {
       "id": "string (snake_case)",
       "question": "string",
-      "category": "string (travel_style|pace|region_vibe|food|activity)",
+      "category": "string (travel_style|pace|region_vibe|interests|group|budget)",
       "is_multi_select": boolean,
       "options": [
         {"label": "string", "value": "string", "icon": "emoji"}
@@ -221,9 +430,11 @@ async def _generate_dynamic_clarification_questions(
     user_message: str,
     destination: str,
     num_days: int,
+    missing_dimensions: Optional[list[str]] = None,
 ) -> list[ClarificationQuestion]:
     """Use LLM to generate contextual clarification questions based on the specific user prompt."""
-    user_context = f"User request: '{user_message}'\nDestination: {destination}\nDuration: {num_days} days"
+    missing_str = f"Missing key dimensions to prioritize: {', '.join(missing_dimensions)}." if missing_dimensions else ""
+    user_context = f"User request: '{user_message}'\nDestination: {destination}\nDuration: {num_days} days\n{missing_str}".strip()
 
     # Try Gemini first (fast, high quality)
     if GOOGLE_KEY:
@@ -385,14 +596,21 @@ def _extract_with_regex(text: str) -> dict:
         if prep in text_lower:
             parts = text_lower.split(prep, 1)
             candidate = parts[1].split(",")[0].split()[0].strip(".,!?").title()
-            if candidate and candidate.lower() not in ["a", "the", "my", "our", "some", "trip", "days", "standard", "preferences", "defaults"]:
+            if candidate and candidate.lower() not in [
+                "a", "the", "my", "our", "some", "trip", "days", "standard", "preferences", "defaults",
+                "holiday", "vacation", "getaway", "tour", "itinerary", "somewhere", "anywhere", "break"
+            ]:
                 destination = candidate
                 break
 
     # If destination is still Unknown, check if the first or last word is a known city/place
     if destination == "Unknown":
         words = [w.strip(".,!?") for w in text.split()]
-        common_stops = {"3", "4", "5", "2", "1", "days", "day", "trip", "in", "to", "plan", "with", "submit", "preferences"}
+        common_stops = {
+            "3", "4", "5", "2", "1", "days", "day", "trip", "in", "to", "plan", "with", "submit", "preferences",
+            "holiday", "vacation", "getaway", "tour", "itinerary", "somewhere", "anywhere", "travel", "places", "explore",
+            "vacations", "holidays", "trips", "weekend", "week", "break"
+        }
         candidates = [w.title() for w in words if w.lower() not in common_stops and len(w) > 2]
         if candidates:
             destination = candidates[0]
@@ -656,13 +874,128 @@ async def intake_node(state: TravelGraphState) -> dict:
                     current_interests.add(f"{d} food")
                 extracted["interests"] = list(current_interests)
 
+        # 6. Group type
+        if "group" in answers:
+            groups = _to_list(answers["group"])
+            if groups:
+                g_val = groups[0].lower()
+                if "couple" in g_val or "romantic" in g_val:
+                    extracted["group_type"] = "couple"
+                elif "family" in g_val or "kid" in g_val:
+                    extracted["group_type"] = "family"
+                elif "friend" in g_val:
+                    extracted["group_type"] = "friends"
+                else:
+                    extracted["group_type"] = "solo"
+
+        # 7. Budget tier
+        if "budget" in answers:
+            b_vals = _to_list(answers["budget"])
+            if b_vals:
+                b_val = b_vals[0].lower()
+                if "budget" in b_val or "cheap" in b_val or "economy" in b_val:
+                    extracted["budget_usd"] = 400.0
+                elif "luxury" in b_val or "premium" in b_val or "high" in b_val:
+                    extracted["budget_usd"] = 2500.0
+                elif "moderate" in b_val or "mid" in b_val:
+                    extracted["budget_usd"] = 1000.0
+
+        # 8. Duration / Days
+        if "duration" in answers or "num_days" in answers:
+            d_vals = _to_list(answers.get("duration") or answers.get("num_days"))
+            if d_vals:
+                match = re.search(r'\d+', d_vals[0])
+                if match:
+                    extracted["num_days"] = int(match.group(0))
+
+        # 9. Destination selection
+        if "destination" in answers:
+            dest_vals = _to_list(answers["destination"])
+            if dest_vals:
+                extracted["destination"] = dest_vals[0]
+
     trip_request = _dict_to_trip_request(extracted, raw_message=last_user_msg)
     if "region_preference" in extracted:
         trip_request.region_preference = extracted["region_preference"]
 
-    # ── Check if prompt is underspecified ─────────────────────────────────
-    is_brief_prompt = len(last_user_msg.split()) <= 7 and not answers and trip_request.budget_usd is None
-    needs_clarification = is_brief_prompt and not force_plan
+    # ── Strategic Fixed-Info Dimension Tracking (Phase 11D) ───────────────
+    # Key fixed dimensions: destination, duration, travel style/interests, pace, group, budget
+    msg_lower = last_user_msg.lower()
+    has_explicit_dest = trip_request.destination != "Unknown"
+    has_explicit_duration = (
+        bool(re.search(r'\b(\d+)\s*(?:day|night)', msg_lower))
+        or "weekend" in msg_lower
+        or "week" in msg_lower
+        or explicit_days is not None
+    )
+    has_explicit_style = (
+        trip_request.travel_style != TravelStyle.balanced
+        or bool(trip_request.interests)
+        or any(w in msg_lower for w in ["hidden gem", "offbeat", "secret", "local", "niche", "authentic", "iconic", "famous", "landmark", "food", "foodie", "culture", "history", "museum", "adventure", "beach", "nature", "scenic"])
+    )
+    has_explicit_pace = any(w in msg_lower for w in ["slow", "relaxed", "leisure", "moderate", "fast", "packed", "busy", "intense", "stops/day"])
+    has_explicit_group = any(w in msg_lower for w in ["solo", "couple", "honeymoon", "partner", "wife", "husband", "family", "kids", "children", "friend", "friends", "group", "colleagues"])
+    has_explicit_budget = trip_request.budget_usd is not None or any(w in msg_lower for w in ["budget", "cheap", "luxury", "expensive", "mid-range", "economy", "$", "€", "£", "₹", "rs", "inr"])
+
+    missing_dimensions: list[str] = []
+    if not has_explicit_duration:
+        missing_dimensions.append("duration")
+    if not has_explicit_style:
+        missing_dimensions.append("travel_style")
+    if not has_explicit_pace:
+        missing_dimensions.append("pace")
+    if not has_explicit_group:
+        missing_dimensions.append("group")
+    if not has_explicit_budget:
+        missing_dimensions.append("budget")
+
+    if force_plan or answers:
+        needs_clarification = False
+    elif not has_explicit_dest:
+        needs_clarification = True
+    else:
+        dims_present = sum([has_explicit_duration, has_explicit_style, has_explicit_pace, has_explicit_group, has_explicit_budget])
+        # If fewer than 3 supporting dimensions specified, strategically ask clarifying questions
+        needs_clarification = dims_present < 3
+
+    # Handle Unknown Destination prompt (e.g. "plan a 3 day trip")
+    if needs_clarification and trip_request.destination == "Unknown":
+        dest_q = ClarificationQuestion(
+            id="choose_destination",
+            question="Which world-class destination would you like to explore?",
+            category="destination",
+            is_multi_select=False,
+            options=[
+                ClarificationOption(label="Goa, India — Beaches & Sunsets", value="Goa", icon="🌴"),
+                ClarificationOption(label="Mumbai, India — Colonial Heritage & Coast", value="Mumbai", icon="🏛️"),
+                ClarificationOption(label="Rajasthan, India — Royal Palaces & Forts", value="Rajasthan", icon="👑"),
+                ClarificationOption(label="Kashmir, India — Serene Lakes & Valleys", value="Kashmir", icon="❄️"),
+                ClarificationOption(label="Kyoto, Japan — Ancient Temples & Zen", value="Kyoto", icon="⛩️"),
+                ClarificationOption(label="Lisbon, Portugal — Hills, Tram & Pastéis", value="Lisbon", icon="🏰"),
+                ClarificationOption(label="Paris, France — Iconic Landmarks & Cafes", value="Paris", icon="🗼"),
+            ]
+        )
+        generic_qs = _get_generic_clarification_questions("your trip")
+        questions = [dest_q, generic_qs[0]]
+        events.append(AgentEvent(
+            event_type="clarification_needed",
+            agent="intake_agent",
+            message="I'd love to help plan your getaway! Where would you like to travel, and what travel vibe excites you?",
+            data={
+                "questions": [q.model_dump() for q in questions],
+                "destination": "Unknown",
+                "num_days": trip_request.num_days,
+            }
+        ))
+        return {
+            "trip_request": trip_request,
+            "destination": "Unknown",
+            "num_days": trip_request.num_days,
+            "is_edit": False,
+            "needs_clarification": True,
+            "clarification_questions": questions,
+            "events": events,
+        }
 
     if needs_clarification and trip_request.destination != "Unknown":
         dest_lower = trip_request.destination.lower()
@@ -682,17 +1015,26 @@ async def intake_node(state: TravelGraphState) -> dict:
                 for q in raw_qs
             ]
         else:
-            # Generate dynamic contextual questions from the user's actual prompt via LLM
+            # Generate dynamic contextual questions from user's prompt targeting missing dimensions
             questions = await _generate_dynamic_clarification_questions(
                 user_message=last_user_msg,
                 destination=trip_request.destination,
                 num_days=trip_request.num_days,
+                missing_dimensions=missing_dimensions,
             )
+
+        clarification_msg = (
+            f"I've got {trip_request.num_days} days in {trip_request.destination} noted! "
+            f"To customize this trip to your exact tastes, select a few quick preferences below (or generate immediately with standard defaults):"
+            if has_explicit_duration else
+            f"I've got {trip_request.destination} noted! To personalize your itinerary and daily rhythm, "
+            f"choose your preferences below (or generate immediately with standard 3-day defaults):"
+        )
 
         events.append(AgentEvent(
             event_type="clarification_needed",
             agent="intake_agent",
-            message=f"I've got {trip_request.num_days} days in {trip_request.destination} noted! To make this itinerary truly personal, tell me a bit about your travel style below (or click 'Plan with defaults now' to start immediately).",
+            message=clarification_msg,
             data={
                 "questions": [q.model_dump() for q in questions],
                 "destination": trip_request.destination,
