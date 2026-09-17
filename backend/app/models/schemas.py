@@ -61,11 +61,11 @@ class NicheScore(BaseModel):
 class Stop(BaseModel):
     id: str
     name: str
-    category: str               # "attraction", "restaurant", "cafe", "viewpoint", "park", "museum", "beach", "market"
-    description: str
-    narration: str              # Written by fine-tuned model (or cloud LLM fallback)
-    lat: float
-    lon: float
+    category: str = "attraction" # "attraction", "restaurant", "cafe", "viewpoint", "park", "museum", "beach", "market"
+    description: str = ""
+    narration: Optional[str] = None # Written by fine-tuned model (or cloud LLM fallback)
+    lat: float = 0.0
+    lon: float = 0.0
     address: Optional[str] = None
     duration_minutes: int = 60
     estimated_cost_usd: Optional[float] = None
@@ -82,7 +82,7 @@ class Stop(BaseModel):
 
 class DayPlan(BaseModel):
     day_number: int
-    theme: str                  # e.g. "Historic Alfama & Fado Nights" or "North Goa Coastal Forts"
+    theme: Optional[str] = "Explore & Discover" # e.g. "Historic Alfama & Fado Nights" or "North Goa Coastal Forts"
     date: Optional[str] = None
     stops: list[Stop] = Field(default_factory=list)
     day_cost_estimate_usd: Optional[float] = None

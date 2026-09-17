@@ -35,6 +35,7 @@ from app.db.history_store import (
     save_itinerary,
     get_all_histories,
     get_itinerary_by_id,
+    get_itinerary_by_slug,
     delete_itinerary,
 )
 from app.tools.pdf_generator import generate_itinerary_pdf, generate_itinerary_html
@@ -372,21 +373,25 @@ async def export_pdf_by_id(itinerary_id: str):
     """
     Generate and stream a high-fidelity PDF travel guide for a saved itinerary.
     """
-    itinerary = get_itinerary_by_id(itinerary_id)
+    itinerary = get_itinerary_by_slug(itinerary_id)
     if not itinerary:
         raise HTTPException(status_code=404, detail="Itinerary not found.")
 
     dest = itinerary.trip_request.destination if itinerary.trip_request else "Trip"
     safe_dest = re.sub(r'[^a-zA-Z0-9_-]', '_', dest)
-    filename = f"WanderAI-{safe_dest}-{itinerary_id[:8]}.pdf"
+    short_id = (itinerary_id or "trip")[:8]
+    filename = f"WanderAI-{safe_dest}-{short_id}.pdf"
 
     pdf_bytes = await generate_itinerary_pdf(itinerary)
+    is_real_pdf = pdf_bytes.startswith(b"%PDF-")
+    media_type = "application/pdf" if is_real_pdf else "text/html; charset=utf-8"
+    download_name = filename if is_real_pdf else f"WanderAI-{safe_dest}-{short_id}.html"
 
     return Response(
         content=pdf_bytes,
-        media_type="application/pdf",
+        media_type=media_type,
         headers={
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Disposition": f'attachment; filename="{download_name}"',
             "Cache-Control": "no-cache",
         },
     )
@@ -403,12 +408,15 @@ async def export_pdf_direct(itinerary: Itinerary):
     filename = f"WanderAI-{safe_dest}-{short_id}.pdf"
 
     pdf_bytes = await generate_itinerary_pdf(itinerary)
+    is_real_pdf = pdf_bytes.startswith(b"%PDF-")
+    media_type = "application/pdf" if is_real_pdf else "text/html; charset=utf-8"
+    download_name = filename if is_real_pdf else f"WanderAI-{safe_dest}-{short_id}.html"
 
     return Response(
         content=pdf_bytes,
-        media_type="application/pdf",
+        media_type=media_type,
         headers={
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Disposition": f'attachment; filename="{download_name}"',
             "Cache-Control": "no-cache",
         },
     )
@@ -420,15 +428,8 @@ async def get_shared_trip(slug_or_id: str):
     """
     Retrieve an itinerary for public sharing / read-only viewing.
     """
-    itinerary = get_itinerary_by_id(slug_or_id)
+    itinerary = get_itinerary_by_slug(slug_or_id)
     if not itinerary:
-        # Also check all histories in case slug is mapped
-        histories = get_all_histories(limit=100)
-        for h in histories:
-            if h.get("id", "").startswith(slug_or_id) or slug_or_id in h.get("id", ""):
-                found = get_itinerary_by_id(h["id"])
-                if found:
-                    return found
         raise HTTPException(status_code=404, detail="Shared trip not found.")
     return itinerary
 

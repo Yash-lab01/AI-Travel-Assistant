@@ -511,10 +511,17 @@ async def generate_itinerary_pdf(itinerary: Itinerary) -> bytes:
 
     try:
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
+            browser = await p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+            )
             page = await browser.new_page()
-            # Set HTML content and wait for images/fonts
-            await page.set_content(html, wait_until="networkidle", timeout=12000)
+            # Set HTML content and wait for load (don't block indefinitely on networkidle)
+            try:
+                await page.set_content(html, wait_until="load", timeout=8000)
+            except Exception as wait_err:
+                print(f"[pdf_generator] Notice: Page load timeout (proceeding to render PDF): {wait_err}")
+
             pdf_bytes = await page.pdf(
                 format="A4",
                 print_background=True,
@@ -529,7 +536,7 @@ async def generate_itinerary_pdf(itinerary: Itinerary) -> bytes:
             if pdf_bytes and len(pdf_bytes) > 1000:
                 return pdf_bytes
     except Exception as e:
-        print(f"[pdf_generator] Playwright Chromium PDF generation note: {e}")
+        print(f"[pdf_generator] Playwright Chromium PDF generation error: {e}")
 
     # Fallback: return formatted HTML bytes (clients can open and print)
     return html.encode("utf-8")

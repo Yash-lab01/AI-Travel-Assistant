@@ -151,3 +151,34 @@ async def test_get_shared_trip_404():
         response = await client.get("/share/unknown-fake-slug-000")
         assert response.status_code == 404
         assert "not found" in response.json().get("detail", "").lower()
+
+
+@pytest.mark.anyio
+async def test_export_pdf_with_missing_narration_and_theme():
+    """Test POST /export/pdf succeeds even when stops lack narration or days lack theme."""
+    raw_payload = {
+        "id": "itin-resilient-pdf-001",
+        "trip_request": {"destination": "Kashmir"},
+        "days": [
+            {
+                "day_number": 1,
+                "stops": [
+                    {
+                        "id": "stop-k1",
+                        "name": "Dal Lake",
+                        "category": "nature",
+                        "description": "Scenic lake in Srinagar.",
+                        "lat": 34.12,
+                        "lon": 74.87,
+                    }
+                ],
+            }
+        ],
+    }
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/export/pdf", json=raw_payload)
+        assert response.status_code == 200
+        assert "application/pdf" in response.headers.get("content-type", "")
+        assert len(response.content) > 500
+        assert response.content.startswith(b"%PDF-")
+

@@ -171,3 +171,28 @@ def delete_itinerary(
         cursor.execute("DELETE FROM trip_history WHERE id = ?", (str(itinerary_id),))
         conn.commit()
         return cursor.rowcount > 0
+
+
+def get_itinerary_by_slug(
+    slug_or_id: str,
+    db_path: Optional[str] = None,
+) -> Optional[Itinerary]:
+    """Retrieve full Itinerary object by its UUID or share_slug."""
+    found = get_itinerary_by_id(slug_or_id, db_path)
+    if found:
+        return found
+    init_db(db_path)
+    with _get_connection(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT itinerary_json FROM trip_history
+            WHERE itinerary_json LIKE ? OR itinerary_json LIKE ?
+            LIMIT 1
+            """,
+            (f'%"share_slug": "{slug_or_id}"%', f'%"share_slug":"{slug_or_id}"%'),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return Itinerary.model_validate_json(row["itinerary_json"])
