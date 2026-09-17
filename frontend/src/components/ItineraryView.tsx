@@ -554,10 +554,9 @@ export default function ItineraryView({ itinerary, isLoading, onStopAction, onQu
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       toast.success('PDF travel guide downloaded successfully!', 'PDF Exported');
-    } catch (err) {
+    } catch (err: any) {
       console.error('PDF download error:', err);
-      toast.warning('Opening PDF in new tab...', 'Fallback Export');
-      window.open(`http://localhost:8000/export/pdf/${itinerary.id}`, '_blank');
+      toast.error('Failed to generate PDF. Ensure the backend server is running at localhost:8000.', 'PDF Export Error');
     } finally {
       setIsDownloadingPdf(false);
     }
