@@ -91,5 +91,6 @@
 
 ## 5. Active Developmental Milestone
 
-**Phases 0 through 11 are 100% completed, verified, and passing all 43/43 pytest unit tests with zero TypeScript/Turbopack errors in Next.js 16.**
+**Phases 0 through 11 and Phase 12A (LLM Chat Streaming & Pre-Stream Typing Indicator) are 100% completed, verified, and passing all 44/44 pytest unit tests with zero TypeScript/Turbopack errors in Next.js 16.**
+Next: Phase 12B (Destination Preview Card, Freeform ↔ Guided preferences strip, clarification progress counter).
 

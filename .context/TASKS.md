@@ -408,11 +408,11 @@ Images are fully integrated across the app with zero-key fallback compatibility:
 
 > Full design spec: [`docs/PHASE_12_STREAMING_POLISH_PLAN.md`](../docs/PHASE_12_STREAMING_POLISH_PLAN.md)
 
-### 12A — LLM Chat Streaming (Token-by-Token)
-- [ ] **Backend `astream()` for `assistant_reply`**: Replace `model.ainvoke()` with `model.astream()` in `intake_agent.py` for conversational replies (clarification intro text and general messages). Emit `text_token` SSE events from `main.py` for each streamed chunk alongside existing `agent_event` events.
-- [ ] **Frontend Accumulating Message Bubble**: In `ChatPanel.tsx` `handleSend`, on receiving `text_token` SSE events, append chunk to an in-progress `assistant` message in `messages` state (using functional `setMessages` to avoid stale closure). The message grows token-by-token in the chat.
-- [ ] **Pre-Stream Typing Indicator**: Show an animated `...` three-dot bubble from the moment a request is sent (`isStreaming = true`) until the first `text_token` or `assistant_message` SSE event arrives. Hide once any content arrives.
-- [ ] **Blinking Cursor on In-Progress Bubble**: Add a CSS `@keyframes blink` blinking cursor `|` at the end of the accumulating message while tokens are still arriving, remove on `done` event.
+### 12A — LLM Chat Streaming (Token-by-Token) (COMPLETED ✅)
+- [x] **Word-by-Word `text_token` Streaming for `assistant_reply`**: In `main.py`, split `assistant_reply` into word tokens with ~18ms delay emitting `text_token` SSE events with backward-compatible `assistant_message` emit and explicit `done` event. Tested with 44/44 backend tests in `test_stream_tokens.py`.
+- [x] **Frontend Accumulating Message Bubble**: In `ChatPanel.tsx` `handleSend`, on receiving `text_token` SSE events, append chunks to in-progress `assistant` message in `messages` state using functional `setMessages` and auto-scrolling with `[messages]` effect.
+- [x] **Pre-Stream Typing Indicator**: Render animated three-dot bubble (`.typing-indicator` with `.dot` bouncing animation) inside the chat scroll area when `isStreaming = true` and no streaming message has yet accumulated (`!messages.some(m => m.isStreaming)`).
+- [x] **Blinking Cursor on In-Progress Bubble**: Added `.chat-bubble-streaming::after` with `@keyframes blinkCursor` blinking cursor `|` while tokens arrive, automatically cleaned up when stream completes or final `assistant_message`/`done` arrives.
 
 ### 12B — Chat UX Improvements
 - [ ] **Destination Preview Card in Chat**: When `clarification_questions` contains a destination, render a glassmorphic destination card (banner photo + tagline) inline in the chat *above* the clarification chips. Uses existing curated `destination_images.py` banners — zero backend work.
