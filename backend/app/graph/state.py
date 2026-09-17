@@ -2,7 +2,7 @@
 LangGraph state definition for the travel planning graph.
 All agents share and mutate this state object.
 """
-from typing import TypedDict, Annotated, Optional
+from typing import TypedDict, Annotated, Optional, Any
 from langgraph.graph.message import add_messages
 from app.models.schemas import (
     TripRequest, Itinerary, NicheScore, AgentEvent, Stop, ClarificationQuestion
@@ -20,7 +20,7 @@ class TravelGraphState(TypedDict):
 
     # Clarification state
     force_plan: bool                                       # Bypass clarification if True
-    clarification_answers: Optional[dict[str, str]]        # Answers selected by user
+    clarification_answers: Optional[dict[str, Any]]        # Answers selected by user (str or list[str])
     needs_clarification: bool                              # Set to True by Intake if prompt is brief
     clarification_questions: list[ClarificationQuestion]   # Generated clarifying questions & chips
 

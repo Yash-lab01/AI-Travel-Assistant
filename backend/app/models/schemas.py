@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, Any
 from datetime import date
 from enum import Enum
 
@@ -109,7 +109,8 @@ class ClarificationOption(BaseModel):
 class ClarificationQuestion(BaseModel):
     id: str
     question: str
-    category: str   # "region_vibe" | "pace" | "budget" | "travel_style" | "group"
+    category: str   # "region_vibe" | "pace" | "budget" | "travel_style" | "group" | "interests"
+    is_multi_select: bool = False
     options: list[ClarificationOption] = Field(default_factory=list)
 
 
@@ -200,7 +201,7 @@ class ChatRequest(BaseModel):
     num_days: Optional[int] = None               # Explicit days if preserved across turns
     existing_itinerary_id: Optional[str] = None  # For follow-up edits
     force_plan: bool = False                     # If True, bypasses clarification questions
-    answers: Optional[dict[str, str]] = None     # User-selected clarification answers
+    answers: Optional[dict[str, Any]] = None     # User-selected clarification answers (str or list[str])
     action: Optional[str] = None                 # Explicit action: "swap" | "remove" | "tell_me_more"
     target_day: Optional[int] = None             # Target day number for edits
     target_stop_id: Optional[str] = None         # Specific stop id being targeted

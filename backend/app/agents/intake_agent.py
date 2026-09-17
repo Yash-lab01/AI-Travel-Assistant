@@ -28,6 +28,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "goa_vibe",
             "question": "Which coastal vibe are you looking for in Goa?",
             "category": "region_vibe",
+            "is_multi_select": True,
             "options": [
                 {"label": "North Goa — Beaches & Nightlife", "value": "North Goa (beaches/nightlife)", "icon": "🌴"},
                 {"label": "South Goa — Serenity & Heritage", "value": "South Goa (heritage/relaxation)", "icon": "🏰"},
@@ -38,6 +39,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "travel_pace",
             "question": "What travel pace feels best for this trip?",
             "category": "pace",
+            "is_multi_select": False,
             "options": [
                 {"label": "Relaxed & Leisurely (2-3 spots/day)", "value": "slow", "icon": "🧘"},
                 {"label": "Active & Exploring (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
@@ -47,6 +49,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "gem_focus",
             "question": "How would you like to balance attractions and hidden gems?",
             "category": "travel_style",
+            "is_multi_select": True,
             "options": [
                 {"label": "Authentic Local Hidden Gems", "value": "niche", "icon": "💎"},
                 {"label": "Curated 50/50 Balance", "value": "balanced", "icon": "✨"},
@@ -59,6 +62,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "mumbai_vibe",
             "question": "What experience are you looking for in Mumbai?",
             "category": "travel_style",
+            "is_multi_select": True,
             "options": [
                 {"label": "Colonial Heritage & South Bombay", "value": "cultural", "icon": "🏛️"},
                 {"label": "Street Food, Cafes & Coastal Walks", "value": "foodie", "icon": "🍲"},
@@ -69,9 +73,10 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "travel_pace",
             "question": "What travel pace suits your trip?",
             "category": "pace",
+            "is_multi_select": False,
             "options": [
                 {"label": "Relaxed (2-3 spots/day)", "value": "slow", "icon": "🧘"},
-                {"label": "Moderate (4-5 spots/day)", "value": "moderate", "icon": "⚡"},
+                {"label": "Moderate (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
             ]
         }
     ],
@@ -80,6 +85,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "pune_vibe",
             "question": "What would you like to explore in Pune?",
             "category": "travel_style",
+            "is_multi_select": True,
             "options": [
                 {"label": "Maratha Forts & Historic Wadas", "value": "cultural", "icon": "🏰"},
                 {"label": "Irani Cafes & Street Food", "value": "foodie", "icon": "☕"},
@@ -90,6 +96,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "travel_pace",
             "question": "What daily pace would you prefer?",
             "category": "pace",
+            "is_multi_select": False,
             "options": [
                 {"label": "Relaxed (2-3 spots/day)", "value": "slow", "icon": "🧘"},
                 {"label": "Active (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
@@ -101,6 +108,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "rajasthan_style",
             "question": "What is your primary focus for Rajasthan?",
             "category": "travel_style",
+            "is_multi_select": True,
             "options": [
                 {"label": "Royal Forts & Palaces", "value": "cultural", "icon": "👑"},
                 {"label": "Stepwells & Desert Secrets", "value": "niche", "icon": "🏜️"},
@@ -111,6 +119,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "travel_pace",
             "question": "What sightseeing pace would you prefer?",
             "category": "pace",
+            "is_multi_select": False,
             "options": [
                 {"label": "Relaxed (2-3 stops/day)", "value": "slow", "icon": "🧘"},
                 {"label": "Moderate (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
@@ -122,6 +131,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "lisbon_vibe",
             "question": "What atmosphere are you most excited to experience in Lisbon?",
             "category": "travel_style",
+            "is_multi_select": True,
             "options": [
                 {"label": "Historic Castles & Miradouros", "value": "cultural", "icon": "🏰"},
                 {"label": "Food, Pastéis & Fado Culture", "value": "foodie", "icon": "🍷"},
@@ -132,6 +142,7 @@ DESTINATION_QUESTIONS: dict[str, list[dict]] = {
             "id": "travel_pace",
             "question": "What daily pace suits your trip?",
             "category": "pace",
+            "is_multi_select": False,
             "options": [
                 {"label": "Relaxed Morning & Afternoon", "value": "slow", "icon": "☕"},
                 {"label": "Comprehensive Day Exploration", "value": "moderate", "icon": "🚶"},
@@ -148,6 +159,7 @@ def _get_generic_clarification_questions(destination: str) -> list[Clarification
             "id": "travel_style",
             "question": f"What type of experience are you looking for in {destination}?",
             "category": "travel_style",
+            "is_multi_select": True,
             "options": [
                 {"label": "Curated Iconic Sights + Hidden Gems", "value": "balanced", "icon": "✨"},
                 {"label": "Off-The-Beaten-Path Secrets", "value": "niche", "icon": "💎"},
@@ -159,6 +171,7 @@ def _get_generic_clarification_questions(destination: str) -> list[Clarification
             "id": "travel_pace",
             "question": "What is your preferred daily pace?",
             "category": "pace",
+            "is_multi_select": False,
             "options": [
                 {"label": "Relaxed (2-3 stops/day)", "value": "slow", "icon": "🧘"},
                 {"label": "Moderate (4-5 stops/day)", "value": "moderate", "icon": "⚡"},
@@ -171,6 +184,7 @@ def _get_generic_clarification_questions(destination: str) -> list[Clarification
             id=q["id"],
             question=q["question"],
             category=q["category"],
+            is_multi_select=q.get("is_multi_select", False),
             options=[ClarificationOption(**opt) for opt in q["options"]]
         )
         for q in raw_qs
@@ -181,9 +195,9 @@ def _get_generic_clarification_questions(destination: str) -> list[Clarification
 CLARIFICATION_SYSTEM_PROMPT = """You are a travel preference assistant. Based on the user's travel request, generate 2-3 contextual clarification questions with chip options that are SPECIFIC to what they mentioned.
 
 Rules:
-- Question 1: Always about travel style / experience TYPE — but options must reflect what they actually mentioned (e.g. if they said "beaches and nightlife", offer variants of that, not generic options)
-- Question 2: Always about daily pace (slow / moderate / packed)
-- Question 3 (optional): A third question specific to the destination or interest (e.g. cuisine type for foodie trips, region for wide destinations, vibe for city trips)
+- Question 1: Always about travel style / experience TYPE (set "is_multi_select": true) — options must reflect what they actually mentioned (e.g. if they said "beaches and nightlife", offer variants of that, not generic options)
+- Question 2: Daily pace (set "is_multi_select": false) (slow / moderate / packed)
+- Question 3 (optional): A third question specific to the destination or interest (e.g. cuisine type for foodie trips, region for wide destinations, activities/vibe) (set "is_multi_select": true)
 - Each question must have 2-4 options. Each option needs a label (max 5 words), a value (one of: slow/moderate/fast/balanced/niche/popular/cultural/foodie/adventure/relaxed or a freeform preference string), and an emoji icon.
 - Make labels feel fresh, specific, and destination-aware. Avoid generic labels like "Cultural" or "Historical".
 
@@ -194,6 +208,7 @@ Respond ONLY with valid JSON matching this exact schema:
       "id": "string (snake_case)",
       "question": "string",
       "category": "string (travel_style|pace|region_vibe|food|activity)",
+      "is_multi_select": boolean,
       "options": [
         {"label": "string", "value": "string", "icon": "emoji"}
       ]
@@ -233,6 +248,7 @@ async def _generate_dynamic_clarification_questions(
                         id=q["id"],
                         question=q["question"],
                         category=q["category"],
+                        is_multi_select=bool(q.get("is_multi_select", False)),
                         options=[ClarificationOption(**opt) for opt in q["options"]]
                     )
                     for q in data.get("questions", [])
@@ -261,6 +277,7 @@ async def _generate_dynamic_clarification_questions(
                         id=q["id"],
                         question=q["question"],
                         category=q["category"],
+                        is_multi_select=bool(q.get("is_multi_select", False)),
                         options=[ClarificationOption(**opt) for opt in q["options"]]
                     )
                     for q in data.get("questions", [])
@@ -577,18 +594,67 @@ async def intake_node(state: TravelGraphState) -> dict:
             extracted["destination"] = prev_trip.destination
             extracted["num_days"] = prev_trip.num_days
 
-    # Merge explicit clarification answers if user clicked chips
+    # Merge explicit clarification answers if user clicked chips (supports multi-select)
     if answers:
+        def _to_list(val) -> list[str]:
+            if isinstance(val, list):
+                return [str(v).strip() for v in val if str(v).strip()]
+            if isinstance(val, str) and val.strip():
+                return [v.strip() for v in val.split(",") if v.strip()]
+            return []
+
+        # 1. Travel style & niche weighting
         if "travel_style" in answers:
-            extracted["travel_style"] = answers["travel_style"]
-            if answers["travel_style"] == "niche":
-                extracted["niche_weight"] = 0.8
-            elif answers["travel_style"] == "popular":
-                extracted["niche_weight"] = 0.2
+            styles = _to_list(answers["travel_style"])
+            if styles:
+                if "niche" in styles and "popular" in styles:
+                    extracted["niche_weight"] = 0.5
+                    extracted["travel_style"] = "balanced"
+                elif "niche" in styles:
+                    extracted["niche_weight"] = 0.8
+                    extracted["travel_style"] = "niche"
+                elif "popular" in styles:
+                    extracted["niche_weight"] = 0.2
+                    extracted["travel_style"] = "popular"
+                else:
+                    known = {"cultural", "foodie", "adventure", "relaxed", "balanced"}
+                    chosen = next((s for s in styles if s in known), styles[0])
+                    extracted["travel_style"] = chosen
+
+                current_interests = set(extracted.get("interests") or [])
+                for s in styles:
+                    current_interests.add(s)
+                extracted["interests"] = list(current_interests)
+
+        # 2. Pacing
         if "pace" in answers:
-            extracted["pace"] = answers["pace"]
+            paces = _to_list(answers["pace"])
+            if paces:
+                extracted["pace"] = paces[0]
+
+        # 3. Regional / Vibe preference
         if "region_vibe" in answers:
-            extracted["region_preference"] = answers["region_vibe"]
+            vibes = _to_list(answers["region_vibe"])
+            if vibes:
+                extracted["region_preference"] = " & ".join(vibes)
+
+        # 4. Activities / Interests
+        for interest_key in ["interests", "activity", "food", "gem_focus"]:
+            if interest_key in answers:
+                items = _to_list(answers[interest_key])
+                if items:
+                    current_interests = set(extracted.get("interests") or [])
+                    current_interests.update(items)
+                    extracted["interests"] = list(current_interests)
+
+        # 5. Dietary preferences
+        if "dietary" in answers:
+            diet_items = _to_list(answers["dietary"])
+            if diet_items:
+                current_interests = set(extracted.get("interests") or [])
+                for d in diet_items:
+                    current_interests.add(f"{d} food")
+                extracted["interests"] = list(current_interests)
 
     trip_request = _dict_to_trip_request(extracted, raw_message=last_user_msg)
     if "region_preference" in extracted:
@@ -610,6 +676,7 @@ async def intake_node(state: TravelGraphState) -> dict:
                     id=q["id"],
                     question=q["question"],
                     category=q["category"],
+                    is_multi_select=bool(q.get("is_multi_select", False)),
                     options=[ClarificationOption(**opt) for opt in q["options"]]
                 )
                 for q in raw_qs
