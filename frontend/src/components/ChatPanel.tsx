@@ -109,7 +109,7 @@ export default function ChatPanel({
     destination: string;
     num_days: number;
   } | null>(null);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string[]>>({});
 
   // Phase 11A — Dual-Mode Intake & State Preservation
   const [inputMode, setInputMode] = useState<'chat' | 'guided'>('chat');
@@ -315,11 +315,35 @@ export default function ChatPanel({
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
   };
 
-  const handleSelectChip = (questionCategory: string, value: string) => {
-    setSelectedAnswers(prev => ({
-      ...prev,
-      [questionCategory]: value,
-    }));
+  const handleSelectChip = (questionCategory: string, value: string, isMultiSelect?: boolean) => {
+    setSelectedAnswers(prev => {
+      const existing = prev[questionCategory] || [];
+      if (isMultiSelect) {
+        if (existing.includes(value)) {
+          return {
+            ...prev,
+            [questionCategory]: existing.filter(v => v !== value),
+          };
+        } else {
+          return {
+            ...prev,
+            [questionCategory]: [...existing, value],
+          };
+        }
+      } else {
+        if (existing.includes(value)) {
+          return {
+            ...prev,
+            [questionCategory]: [],
+          };
+        } else {
+          return {
+            ...prev,
+            [questionCategory]: [value],
+          };
+        }
+      }
+    });
   };
 
   const [dietaryPreference, setDietaryPreference] = useState<string | null>(null);
@@ -338,7 +362,7 @@ export default function ChatPanel({
     textToSend?: string,
     options?: {
       forcePlan?: boolean;
-      customAnswers?: Record<string, string>;
+      customAnswers?: Record<string, string | string[]>;
       action?: string;
       targetDay?: number;
       targetStopId?: string;
@@ -354,7 +378,7 @@ export default function ChatPanel({
     const explicitDest = pendingTrip?.destination || activeClarification?.destination;
     const explicitDays = pendingTrip?.num_days || activeClarification?.num_days;
 
-    let finalAnswers = { ...(options?.customAnswers || selectedAnswers) };
+    let finalAnswers: Record<string, string | string[]> = { ...(options?.customAnswers || selectedAnswers) };
     if (dietaryPreference) {
       finalAnswers['dietary'] = dietaryPreference;
     }
@@ -367,9 +391,17 @@ export default function ChatPanel({
     } else if (options?.customAnswers) {
       const dest = explicitDest || 'Goa';
       const days = explicitDays || 3;
-      const answerSummary = Object.values(options.customAnswers).join(', ');
+      const allSelectedValues: string[] = [];
+      Object.values(options.customAnswers).forEach(val => {
+        if (Array.isArray(val)) {
+          allSelectedValues.push(...val);
+        } else if (typeof val === 'string' && val.trim()) {
+          allSelectedValues.push(val);
+        }
+      });
+      const answerSummary = allSelectedValues.join(', ');
       outgoingMessage = `${days} days in ${dest}${answerSummary ? `, ${answerSummary}` : ''}${dietaryPreference ? `, ${dietaryPreference}` : ''}`;
-      setMessages(prev => [...prev, { role: 'user', content: `🚀 Plan ${days} days in ${dest} (${answerSummary})` }]);
+      setMessages(prev => [...prev, { role: 'user', content: `🚀 Plan ${days} days in ${dest}${answerSummary ? ` (${answerSummary})` : ''}` }]);
     } else if (outgoingMessage) {
       if (dietaryPreference && !outgoingMessage.toLowerCase().includes(dietaryPreference)) {
         outgoingMessage += ` (${dietaryPreference} dining)`;
@@ -601,27 +633,36 @@ export default function ChatPanel({
                   {msg.isClarification && msg.questions && (
                     <div className="clarification-card">
                       <div className="clarification-title">✨ Quick Travel Preferences for {msg.destination || 'your trip'}:</div>
-                      {msg.questions.map((q) => (
-                        <div key={q.id} className="clarification-question-group">
-                          <div className="clarification-q-text">{q.question}</div>
-                          <div className="clarification-options-grid">
-                            {q.options.map((opt) => {
-                              const isSelected = selectedAnswers[q.category] === opt.value;
-                              return (
-                                <button
-                                  key={opt.value}
-                                  className={`clarification-option-chip ${isSelected ? 'selected' : ''}`}
-                                  onClick={() => handleSelectChip(q.category, opt.value)}
-                                  disabled={isStreaming}
-                                >
-                                  {opt.icon && <span style={{ marginRight: 6 }}>{opt.icon}</span>}
-                                  <span>{opt.label}</span>
-                                </button>
-                              );
-                            })}
+                      {msg.questions.map((q) => {
+                        const selectedVals = selectedAnswers[q.category] || [];
+                        return (
+                          <div key={q.id} className="clarification-question-group">
+                            <div className="clarification-q-text">
+                              {q.question}
+                              {q.is_multi_select && (
+                                <span className="clarification-multi-tag">Multi-select</span>
+                              )}
+                            </div>
+                            <div className="clarification-options-grid">
+                              {q.options.map((opt) => {
+                                const isSelected = selectedVals.includes(opt.value);
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    className={`clarification-option-chip ${isSelected ? 'selected' : ''}`}
+                                    onClick={() => handleSelectChip(q.category, opt.value, q.is_multi_select)}
+                                    disabled={isStreaming}
+                                  >
+                                    {isSelected && <span style={{ marginRight: 5, color: 'var(--teal)', fontWeight: 700 }}>✓</span>}
+                                    {opt.icon && <span style={{ marginRight: 6 }}>{opt.icon}</span>}
+                                    <span>{opt.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {/* Action Buttons for Clarification */}
                       <div className="clarification-actions-row">

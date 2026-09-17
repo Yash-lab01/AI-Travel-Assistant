@@ -1073,6 +1073,23 @@ html, body {
   font-size: 13.5px;
   color: #ffffff;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.clarification-multi-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--teal);
+  background: rgba(0, 219, 231, 0.12);
+  border: 1px solid rgba(0, 219, 231, 0.3);
+  border-radius: var(--radius-full);
+  padding: 1px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
 }
 
 .clarification-options-grid {

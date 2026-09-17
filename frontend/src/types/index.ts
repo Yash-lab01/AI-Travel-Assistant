@@ -78,6 +78,7 @@ export interface ClarificationQuestion {
   id: string;
   question: string;
   category: string;
+  is_multi_select?: boolean;
   options: ClarificationOption[];
 }
 
